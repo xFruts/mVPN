@@ -1,0 +1,15 @@
+spring:
+  config:
+    activate:
+      on-profile: prod
+  datasource:
+    url: jdbc:postgresql://db:5432/mvpn_db
+    username: ${DB_USER}
+    password: ${DB_PASSWORD}
+  jpa:
+    hibernate:
+      ddl-auto: update
+    properties:
+      hibernate:
+        format_sql: false
+    open-in-view: false
