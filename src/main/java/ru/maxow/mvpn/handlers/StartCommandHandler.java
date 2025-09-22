@@ -1,4 +1,4 @@
-package ru.maxow.mvpn.features;
+package ru.maxow.mvpn.handlers;
 
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
