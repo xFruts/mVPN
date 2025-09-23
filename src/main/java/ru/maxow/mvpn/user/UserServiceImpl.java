@@ -82,4 +82,24 @@ public class UserServiceImpl implements UserService {
       throw new NotFoundException("User", id);
     }
   }
+
+  @Override
+  public boolean checkVerificationCode(UUID code) {
+    return userRepository.existsByVerificationCode(code);
+  }
+
+  @Override
+  public boolean updateUserTelegramId(UUID code, Long telegramId) {
+    User existingUser = userRepository.findByVerificationCode(code)
+            .orElse(null);
+
+    if (existingUser == null) {
+      return false;
+    }
+
+    existingUser.setUserTelegramId(telegramId);
+    userRepository.save(existingUser);
+    log.info("Telegram ID for user with verification code: {} updated successfully", code);
+    return true;
+  }
 }

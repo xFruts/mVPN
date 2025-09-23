@@ -1,10 +1,13 @@
 package ru.maxow.mvpn.user;
 
 
+import java.util.UUID;
+
 public record UserResponseDto(
     Long id,
     String fullName,
-    String verificationKey,
-    String role
+    UUID verificationCode,
+    String role,
+    Long userTelegramId
 ) {
 }

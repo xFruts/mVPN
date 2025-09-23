@@ -20,7 +20,7 @@ public class User {
   @Column(nullable = false)
   private String fullName;
 
-  private UUID verificationKey = UUID.randomUUID();
+  private UUID verificationCode = UUID.randomUUID();
 
   @Enumerated(EnumType.STRING)
   @Column(nullable = false)
