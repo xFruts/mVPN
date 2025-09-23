@@ -1,5 +1,7 @@
 package ru.maxow.mvpn.notification;
 
+import java.time.LocalDate;
+import java.util.List;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
@@ -13,9 +15,11 @@ import ru.maxow.mvpn.user.User;
 import ru.maxow.mvpn.user.UserService;
 import ru.maxow.mvpn.util.exception.NotFoundException;
 
-import java.time.LocalDate;
-import java.util.List;
 
+/**
+ * Service for sending notifications to users.
+ * Currently, it sends payment reminders on a scheduled basis.
+ */
 @Service
 @RequiredArgsConstructor
 @Slf4j
@@ -25,6 +29,10 @@ public class NotificationService {
   PaymentSettingsService paymentSettingsService;
   TelegramSenderService telegramSenderService;
 
+  /**
+   * Sends payment reminders to all regular users on the payment date.
+   * Scheduled to run daily at 9 AM.
+   */
   @Scheduled(cron = "0 0 9 * * ?")
   public void sendPaymentReminders() {
     PaymentSettings settings;

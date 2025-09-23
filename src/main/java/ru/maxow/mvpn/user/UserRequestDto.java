@@ -1,10 +1,12 @@
 package ru.maxow.mvpn.user;
 
-import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
-import ru.maxow.mvpn.util.xss.XssStringJsonDeserializer;
-
+/**
+ * Data Transfer Object for user requests.
+ *
+ * @param fullName       the full name of the user
+ * @param userTelegramId the Telegram ID of the user
+ */
 public record UserRequestDto(
-    @JsonDeserialize(using = XssStringJsonDeserializer.class)
     String fullName,
     Long userTelegramId
-) { }
+) {}

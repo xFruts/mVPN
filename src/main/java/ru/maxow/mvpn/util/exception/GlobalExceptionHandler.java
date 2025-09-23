@@ -7,10 +7,15 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.context.request.WebRequest;
 
+/**
+ * Global exception handler for REST controllers.
+ * Catches specific exceptions and returns appropriate HTTP responses.
+ */
 @Slf4j
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
+  /** Handle NotFoundException and return 404 status. */
   @ResponseStatus(HttpStatus.NOT_FOUND)
   @ExceptionHandler(NotFoundException.class)
   public ErrorResponse handleNotFoundException(NotFoundException ex, WebRequest request) {
@@ -19,6 +24,7 @@ public class GlobalExceptionHandler {
     return new ErrorResponse(userFriendlyMessage, System.currentTimeMillis());
   }
 
+  /** Handle BadRequestException and return 400 status. */
   @ResponseStatus(HttpStatus.BAD_REQUEST)
   @ExceptionHandler(BadRequestException.class)
   public ErrorResponse handleBadRequestException(BadRequestException ex, WebRequest request) {
@@ -27,6 +33,7 @@ public class GlobalExceptionHandler {
     return new ErrorResponse(userFriendlyMessage, System.currentTimeMillis());
   }
 
+  /** Handle all other exceptions and return 500 status. */
   @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
   @ExceptionHandler(Exception.class)
   public ErrorResponse handleGlobalException(Exception ex, WebRequest request) {

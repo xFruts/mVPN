@@ -8,6 +8,9 @@ import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.stereotype.Service;
 import ru.maxow.mvpn.util.exception.NotFoundException;
 
+/**
+ * Service implementation for managing PaymentSettings entities.
+ */
 @Service
 @Slf4j
 @RequiredArgsConstructor
@@ -24,14 +27,16 @@ public class PaymentSettingsServiceImpl implements  PaymentSettingsService {
   }
 
   @Override
-  public PaymentSettings createPaymentSettings(PaymentSettingsRequestDto paymentSettingsRequestDto) {
+  public PaymentSettings createPaymentSettings(
+      PaymentSettingsRequestDto paymentSettingsRequestDto) {
     PaymentSettings paymentSettings = paymentSettingsMapper.toEntity(paymentSettingsRequestDto);
     log.info("create payment settings with ID: {}", paymentSettings.getId());
     return paymentSettingsRepository.save(paymentSettings);
   }
 
   @Override
-  public PaymentSettings updatePaymentSettings(Long id, PaymentSettingsRequestDto paymentSettingsRequestDto) {
+  public PaymentSettings updatePaymentSettings(
+      Long id, PaymentSettingsRequestDto paymentSettingsRequestDto) {
     PaymentSettings existingPaymentSettings = getPaymentSettings(id);
     paymentSettingsMapper.updateEntityFromDto(paymentSettingsRequestDto, existingPaymentSettings);
     log.info("update payment settings with ID: {}", existingPaymentSettings.getId());

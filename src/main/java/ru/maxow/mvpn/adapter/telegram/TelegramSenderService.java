@@ -10,6 +10,9 @@ import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.bots.AbsSender;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
+/**
+ * Service for sending messages with absSender via Telegram bot.
+ */
 @Service
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @Slf4j
@@ -18,11 +21,17 @@ import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 public class TelegramSenderService {
   AbsSender absSender;
 
+  /**
+   * Send message to chat.
+   *
+   * @param chatId chat id
+   * @param text   message text
+   */
   public void sendMessage(String chatId, String text) {
     SendMessage sendMessage = SendMessage.builder()
-      .chatId(chatId)
-      .text(text)
-      .build();
+        .chatId(chatId)
+        .text(text)
+        .build();
     try {
       absSender.execute(sendMessage);
     } catch (TelegramApiException e) {

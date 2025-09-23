@@ -1,5 +1,7 @@
 package ru.maxow.mvpn.user;
 
+import java.util.List;
+import java.util.UUID;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
@@ -11,9 +13,9 @@ import org.springframework.stereotype.Service;
 import ru.maxow.mvpn.util.exception.BadRequestException;
 import ru.maxow.mvpn.util.exception.NotFoundException;
 
-import java.util.List;
-import java.util.UUID;
-
+/**
+ * Service implementation for managing users.
+ */
 @Service
 @Slf4j
 @RequiredArgsConstructor

@@ -6,6 +6,9 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.experimental.FieldDefaults;
 
+/**
+ * Represents an error response with a message and a timestamp.
+ */
 @Getter
 @Setter
 @AllArgsConstructor

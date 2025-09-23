@@ -1,12 +1,14 @@
 package ru.maxow.mvpn.handlers;
 
+import java.util.List;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.Update;
 
-import java.util.List;
-
+/**
+ * Handler for /start command.
+ */
 @Component
 @Order(1)
 public class StartCommandHandler implements CommandHandler {

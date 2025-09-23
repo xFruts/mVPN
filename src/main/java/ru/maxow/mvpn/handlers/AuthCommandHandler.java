@@ -1,5 +1,8 @@
 package ru.maxow.mvpn.handlers;
 
+import java.util.List;
+import java.util.UUID;
+import lombok.RequiredArgsConstructor;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
@@ -7,17 +10,15 @@ import org.telegram.telegrambots.meta.api.objects.Update;
 import ru.maxow.mvpn.user.User;
 import ru.maxow.mvpn.user.UserService;
 
-import java.util.List;
-import java.util.UUID;
 
+/**
+ * Handler for the /auth command to authenticate users via a token.
+ */
 @Component
 @Order(1)
+@RequiredArgsConstructor
 public class AuthCommandHandler implements CommandHandler {
   private final UserService userService;
-
-  public AuthCommandHandler(UserService userService) {
-    this.userService = userService;
-  }
 
   @Override
   public boolean supports(Update update) {
@@ -57,7 +58,9 @@ public class AuthCommandHandler implements CommandHandler {
         responseText = "❌ Неверный формат токена. Пожалуйста, проверьте правильность ввода.";
       }
     } else {
-      responseText = "❌ Пожалуйста, предоставьте токен аутентификации после команды /auth. Например: /auth your_token_here";
+      responseText =
+          "❌ Пожалуйста, предоставьте токен аутентификации после команды /auth. "
+              + "Например: /auth your_token_here";
     }
     return List.of(
         SendMessage.builder()
