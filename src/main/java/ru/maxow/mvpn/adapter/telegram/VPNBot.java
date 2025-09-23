@@ -16,10 +16,12 @@ public class VPNBot extends TelegramLongPollingBot {
     public VPNBot(
             @Value("${bot.token}") String botToken,
             @Value("${bot.username}") String username,
-            UpdateDispatcher dispatcher) {
+            UpdateDispatcher dispatcher,
+            TelegramSenderService telegramSenderService) {
         super(botToken);
         this.username = username;
         this.dispatcher = dispatcher;
+        telegramSenderService.setAbsSender(this);
     }
 
     @Override

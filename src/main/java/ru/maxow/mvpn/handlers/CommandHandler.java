@@ -1,4 +1,4 @@
-package ru.maxow.mvpn.adapter.telegram;
+package ru.maxow.mvpn.handlers;
 
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.Update;

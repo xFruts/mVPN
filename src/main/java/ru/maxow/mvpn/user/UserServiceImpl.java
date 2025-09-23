@@ -11,6 +11,7 @@ import org.springframework.stereotype.Service;
 import ru.maxow.mvpn.util.exception.BadRequestException;
 import ru.maxow.mvpn.util.exception.NotFoundException;
 
+import java.util.List;
 import java.util.UUID;
 
 @Service
@@ -101,5 +102,15 @@ public class UserServiceImpl implements UserService {
     userRepository.save(existingUser);
     log.info("Telegram ID for user with verification code: {} updated successfully", code);
     return true;
+  }
+
+  @Override
+  public List<User> getRegularUsers() {
+    return userRepository.getRegularUser();
+  }
+
+  @Override
+  public User findByTelegramId(Long telegramId) {
+    return userRepository.findByUserTelegramId(telegramId).orElse(null);
   }
 }

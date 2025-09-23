@@ -3,6 +3,7 @@ package ru.maxow.mvpn.adapter.telegram;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.Update;
+import ru.maxow.mvpn.handlers.CommandHandler;
 
 import java.util.List;
 

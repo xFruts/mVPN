@@ -44,7 +44,7 @@ class UserServiceImplTest {
         user = new User();
         user.setId(1L);
         user.setFullName("Test User");
-        user.setRole(UserRole.USER);
+        user.setRole(UserRole.REGULAR);
         user.setVerificationCode(verificationCode);
 
         userRequestDto = new UserRequestDto("Test User", 12345L);
