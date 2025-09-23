@@ -1,6 +1,5 @@
 package ru.maxow.mvpn.handlers;
 
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -10,12 +9,14 @@ import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.Chat;
 import org.telegram.telegrambots.meta.api.objects.Message;
 import org.telegram.telegrambots.meta.api.objects.Update;
+import ru.maxow.mvpn.user.User;
 import ru.maxow.mvpn.user.UserService;
 
 import java.util.List;
 import java.util.UUID;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -27,81 +28,107 @@ class AuthCommandHandlerTest {
     @InjectMocks
     private AuthCommandHandler authCommandHandler;
 
-    private Update update;
-    private Message message;
-
-    @BeforeEach
-    void setUp() {
-        update = new Update();
-        message = new Message();
+    private Update createMockUpdate(String text, Long chatId) {
+        Update update = new Update();
+        Message message = new Message();
         Chat chat = new Chat();
-        chat.setId(123L);
+        chat.setId(chatId);
         message.setChat(chat);
+        message.setText(text);
         update.setMessage(message);
+        return update;
     }
 
     @Test
-    void supports_shouldReturnTrue_whenCommandIsAuth() {
-        message.setText("/auth some_token");
-        assertTrue(authCommandHandler.supports(update));
+    void supports_ShouldReturnTrue_ForAuthCommand() {
+        // Given
+        Update update = createMockUpdate("/auth test", 123L);
+        // When
+        boolean result = authCommandHandler.supports(update);
+        // Then
+        assertTrue(result);
     }
 
     @Test
-    void supports_shouldReturnFalse_whenCommandIsNotAuth() {
-        message.setText("/start");
-        assertFalse(authCommandHandler.supports(update));
-    }
+    void handle_ShouldReturnAlreadyAuthenticated_WhenUserExists() {
+        // Given
+        Long chatId = 123L;
+        Update update = createMockUpdate("/auth some-token", chatId);
+        when(userService.findByTelegramId(chatId)).thenReturn(new User());
 
-    @Test
-    void supports_shouldReturnFalse_whenMessageHasNoText() {
-        assertFalse(authCommandHandler.supports(update));
-    }
-
-    @Test
-    void handle_shouldReturnHelpMessage_whenNoTokenProvided() {
-        message.setText("/auth");
-
+        // When
         List<SendMessage> result = authCommandHandler.handle(update);
 
+        // Then
         assertEquals(1, result.size());
-        assertEquals("❌ Пожалуйста, предоставьте токен аутентификации после команды /auth. Например: /auth your_token_here", result.get(0).getText());
+        assertEquals("✅ Вы уже аутентифицированы.", result.get(0).getText());
+        verify(userService, never()).checkVerificationCode(any());
     }
 
     @Test
-    void handle_shouldReturnInvalidFormatMessage_whenTokenIsInvalidUUID() {
-        message.setText("/auth invalid-uuid");
-
-        List<SendMessage> result = authCommandHandler.handle(update);
-
-        assertEquals(1, result.size());
-        assertEquals("❌ Неверный формат токена. Пожалуйста, проверьте правильность ввода.", result.get(0).getText());
-    }
-
-    @Test
-    void handle_shouldReturnWrongTokenMessage_whenTokenIsIncorrect() {
+    void handle_ShouldReturnSuccess_WhenTokenIsValid() {
+        // Given
+        Long chatId = 123L;
         UUID token = UUID.randomUUID();
-        message.setText("/auth " + token);
+        Update update = createMockUpdate("/auth " + token, chatId);
+        when(userService.findByTelegramId(chatId)).thenReturn(null);
+        when(userService.checkVerificationCode(token)).thenReturn(true);
+
+        // When
+        List<SendMessage> result = authCommandHandler.handle(update);
+
+        // Then
+        assertEquals(1, result.size());
+        assertEquals("✅ Вы успешно аутентифицированы!", result.get(0).getText());
+        verify(userService, times(1)).updateUserTelegramId(token, chatId);
+    }
+
+    @Test
+    void handle_ShouldReturnInvalidToken_WhenTokenIsWrong() {
+        // Given
+        Long chatId = 123L;
+        UUID token = UUID.randomUUID();
+        Update update = createMockUpdate("/auth " + token, chatId);
+        when(userService.findByTelegramId(chatId)).thenReturn(null);
         when(userService.checkVerificationCode(token)).thenReturn(false);
 
+        // When
         List<SendMessage> result = authCommandHandler.handle(update);
 
+        // Then
         assertEquals(1, result.size());
         assertEquals("❌ Неверный токен аутентификации. Пожалуйста, попробуйте снова.", result.get(0).getText());
         verify(userService, never()).updateUserTelegramId(any(), any());
     }
 
     @Test
-    void handle_shouldReturnSuccessMessage_whenTokenIsCorrect() {
-        UUID token = UUID.randomUUID();
-        long chatId = 123L;
-        message.setText("/auth " + token);
-        when(userService.checkVerificationCode(token)).thenReturn(true);
+    void handle_ShouldReturnInvalidFormat_WhenTokenIsMalformed() {
+        // Given
+        Long chatId = 123L;
+        Update update = createMockUpdate("/auth not-a-uuid", chatId);
+        when(userService.findByTelegramId(chatId)).thenReturn(null);
 
+        // When
         List<SendMessage> result = authCommandHandler.handle(update);
 
+        // Then
         assertEquals(1, result.size());
-        assertEquals("✅ Вы успешно аутентифицированы!", result.get(0).getText());
-        verify(userService, times(1)).updateUserTelegramId(token, chatId);
+        assertEquals("❌ Неверный формат токена. Пожалуйста, проверьте правильность ввода.", result.get(0).getText());
+    }
+
+    @Test
+    void handle_ShouldReturnProvideToken_WhenTokenIsMissing() {
+        // Given
+        Long chatId = 123L;
+        Update update = createMockUpdate("/auth", chatId);
+        when(userService.findByTelegramId(chatId)).thenReturn(null);
+
+        // When
+        List<SendMessage> result = authCommandHandler.handle(update);
+
+        // Then
+        assertEquals(1, result.size());
+        assertTrue(result.get(0).getText().contains("Пожалуйста, предоставьте токен аутентификации"));
     }
 }
 

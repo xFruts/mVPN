@@ -4,7 +4,6 @@ import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.Update;
-import ru.maxow.mvpn.adapter.telegram.CommandHandler;
 
 import java.util.List;
 
@@ -23,8 +22,12 @@ public class HelpCommandHandler implements CommandHandler {
     Long chatId = update.getMessage().getChatId();
 
     String text = """
+            Данный бот предназначен для предоставления доступа к VPN-сервису.
+            Для получения доступа необходимо авторизоваться с помощью кода, который можно получить у администратора.
+            После успешной авторизации вы получите инструкции по подключению к VPN.
+            Если у вас возникнут вопросы, пожалуйста, обратитесь к администратору.
+            
             Список доступных команд:
-            /start - начать работу с ботом
             /auth - Ввести код авторизации, полученный от администратора
             """;
     return List.of(

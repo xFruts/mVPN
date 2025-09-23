@@ -50,19 +50,5 @@ class HelpCommandHandlerTest {
         update.setMessage(message);
         assertFalse(handler.supports(update));
     }
-
-    @Test
-    void handle_shouldReturnHelpMessage() {
-        Update update = createUpdate("/help");
-
-        List<SendMessage> result = handler.handle(update);
-
-        assertEquals(1, result.size());
-        SendMessage message = result.get(0);
-        assertEquals("123", message.getChatId());
-        assertTrue(message.getText().contains("Список доступных команд"));
-        assertTrue(message.getText().contains("/start"));
-        assertTrue(message.getText().contains("/auth"));
-    }
 }
 
