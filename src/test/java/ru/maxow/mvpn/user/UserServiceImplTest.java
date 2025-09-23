@@ -15,6 +15,7 @@ import ru.maxow.mvpn.util.exception.NotFoundException;
 
 import java.util.Collections;
 import java.util.Optional;
+import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
@@ -35,16 +36,19 @@ class UserServiceImplTest {
     private User user;
     private UserRequestDto userRequestDto;
     private UserResponseDto userResponseDto;
+    private UUID verificationCode;
 
     @BeforeEach
     void setUp() {
+        verificationCode = UUID.randomUUID();
         user = new User();
         user.setId(1L);
         user.setFullName("Test User");
         user.setRole(UserRole.USER);
+        user.setVerificationCode(verificationCode);
 
         userRequestDto = new UserRequestDto("Test User", 12345L);
-        userResponseDto = new UserResponseDto(1L, "Test User", "key", "USER");
+        userResponseDto = new UserResponseDto(1L, "Test User", verificationCode, "USER", null);
     }
 
     @Test
@@ -146,5 +150,47 @@ class UserServiceImplTest {
 
         assertThrows(NotFoundException.class, () -> userService.deleteUserById(1L));
     }
-}
 
+    @Test
+    void checkVerificationCode_shouldReturnTrue_whenCodeExists() {
+        when(userRepository.existsByVerificationCode(verificationCode)).thenReturn(true);
+
+        boolean result = userService.checkVerificationCode(verificationCode);
+
+        assertTrue(result);
+        verify(userRepository).existsByVerificationCode(verificationCode);
+    }
+
+    @Test
+    void checkVerificationCode_shouldReturnFalse_whenCodeDoesNotExist() {
+        when(userRepository.existsByVerificationCode(verificationCode)).thenReturn(false);
+
+        boolean result = userService.checkVerificationCode(verificationCode);
+
+        assertFalse(result);
+        verify(userRepository).existsByVerificationCode(verificationCode);
+    }
+
+    @Test
+    void updateUserTelegramId_shouldUpdateTelegramId_whenCodeIsValid() {
+        long telegramId = 12345L;
+        when(userRepository.findByVerificationCode(verificationCode)).thenReturn(Optional.of(user));
+
+        boolean result = userService.updateUserTelegramId(verificationCode, telegramId);
+
+        assertTrue(result);
+        assertEquals(telegramId, user.getUserTelegramId());
+        verify(userRepository).save(user);
+    }
+
+    @Test
+    void updateUserTelegramId_shouldReturnFalse_whenCodeIsInvalid() {
+        long telegramId = 12345L;
+        when(userRepository.findByVerificationCode(verificationCode)).thenReturn(Optional.empty());
+
+        boolean result = userService.updateUserTelegramId(verificationCode, telegramId);
+
+        assertFalse(result);
+        verify(userRepository, never()).save(any(User.class));
+    }
+}

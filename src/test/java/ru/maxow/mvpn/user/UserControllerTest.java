@@ -14,6 +14,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import ru.maxow.mvpn.util.exception.NotFoundException;
 
 import java.util.Collections;
+import java.util.UUID;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
@@ -38,10 +39,12 @@ class UserControllerTest {
 
     private UserResponseDto userResponseDto;
     private UserRequestDto userRequestDto;
+    private UUID verificationCode;
 
     @BeforeEach
     void setUp() {
-        userResponseDto = new UserResponseDto(1L, "Test User", "key", "USER");
+        verificationCode = UUID.randomUUID();
+        userResponseDto = new UserResponseDto(1L, "Test User", verificationCode, "USER", null);
         userRequestDto = new UserRequestDto("Test User", 12345L);
     }
 
@@ -118,4 +121,3 @@ class UserControllerTest {
                 .andExpect(jsonPath("$.id").value(1L));
     }
 }
-
