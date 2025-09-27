@@ -1,0 +1,26 @@
+html, body {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    color: inherit;
+    text-decoration: none;
+}
+
+
+.main-page {
+    display: flex;
+}
+
+.sidebar {
+    height: 99vh;
+    width: 100%;
+    border: black 1px solid;
+    flex: 1;
+}
+
+.main-content {
+    height: 99vh;
+    width: 100%;
+    border: red 1px solid;
+    flex: 6;
+}
