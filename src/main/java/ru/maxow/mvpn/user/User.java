@@ -9,9 +9,12 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import java.util.UUID;
+
+import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;
+import lombok.experimental.FieldDefaults;
 
 /**
  * User entity representing a user in the system.
@@ -21,19 +24,22 @@ import lombok.Setter;
 @Setter
 @RequiredArgsConstructor
 @Table(name = "users")
+@FieldDefaults(level = AccessLevel.PRIVATE)
 public class User {
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
-  private Long id;
+  Long id;
 
-  private Long userTelegramId;
+  Long userTelegramId;
 
   @Column(nullable = false)
-  private String fullName;
+  String fullName;
 
-  private UUID verificationCode = UUID.randomUUID();
+  UUID verificationCode = UUID.randomUUID();
 
   @Enumerated(EnumType.STRING)
   @Column(nullable = false)
-  private UserRole role =  UserRole.REGULAR;
+  UserRole role =  UserRole.REGULAR;
+
+  String configFilePath;
 }
