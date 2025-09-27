@@ -9,15 +9,9 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PatchMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
+import ru.maxow.mvpn.util.exception.NotFoundException;
 
 /**
  * REST controller for managing users.
@@ -96,5 +90,17 @@ public class UserController {
       @PathVariable Long userId, @RequestBody UpdateUserRoleRequest request) {
     UserResponseDto updatedUser = userService.updateUserRole(userId, request.role());
     return ResponseEntity.ok(updatedUser);
+  }
+
+  @PostMapping("/{id}/config")
+  public ResponseEntity<?> uploadConfigFile(@PathVariable Long id, @RequestParam("file") MultipartFile file) {
+    try {
+      userService.attachConfigFile(id, file);
+      return ResponseEntity.ok().body("File uploaded successfully");
+    } catch (NotFoundException e) {
+      return ResponseEntity.notFound().build();
+    } catch (Exception e) {
+      return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Could not upload the file: " + e.getMessage());
+    }
   }
 }

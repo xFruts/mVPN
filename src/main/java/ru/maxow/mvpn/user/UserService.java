@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.UUID;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.web.multipart.MultipartFile;
 
 /**
  * Service interface for managing users.
@@ -89,4 +90,6 @@ public interface UserService {
    * @return the User entity
    */
   User findByTelegramId(Long telegramId);
+
+  void attachConfigFile(Long userId, MultipartFile file);
 }

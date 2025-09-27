@@ -7,3 +7,11 @@ spring:
 bot:
   token: ${TELEGRAM_BOT_TOKEN}
   username: ${TELEGRAM_BOT_USERNAME}
+
+minio:
+  url: http://127.0.0.1:9000
+  access:
+    name: minioadmin
+    secret: minioadmin
+  bucket:
+    name: user-configs

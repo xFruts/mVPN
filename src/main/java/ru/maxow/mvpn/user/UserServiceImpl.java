@@ -2,6 +2,8 @@ package ru.maxow.mvpn.user;
 
 import java.util.List;
 import java.util.UUID;
+
+import jakarta.transaction.Transactional;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
@@ -10,6 +12,8 @@ import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
+import ru.maxow.mvpn.minio.MinioService;
 import ru.maxow.mvpn.util.exception.BadRequestException;
 import ru.maxow.mvpn.util.exception.NotFoundException;
 
@@ -24,6 +28,7 @@ public class UserServiceImpl implements UserService {
 
   UserRepository userRepository;
   UserMapper userMapper;
+  MinioService minioService;
 
   @Override
   public Page<UserResponseDto> findAll(Pageable pageable) {
@@ -114,5 +119,18 @@ public class UserServiceImpl implements UserService {
   @Override
   public User findByTelegramId(Long telegramId) {
     return userRepository.findByUserTelegramId(telegramId).orElse(null);
+  }
+
+  @Override
+  @Transactional
+  public void attachConfigFile(Long userId, MultipartFile file) {
+    User user = userRepository.findById(userId)
+        .orElseThrow(() -> new NotFoundException("User", userId));
+
+    String filePath = minioService.uploadFile(file, userId);
+
+    user.setConfigFilePath(filePath);
+
+    userRepository.save(user);
   }
 }
