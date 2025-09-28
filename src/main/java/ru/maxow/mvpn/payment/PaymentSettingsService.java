@@ -4,16 +4,13 @@ package ru.maxow.mvpn.payment;
  * Service interface for managing payment settings.
  */
 public interface PaymentSettingsService {
-  /** Retrieves payment settings by ID. */
-  PaymentSettings getPaymentSettings(Long id);
+  /** Retrieves the latest payment settings as a DTO. */
+  PaymentSettingsResponseDto getLatestPaymentSettings();
 
-  /** Creates new payment settings. */
-  PaymentSettings createPaymentSettings(PaymentSettingsRequestDto paymentSettingsRequestDto);
-
-  /** Updates existing payment settings. */
-  PaymentSettings updatePaymentSettings(
-      Long id, PaymentSettingsRequestDto paymentSettingsRequestDto);
+  /** Creates or updates payment settings. */
+  PaymentSettingsResponseDto createOrUpdateLatestPaymentSettings(
+      PaymentSettingsRequestDto paymentSettingsRequestDto);
 
   /** Deletes payment settings by ID. */
-  void deletePaymentSettings(Long id);
+  void deleteLatestPaymentSettings();
 }

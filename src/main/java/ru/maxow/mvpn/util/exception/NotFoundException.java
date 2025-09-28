@@ -14,6 +14,17 @@ public class NotFoundException extends RuntimeException {
   Long identifier;
 
   /**
+   * Constructs a new NotFoundException with the specified entity name.
+   *
+   * @param entityName the name of the entity that was not found
+   */
+  public NotFoundException(String entityName) {
+    super(String.format("%s not found", entityName));
+    this.entityName = entityName;
+    this.identifier = null;
+  }
+
+  /**
    * Constructs a new NotFoundException with the specified entity name and identifier.
    *
    * @param entityName the name of the entity that was not found
