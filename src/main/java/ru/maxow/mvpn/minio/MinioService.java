@@ -1,10 +1,14 @@
 package ru.maxow.mvpn.minio;
 
 import io.minio.BucketExistsArgs;
+import io.minio.GetObjectArgs;
 import io.minio.MakeBucketArgs;
 import io.minio.MinioClient;
 import io.minio.PutObjectArgs;
+import io.minio.RemoveObjectArgs;
 import jakarta.annotation.PostConstruct;
+import java.io.InputStream;
+import java.util.UUID;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
@@ -13,8 +17,9 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.util.UUID;
-
+/**
+ * Service for handling file operations with MinIO.
+ */
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -29,7 +34,8 @@ public class MinioService {
   @PostConstruct
   private void createBucket() {
     try {
-      boolean bucketExists = minioClient.bucketExists(BucketExistsArgs.builder().bucket(bucketName).build());
+      boolean bucketExists =
+          minioClient.bucketExists(BucketExistsArgs.builder().bucket(bucketName).build());
       if (!bucketExists) {
         minioClient.makeBucket(MakeBucketArgs.builder().bucket(bucketName).build());
         log.info("Bucket {} created successfully.", bucketName);
@@ -41,9 +47,18 @@ public class MinioService {
     }
   }
 
+  /**
+   * Uploads a file to MinIO.
+   *
+   * @param file   the file to upload
+   * @param userId the ID of the user uploading the file
+   * @return the object name in MinIO
+   */
   public String uploadFile(MultipartFile file, Long userId) {
     try {
-      String objectName = "user-" + userId + "/" + UUID.randomUUID() + "-" + file.getOriginalFilename();
+      String objectName = "user-"
+          + userId + "/" + UUID.randomUUID()
+          + "-" + file.getOriginalFilename();
 
       minioClient.putObject(
           PutObjectArgs.builder()
@@ -60,4 +75,41 @@ public class MinioService {
     }
   }
 
+  /**
+   * Downloads a file from MinIO.
+   *
+   * @param objectName the name of the object to download
+   * @return an InputStream of the downloaded file
+   */
+  public InputStream downloadFile(String objectName) {
+    try {
+      return minioClient.getObject(
+          GetObjectArgs.builder()
+              .bucket(bucketName)
+              .object(objectName)
+              .build()
+      );
+    } catch (Exception e) {
+      throw new RuntimeException("Could not download file from MinIO.", e);
+    }
+  }
+
+  /**
+   * Deletes a file from MinIO.
+   *
+   * @param objectName the name of the object to delete
+   */
+  public void deleteFile(String objectName) {
+    try {
+      minioClient.removeObject(
+          RemoveObjectArgs.builder()
+              .bucket(bucketName)
+              .object(objectName)
+              .build()
+      );
+      log.info("Deleted file {} from bucket {}", objectName, bucketName);
+    } catch (Exception e) {
+      throw new RuntimeException("Could not delete file from MinIO.", e);
+    }
+  }
 }
