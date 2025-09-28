@@ -1,5 +1,6 @@
 package ru.maxow.mvpn.user;
 
+import java.io.InputStream;
 import java.util.List;
 import java.util.UUID;
 import org.springframework.data.domain.Page;
@@ -70,11 +71,10 @@ public interface UserService {
   /**
    * Updates the Telegram ID of a user based on their verification code.
    *
-   * @param code the verification code
+   * @param code       the verification code
    * @param telegramId the new Telegram ID
-   * @return true if the update was successful, false otherwise
    */
-  boolean updateUserTelegramId(UUID code, Long telegramId);
+  void updateUserTelegramId(UUID code, Long telegramId);
 
   /**
    * Retrieves a list of all regular users (user with role REGULAR).
@@ -91,5 +91,26 @@ public interface UserService {
    */
   User findByTelegramId(Long telegramId);
 
+  /**
+   * Attaches a configuration file to a user.
+   *
+   * @param userId the ID of the user
+   * @param file   the configuration file to attach
+   */
   void attachConfigFile(Long userId, MultipartFile file);
+
+  /**
+   * Downloads the configuration file of a user.
+   *
+   * @param userId the ID of the user
+   * @return an InputStream of the configuration file
+   */
+  InputStream downloadConfigFile(Long userId);
+
+  /**
+   * Deletes the configuration file of a user.
+   *
+   * @param userId the ID of the user
+   */
+  void deleteConfigFile(Long userId);
 }

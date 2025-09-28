@@ -20,6 +20,7 @@ public record UserResponseDto(
     String fullName,
     UUID verificationCode,
     String role,
-    Long userTelegramId
+    Long userTelegramId,
+    String configFilePath
 ) {
 }
