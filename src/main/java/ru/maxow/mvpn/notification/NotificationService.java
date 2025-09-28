@@ -9,7 +9,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import ru.maxow.mvpn.adapter.telegram.TelegramSenderService;
-import ru.maxow.mvpn.payment.PaymentSettings;
+import ru.maxow.mvpn.payment.PaymentSettingsResponseDto;
 import ru.maxow.mvpn.payment.PaymentSettingsService;
 import ru.maxow.mvpn.user.User;
 import ru.maxow.mvpn.user.UserService;
@@ -35,15 +35,15 @@ public class NotificationService {
    */
   @Scheduled(cron = "0 0 9 * * ?")
   public void sendPaymentReminders() {
-    PaymentSettings settings;
+    PaymentSettingsResponseDto settings;
     try {
-      settings = paymentSettingsService.getPaymentSettings(1L);
+      settings = paymentSettingsService.getLatestPaymentSettings();
     } catch (NotFoundException e) {
       log.warn("Payment settings not found. Skipping payment reminders.");
       return;
     }
 
-    LocalDate paymentDate = settings.getPaymentDate();
+    LocalDate paymentDate = LocalDate.parse(settings.paymentDate());
 
     if (LocalDate.now().getDayOfMonth() == paymentDate.getDayOfMonth()) {
       List<User> users = userService.getRegularUsers();
@@ -56,7 +56,7 @@ public class NotificationService {
              Банк: %s
              Номер телефона: %d
              Спасибо за понимание!
-          """, paymentDate, settings.getPrice(), settings.getBankName(), settings.getPhoneNumber()
+          """, paymentDate, settings.price(), settings.bankName(), settings.phoneNumber()
       );
 
       for (User user : users) {

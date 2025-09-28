@@ -6,6 +6,7 @@ import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import ru.maxow.mvpn.util.exception.NotFoundException;
 
 /**
@@ -21,35 +22,39 @@ public class PaymentSettingsServiceImpl implements  PaymentSettingsService {
   PaymentSettingsMapper paymentSettingsMapper;
 
   @Override
-  public PaymentSettings getPaymentSettings(Long id) {
-    return  paymentSettingsRepository.findById(id)
-        .orElseThrow(() -> new NotFoundException("PaymentSettings", id));
+  public PaymentSettingsResponseDto getLatestPaymentSettings() {
+    return  paymentSettingsRepository.findTopByOrderByIdDesc()
+        .map(paymentSettingsMapper::toResponseDto)
+        .orElseThrow(() -> new NotFoundException("No payment settings found."));
   }
 
   @Override
-  public PaymentSettings createPaymentSettings(
+  @Transactional
+  public PaymentSettingsResponseDto createOrUpdateLatestPaymentSettings(
       PaymentSettingsRequestDto paymentSettingsRequestDto) {
-    PaymentSettings paymentSettings = paymentSettingsMapper.toEntity(paymentSettingsRequestDto);
-    log.info("create payment settings with ID: {}", paymentSettings.getId());
-    return paymentSettingsRepository.save(paymentSettings);
+    PaymentSettings paymentSettings =
+        paymentSettingsRepository
+            .findTopByOrderByIdDesc()
+            .orElseGet(PaymentSettings::new);
+    paymentSettingsMapper.updateEntityFromDto(paymentSettingsRequestDto, paymentSettings);
+    PaymentSettings createdPaymentSettings = paymentSettingsRepository.save(paymentSettings);
+    return paymentSettingsMapper.toResponseDto(createdPaymentSettings);
   }
 
   @Override
-  public PaymentSettings updatePaymentSettings(
-      Long id, PaymentSettingsRequestDto paymentSettingsRequestDto) {
-    PaymentSettings existingPaymentSettings = getPaymentSettings(id);
-    paymentSettingsMapper.updateEntityFromDto(paymentSettingsRequestDto, existingPaymentSettings);
-    log.info("update payment settings with ID: {}", existingPaymentSettings.getId());
-    return paymentSettingsRepository.save(existingPaymentSettings);
-  }
-
-  @Override
-  public void deletePaymentSettings(Long id) {
+  @Transactional
+  public void deleteLatestPaymentSettings() {
     try {
-      paymentSettingsRepository.deleteById(id);
-      log.info("delete payment settings with ID: {}", id);
+      PaymentSettings settingsToDelete =
+          paymentSettingsRepository
+            .findTopByOrderByIdDesc()
+            .orElseThrow(() -> new NotFoundException("No payment settings found to delete."));
+
+      paymentSettingsRepository.deleteById(settingsToDelete.getId());
+      log.info("Deleted latest payment settings with ID: {}", settingsToDelete.getId());
     } catch (EmptyResultDataAccessException e) {
-      throw new NotFoundException("PaymentSettings", id);
+      log.warn("No payment settings found to delete.");
+      throw new NotFoundException("No payment settings found to delete.");
     }
   }
 }

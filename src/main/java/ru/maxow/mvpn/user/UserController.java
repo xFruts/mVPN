@@ -1,15 +1,26 @@
 package ru.maxow.mvpn.user;
 
+import java.io.InputStream;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 import ru.maxow.mvpn.util.exception.NotFoundException;
 
@@ -92,6 +103,37 @@ public class UserController {
     return ResponseEntity.ok(updatedUser);
   }
 
+  /**
+   * Downloads the configuration file for a user.
+   *
+   * @param id the ID of the user
+   * @return the configuration file as a resource
+   */
+  @GetMapping("/{id}/config")
+  public ResponseEntity<Resource> downloadConfigFile(@PathVariable Long id) {
+    try {
+      InputStream inputStream = userService.downloadConfigFile(id);
+      InputStreamResource resource = new InputStreamResource(inputStream);
+
+      return ResponseEntity.ok()
+          .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"config.ovpn\"")
+          .contentType(MediaType.APPLICATION_OCTET_STREAM)
+          .body(resource);
+    } catch (NotFoundException e) {
+      return ResponseEntity.notFound().build();
+    } catch (Exception e) {
+      log.error("Error downloading file for user {}: {}", id, e.getMessage());
+      return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+    }
+  }
+
+  /**
+   * Uploads a configuration file for a user.
+   *
+   * @param id the ID of the user
+   * @param file the configuration file to upload
+   * @return a response entity indicating the result of the upload
+   */
   @PostMapping("/{id}/config")
   public ResponseEntity<?> uploadConfigFile(@PathVariable Long id, @RequestParam("file") MultipartFile file) {
     try {

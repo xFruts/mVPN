@@ -2,10 +2,12 @@ package ru.maxow.mvpn.util.exception;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
+import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.context.request.WebRequest;
+import org.springframework.web.multipart.MultipartException;
 
 /**
  * Global exception handler for REST controllers.
@@ -24,12 +26,16 @@ public class GlobalExceptionHandler {
     return new ErrorResponse(userFriendlyMessage, System.currentTimeMillis());
   }
 
-  /** Handle BadRequestException and return 400 status. */
+  /** Handle BadRequestException, MultipartException, HttpRequestMethodNotSupportedException
+   *  and return 400 status. */
   @ResponseStatus(HttpStatus.BAD_REQUEST)
-  @ExceptionHandler(BadRequestException.class)
-  public ErrorResponse handleBadRequestException(BadRequestException ex, WebRequest request) {
+  @ExceptionHandler({
+      BadRequestException.class,
+      MultipartException.class,
+      HttpRequestMethodNotSupportedException.class})
+  public ErrorResponse handleBadRequestException(Exception ex, WebRequest request) {
     log.info("Bad Request: {}, Request details {}", ex, request);
-    String userFriendlyMessage = "Bad Request";
+    String userFriendlyMessage = "Bad Request: " + ex.getMessage();
     return new ErrorResponse(userFriendlyMessage, System.currentTimeMillis());
   }
 
