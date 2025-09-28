@@ -1,9 +1,9 @@
 package ru.maxow.mvpn.user;
 
+import jakarta.transaction.Transactional;
+import java.io.InputStream;
 import java.util.List;
 import java.util.UUID;
-
-import jakarta.transaction.Transactional;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
@@ -97,18 +97,17 @@ public class UserServiceImpl implements UserService {
   }
 
   @Override
-  public boolean updateUserTelegramId(UUID code, Long telegramId) {
+  public void updateUserTelegramId(UUID code, Long telegramId) {
     User existingUser = userRepository.findByVerificationCode(code)
             .orElse(null);
 
     if (existingUser == null) {
-      return false;
+      return;
     }
 
     existingUser.setUserTelegramId(telegramId);
     userRepository.save(existingUser);
     log.info("Telegram ID for user with verification code: {} updated successfully", code);
-    return true;
   }
 
   @Override
@@ -132,5 +131,34 @@ public class UserServiceImpl implements UserService {
     user.setConfigFilePath(filePath);
 
     userRepository.save(user);
+  }
+
+  @Override
+  public InputStream downloadConfigFile(Long userId) {
+    User user = userRepository.findById(userId)
+        .orElseThrow(() -> new NotFoundException("User", userId));
+
+    if (user.getConfigFilePath() == null || user.getConfigFilePath().isEmpty()) {
+      throw new NotFoundException("Config file for user", userId);
+    }
+
+    return minioService.downloadFile(user.getConfigFilePath());
+  }
+
+  @Override
+  @Transactional
+  public void deleteConfigFile(Long userId) {
+    User user = userRepository.findById(userId)
+        .orElseThrow(() -> new NotFoundException("User", userId));
+
+    String filePath = user.getConfigFilePath();
+    if (filePath != null && !filePath.isEmpty()) {
+      minioService.deleteFile(filePath);
+      user.setConfigFilePath(null);
+      userRepository.save(user);
+      log.info("Config file for user with ID: {} deleted successfully", userId);
+    } else {
+      throw new NotFoundException("Config file for user", userId);
+    }
   }
 }
