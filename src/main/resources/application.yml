@@ -3,6 +3,23 @@ spring:
     name: mVPN
   profiles:
     active: ${SPRING_PROFILES_ACTIVE:dev}
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+    consumer:
+      group-id: ${KAFKA_CONSUMER_GROUP_ID:mVPN-group}
+      auto-offset-reset: earliest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+      properties:
+        spring:
+          json:
+            trusted.packages: ru.maxow.mvpn.broadcast
+            value.default.type: ru.maxow.mvpn.broadcast.BroadcastRequestDto
+    template:
+      default-topic: ${KAFKA_DEFAULT_TOPIC:mVPN-topic}
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
 
 bot:
   token: ${TELEGRAM_BOT_TOKEN}

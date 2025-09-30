@@ -17,7 +17,16 @@ public interface UserService {
    * @param pageable pagination information
    * @return a page of UserResponseDto
    */
-  Page<UserResponseDto> findAll(Pageable pageable);
+  Page<UserResponseDto> findAllAsPage(Pageable pageable);
+
+  /**
+   * Retrieves a list of all users.
+   * Don't use for controllers.
+   * For controllers use findAllAsPage method.
+   *
+   * @return a list of User entities
+   */
+  List<User> findAll();
 
   /**
    * Creates a new user.
@@ -35,14 +44,6 @@ public interface UserService {
    * @return the updated UserResponseDto
    */
   UserResponseDto updateUser(Long id, UserRequestDto userRequestDto);
-
-  /**
-   * Finds a user by their ID.
-   *
-   * @param id the ID of the user
-   * @return the User entity
-   */
-  User findUserById(Long id);
 
   /**
    * Updates the role of a user.
@@ -77,13 +78,6 @@ public interface UserService {
   void updateUserTelegramId(UUID code, Long telegramId);
 
   /**
-   * Retrieves a list of all regular users (user with role REGULAR).
-   *
-   * @return a list of User entities
-   */
-  List<User> getRegularUsers();
-
-  /**
    * Finds a user by their Telegram ID.
    *
    * @param telegramId the Telegram ID of the user
@@ -113,4 +107,20 @@ public interface UserService {
    * @param userId the ID of the user
    */
   void deleteConfigFile(Long userId);
+
+  /**
+   * Retrieves users by a list of Telegram IDs.
+   *
+   * @param ids the list of Telegram IDs
+   * @return a list of User entities
+   */
+  List<User> getUsersByTelegramIds(List<Long> ids);
+
+  /**
+   * Retrieves users by their role.
+   *
+   * @param role the role to filter users by
+   * @return a list of User entities with the specified role
+   */
+  List<User> getUsersByRole(UserRole role);
 }
