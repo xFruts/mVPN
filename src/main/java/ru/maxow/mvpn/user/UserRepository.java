@@ -37,4 +37,18 @@ public interface UserRepository extends JpaRepository<User, Long> {
    * @return an Optional containing the User if found, or empty if not found
    */
   Optional<User> findByUserTelegramId(Long telegramId);
+
+  /** Find all users with a specific role.
+   *
+   * @param role the role to filter users by
+   * @return a list of users with the specified role
+   */
+  List<User> findAllByRole(UserRole role);
+
+  /** Find users by a list of Telegram IDs.
+   *
+   * @param ids the list of Telegram IDs to search for
+   * @return a list of users whose Telegram IDs are in the provided list
+   */
+  List<User> findByUserTelegramIdIn(List<Long> ids);
 }

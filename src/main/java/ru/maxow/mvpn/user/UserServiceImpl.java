@@ -31,10 +31,15 @@ public class UserServiceImpl implements UserService {
   MinioService minioService;
 
   @Override
-  public Page<UserResponseDto> findAll(Pageable pageable) {
+  public Page<UserResponseDto> findAllAsPage(Pageable pageable) {
     Page<User> users = userRepository.findAll(pageable);
 
     return users.map(userMapper::toUserResponseDto);
+  }
+
+  @Override
+  public List<User> findAll() {
+    return userRepository.findAll();
   }
 
   @Override
@@ -57,8 +62,7 @@ public class UserServiceImpl implements UserService {
     return userMapper.toUserResponseDto(updatedUser);
   }
 
-  @Override
-  public User findUserById(Long id) {
+  private User findUserById(Long id) {
     return userRepository.findById(id).orElseThrow(() ->
         new NotFoundException("User", id));
   }
@@ -111,11 +115,6 @@ public class UserServiceImpl implements UserService {
   }
 
   @Override
-  public List<User> getRegularUsers() {
-    return userRepository.getRegularUser();
-  }
-
-  @Override
   public User findByTelegramId(Long telegramId) {
     return userRepository.findByUserTelegramId(telegramId).orElse(null);
   }
@@ -160,5 +159,15 @@ public class UserServiceImpl implements UserService {
     } else {
       throw new NotFoundException("Config file for user", userId);
     }
+  }
+
+  @Override
+  public List<User> getUsersByTelegramIds(List<Long> ids) {
+    return userRepository.findByUserTelegramIdIn(ids);
+  }
+
+  @Override
+  public List<User> getUsersByRole(UserRole role) {
+    return userRepository.findAllByRole(role);
   }
 }
