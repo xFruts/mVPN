@@ -40,6 +40,4 @@ public class User {
   @Enumerated(EnumType.STRING)
   @Column(nullable = false)
   UserRole role =  UserRole.REGULAR;
-
-  String configFilePath;
 }

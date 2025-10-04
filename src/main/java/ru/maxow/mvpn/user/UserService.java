@@ -85,6 +85,8 @@ public interface UserService {
    */
   User findByTelegramId(Long telegramId);
 
+  User findById(Long id);
+
   /**
    * Attaches a configuration file to a user.
    *
