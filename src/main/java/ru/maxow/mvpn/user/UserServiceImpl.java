@@ -120,6 +120,12 @@ public class UserServiceImpl implements UserService {
   }
 
   @Override
+  public User findById(Long id) {
+    return userRepository.findById(id)
+        .orElseThrow(() -> new NotFoundException("User", id));
+  }
+
+  /*@Override
   @Transactional
   public void attachConfigFile(Long userId, MultipartFile file) {
     User user = userRepository.findById(userId)
@@ -159,7 +165,7 @@ public class UserServiceImpl implements UserService {
     } else {
       throw new NotFoundException("Config file for user", userId);
     }
-  }
+  }*/
 
   @Override
   public List<User> getUsersByTelegramIds(List<Long> ids) {
