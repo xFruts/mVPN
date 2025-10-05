@@ -1,14 +1,31 @@
 package ru.maxow.mvpn.subscription;
 
-import jakarta.persistence.*;
+import jakarta.persistence.CascadeType;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToMany;
+import jakarta.persistence.Table;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.experimental.FieldDefaults;
 import ru.maxow.mvpn.user.User;
 import ru.maxow.mvpn.vpnconfig.VpnConfig;
-import java.time.LocalDateTime;
 
+/**
+ * Entity representing a subscription.
+ */
 @Entity
 @Table(name = "subscriptions")
 @Getter
@@ -23,9 +40,8 @@ public class Subscription {
   @JoinColumn(name = "user_id", nullable = false)
   User user;
 
-  @OneToOne(cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-  @JoinColumn(name = "config_id", referencedColumnName = "id")
-  VpnConfig vpnConfig;
+  @OneToMany(cascade = CascadeType.ALL, fetch = FetchType.LAZY, mappedBy = "subscription")
+  List<VpnConfig> vpnConfigs = new ArrayList<>();
 
   @Enumerated(EnumType.STRING)
   @Column(nullable = false)

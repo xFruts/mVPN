@@ -1,10 +1,9 @@
 package ru.maxow.mvpn.subscription;
 
+import org.jetbrains.annotations.NotNull;
+
 public record SubscriptionRequestDto (
-    Long userId,
-    String configType,
-    Integer durationInDays,
-    String filePath,
-    String configUri
+    @NotNull
+    SubscriptionType type
 ) {
 }
