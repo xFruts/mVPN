@@ -53,7 +53,7 @@ public class PaymentSettingsController {
    *
    * @return a ResponseEntity with no content
    */
-  @DeleteMapping()
+  @DeleteMapping
   public ResponseEntity<Void> deletePaymentSettings() {
     paymentSettingsService.deleteLatestPaymentSettings();
     log.info("Payment settings deleted");

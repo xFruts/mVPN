@@ -70,7 +70,7 @@ public class BroadcastListener {
       return switch (target) {
         case ALL -> userService.findAll();
         case REGULAR -> userService.getUsersByRole(UserRole.REGULAR);
-        case VIP -> userService.getUsersByRole(UserRole.VIP);
+        case VIP -> userService.getUsersByRole(UserRole.SPECIAL);
         case ADMIN -> userService.getUsersByRole(UserRole.ADMIN);
         case CUSTOM_LIST ->
             (requestDto.customUserIds() != null && !requestDto.customUserIds().isEmpty())

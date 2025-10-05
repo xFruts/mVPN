@@ -1,11 +1,13 @@
 package ru.maxow.mvpn.user;
 
-import java.io.InputStream;
 import java.util.List;
 import java.util.UUID;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.web.multipart.MultipartFile;
+import ru.maxow.mvpn.user.dto.CreateUserRequestDto;
+import ru.maxow.mvpn.user.dto.ListUserDto;
+import ru.maxow.mvpn.user.dto.UpdateUserRequestDto;
+import ru.maxow.mvpn.user.dto.UserResponseDto;
 
 /**
  * Service interface for managing users.
@@ -17,7 +19,7 @@ public interface UserService {
    * @param pageable pagination information
    * @return a page of UserResponseDto
    */
-  Page<UserResponseDto> findAllAsPage(Pageable pageable);
+  Page<ListUserDto> findAllAsPage(Pageable pageable);
 
   /**
    * Retrieves a list of all users.
@@ -31,19 +33,19 @@ public interface UserService {
   /**
    * Creates a new user.
    *
-   * @param userRequestDto the user request data
+   * @param dto the data for the new user
    * @return the created UserResponseDto
    */
-  UserResponseDto createUser(UserRequestDto userRequestDto);
+  UserResponseDto createUser(CreateUserRequestDto dto);
 
   /**
    * Updates an existing user.
    *
-   * @param id the ID of the user to update
-   * @param userRequestDto the updated user data
+   * @param id  the ID of the user to update
+   * @param dto the updated data for the user
    * @return the updated UserResponseDto
    */
-  UserResponseDto updateUser(Long id, UserRequestDto userRequestDto);
+  UserResponseDto updateUser(Long id, UpdateUserRequestDto dto);
 
   /**
    * Updates the role of a user.
@@ -84,31 +86,6 @@ public interface UserService {
    * @return the User entity
    */
   User findByTelegramId(Long telegramId);
-
-  User findById(Long id);
-
-  /**
-   * Attaches a configuration file to a user.
-   *
-   * @param userId the ID of the user
-   * @param file   the configuration file to attach
-   */
-  void attachConfigFile(Long userId, MultipartFile file);
-
-  /**
-   * Downloads the configuration file of a user.
-   *
-   * @param userId the ID of the user
-   * @return an InputStream of the configuration file
-   */
-  InputStream downloadConfigFile(Long userId);
-
-  /**
-   * Deletes the configuration file of a user.
-   *
-   * @param userId the ID of the user
-   */
-  void deleteConfigFile(Long userId);
 
   /**
    * Retrieves users by a list of Telegram IDs.

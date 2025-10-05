@@ -1,7 +1,5 @@
 package ru.maxow.mvpn.user;
 
-import jakarta.transaction.Transactional;
-import java.io.InputStream;
 import java.util.List;
 import java.util.UUID;
 import lombok.AccessLevel;
@@ -12,8 +10,15 @@ import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
-import org.springframework.web.multipart.MultipartFile;
-import ru.maxow.mvpn.minio.MinioService;
+import org.springframework.transaction.annotation.Transactional;
+import ru.maxow.mvpn.subscription.SubscriptionRepository;
+import ru.maxow.mvpn.subscription.SubscriptionRequestDto;
+import ru.maxow.mvpn.subscription.SubscriptionService;
+import ru.maxow.mvpn.subscription.SubscriptionType;
+import ru.maxow.mvpn.user.dto.CreateUserRequestDto;
+import ru.maxow.mvpn.user.dto.ListUserDto;
+import ru.maxow.mvpn.user.dto.UpdateUserRequestDto;
+import ru.maxow.mvpn.user.dto.UserResponseDto;
 import ru.maxow.mvpn.util.exception.BadRequestException;
 import ru.maxow.mvpn.util.exception.NotFoundException;
 
@@ -27,14 +32,16 @@ import ru.maxow.mvpn.util.exception.NotFoundException;
 public class UserServiceImpl implements UserService {
 
   UserRepository userRepository;
+  SubscriptionRepository subscriptionRepository;
   UserMapper userMapper;
-  MinioService minioService;
+  SubscriptionService subscriptionService;
 
   @Override
-  public Page<UserResponseDto> findAllAsPage(Pageable pageable) {
+  @Transactional(readOnly = true)
+  public Page<ListUserDto> findAllAsPage(Pageable pageable) {
     Page<User> users = userRepository.findAll(pageable);
 
-    return users.map(userMapper::toUserResponseDto);
+    return users.map(userMapper::toListUserDto);
   }
 
   @Override
@@ -43,23 +50,64 @@ public class UserServiceImpl implements UserService {
   }
 
   @Override
-  public UserResponseDto createUser(UserRequestDto userRequestDto) {
-    User user = userMapper.toUser(userRequestDto);
+  @Transactional
+  public UserResponseDto createUser(CreateUserRequestDto dto) {
+    User user = userMapper.toUser(dto);
 
     userRepository.save(user);
     log.info("User with id: {} created successfully", user.getId());
+
+    createSubscriptionForUser(user, dto.subscriptionType());
+
     return userMapper.toUserResponseDto(user);
   }
 
+  private void createSubscriptionForUser(User user, SubscriptionType type) {
+    if (type != null) {
+      SubscriptionRequestDto subscriptionRequestDto = new SubscriptionRequestDto(type);
+      subscriptionService.createSubscription(user.getId(), subscriptionRequestDto);
+      log.info("Subscription of type {} created for user with id: {}",
+          type, user.getId());
+    }
+  }
+
   @Override
-  public UserResponseDto updateUser(Long id, UserRequestDto userRequestDto) {
+  @Transactional
+  public UserResponseDto updateUser(Long id, UpdateUserRequestDto dto) {
     User existingUser = findUserById(id);
-    userMapper.updateUserFromUserResponseDto(userRequestDto, existingUser);
+
+    if (dto.fullName() != null && !dto.fullName().isBlank()) {
+      existingUser.setFullName(dto.fullName());
+    }
+    if (dto.userTelegramId() != null) {
+      existingUser.setUserTelegramId(dto.userTelegramId());
+    }
+    if (dto.role() != null) {
+      existingUser.setRole(dto.role());
+    }
+
+    updateUserSubscription(existingUser, dto);
 
     User updatedUser = userRepository.save(existingUser);
-
-    log.info("User with ID: {} updated successfully", id);
+    log.info("User with ID: {} and their subscription updated successfully", id);
     return userMapper.toUserResponseDto(updatedUser);
+  }
+
+  private void updateUserSubscription(User user, UpdateUserRequestDto dto) {
+    subscriptionRepository.findFirstByUserOrderByStartDateDesc(user)
+        .ifPresent(subscription -> {
+          if (dto.subscriptionType() != null) {
+            subscription.setType(dto.subscriptionType());
+          }
+          if (dto.subscriptionStatus() != null) {
+            subscription.setStatus(dto.subscriptionStatus());
+          }
+          if (dto.subscriptionEndDate() != null) {
+            subscription.setEndDate(dto.subscriptionEndDate());
+          }
+          subscriptionRepository.save(subscription);
+          log.info("Subscription for user with ID: {} updated successfully", user.getId());
+        });
   }
 
   private User findUserById(Long id) {
@@ -86,6 +134,7 @@ public class UserServiceImpl implements UserService {
   }
 
   @Override
+  @Transactional
   public void deleteUserById(Long id) {
     try {
       userRepository.deleteById(id);
@@ -118,54 +167,6 @@ public class UserServiceImpl implements UserService {
   public User findByTelegramId(Long telegramId) {
     return userRepository.findByUserTelegramId(telegramId).orElse(null);
   }
-
-  @Override
-  public User findById(Long id) {
-    return userRepository.findById(id)
-        .orElseThrow(() -> new NotFoundException("User", id));
-  }
-
-  /*@Override
-  @Transactional
-  public void attachConfigFile(Long userId, MultipartFile file) {
-    User user = userRepository.findById(userId)
-        .orElseThrow(() -> new NotFoundException("User", userId));
-
-    String filePath = minioService.uploadFile(file, userId);
-
-    user.setConfigFilePath(filePath);
-
-    userRepository.save(user);
-  }
-
-  @Override
-  public InputStream downloadConfigFile(Long userId) {
-    User user = userRepository.findById(userId)
-        .orElseThrow(() -> new NotFoundException("User", userId));
-
-    if (user.getConfigFilePath() == null || user.getConfigFilePath().isEmpty()) {
-      throw new NotFoundException("Config file for user", userId);
-    }
-
-    return minioService.downloadFile(user.getConfigFilePath());
-  }
-
-  @Override
-  @Transactional
-  public void deleteConfigFile(Long userId) {
-    User user = userRepository.findById(userId)
-        .orElseThrow(() -> new NotFoundException("User", userId));
-
-    String filePath = user.getConfigFilePath();
-    if (filePath != null && !filePath.isEmpty()) {
-      minioService.deleteFile(filePath);
-      user.setConfigFilePath(null);
-      userRepository.save(user);
-      log.info("Config file for user with ID: {} deleted successfully", userId);
-    } else {
-      throw new NotFoundException("Config file for user", userId);
-    }
-  }*/
 
   @Override
   public List<User> getUsersByTelegramIds(List<Long> ids) {

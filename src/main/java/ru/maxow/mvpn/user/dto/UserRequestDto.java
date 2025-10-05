@@ -1,4 +1,4 @@
-package ru.maxow.mvpn.user;
+package ru.maxow.mvpn.user.dto;
 
 /**
  * Data Transfer Object for user requests.

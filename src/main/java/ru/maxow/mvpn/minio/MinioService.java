@@ -50,14 +50,12 @@ public class MinioService {
   /**
    * Uploads a file to MinIO.
    *
-   * @param file   the file to upload
-   * @param userId the ID of the user uploading the file
-   * @return the object name in MinIO
+   * @param file the file to upload
+   * @return the name of the uploaded object
    */
-  public String uploadFile(MultipartFile file, Long userId) {
+  public String uploadFile(MultipartFile file) {
     try {
-      String objectName = "user-"
-          + userId + "/" + UUID.randomUUID()
+      String objectName = UUID.randomUUID()
           + "-" + file.getOriginalFilename();
 
       minioClient.putObject(
@@ -74,7 +72,6 @@ public class MinioService {
       throw new RuntimeException("Could not upload file to MinIO.", e);
     }
   }
-
   /**
    * Downloads a file from MinIO.
    *

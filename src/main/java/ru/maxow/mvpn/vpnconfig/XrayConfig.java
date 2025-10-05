@@ -9,7 +9,6 @@ import lombok.Setter;
 import lombok.experimental.FieldDefaults;
 
 @Entity
-@Table(name = "xray_configs")
 @Getter
 @Setter
 @DiscriminatorValue("XRAY")
@@ -19,5 +18,5 @@ public class XrayConfig extends VpnConfig {
   Integer port;
   String webBasePath;
 
-  String configUri;
+  String connectionLink;
 }

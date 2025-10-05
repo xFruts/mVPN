@@ -1,4 +1,4 @@
-package ru.maxow.mvpn.user;
+package ru.maxow.mvpn.user.dto;
 
 /**
  * Request to update a user's role.

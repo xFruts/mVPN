@@ -5,18 +5,21 @@ import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.experimental.FieldDefaults;
+import ru.maxow.mvpn.subscription.Subscription;
 
 @Entity
 @Table(name = "vpn_configs")
+@Inheritance(strategy = InheritanceType.SINGLE_TABLE)
+@DiscriminatorColumn(name = "protocol", discriminatorType = DiscriminatorType.STRING)
 @Getter
 @Setter
-@Inheritance(strategy = InheritanceType.JOINED)
-@DiscriminatorColumn(name = "config_type")
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public abstract class VpnConfig {
-  @Id
-  @GeneratedValue(strategy = GenerationType.IDENTITY)
-  Long id;
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    Long id;
 
-  String name;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "subscription_id")
+    Subscription subscription;
 }
