@@ -1,6 +1,7 @@
 package ru.maxow.mvpn.util.exception;
 
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -32,7 +33,9 @@ public class GlobalExceptionHandler {
   @ExceptionHandler({
       BadRequestException.class,
       MultipartException.class,
-      HttpRequestMethodNotSupportedException.class})
+      HttpRequestMethodNotSupportedException.class,
+      DataIntegrityViolationException.class
+  })
   public ErrorResponse handleBadRequestException(Exception ex, WebRequest request) {
     log.info("Bad Request: {}, Request details {}", ex, request);
     String userFriendlyMessage = "Bad Request: " + ex.getMessage();
