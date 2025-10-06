@@ -35,4 +35,6 @@ public interface SubscriptionRepository extends JpaRepository<Subscription, Long
    * @return an Optional containing the most recent subscription if found, or empty if not found
    */
   Optional<Subscription> findFirstByUserOrderByStartDateDesc(User user);
+
+  List<Subscription> findAllByUser(User user);
 }

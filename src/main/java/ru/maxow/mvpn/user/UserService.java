@@ -102,4 +102,6 @@ public interface UserService {
    * @return a list of User entities with the specified role
    */
   List<User> getUsersByRole(UserRole role);
+
+  public boolean hasActiveSubscriptions(Long userId);
 }
