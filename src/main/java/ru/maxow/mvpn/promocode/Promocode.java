@@ -21,7 +21,7 @@ import org.hibernate.annotations.ColumnDefault;
 @Getter
 @Setter
 @FieldDefaults(level = AccessLevel.PRIVATE)
-public class PromoCode {
+public class Promocode {
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
   Long id;
@@ -39,4 +39,7 @@ public class PromoCode {
   @Column(nullable = false)
   @ColumnDefault("0")
   Integer usage = 0;
+
+  @Column(nullable = false)
+  PromocodeStatus status;
 }

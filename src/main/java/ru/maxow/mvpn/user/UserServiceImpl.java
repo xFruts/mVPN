@@ -116,6 +116,13 @@ public class UserServiceImpl implements UserService {
   }
 
   @Override
+  @Transactional(readOnly = true)
+  public boolean hasActiveSubscriptions(Long userId) {
+    User user = findUserById(userId);
+    return !subscriptionRepository.findAllByUser(user).isEmpty();
+  }
+
+  @Override
   public UserResponseDto updateUserRole(Long userId, String userRole) {
     User existingUser = findUserById(userId);
     UserRole newRole;
