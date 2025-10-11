@@ -13,3 +13,6 @@ spring:
       hibernate:
         format_sql: false
     open-in-view: false
+
+encryption:
+    key: ${ENCRYPTION_KEY}
