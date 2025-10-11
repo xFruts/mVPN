@@ -12,6 +12,7 @@ services:
       MINIO_URL: http://minio:9000
       MINIO_ACCESS_NAME: ${MINIO_ACCESS_KEY}
       MINIO_ACCESS_SECRET: ${MINIO_SECRET_KEY}
+      ENCRYPTION_KEY: ${ENCRYPTION_KEY}
       MINIO_BUCKET_NAME: vpn-configs
       SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:29092
       SPRING_KAFKA_PRODUCER_VALUE_SERIALIZER: org.springframework.kafka.support.serializer.JsonSerializer
