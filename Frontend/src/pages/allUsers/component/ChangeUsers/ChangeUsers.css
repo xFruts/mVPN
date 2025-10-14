@@ -1,0 +1,356 @@
+.changeUsers {
+    display: flex;
+    flex-direction: column;
+    padding: 30px;
+    font-family: "Nunito-sans", sans-serif;
+}
+
+.changeUsers-header {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    padding: 0 20px 20px;
+}
+
+.changeUsers-header-title {
+    display: flex;
+    flex-direction: column;
+}
+
+.changeUsers-header-back {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: var(--primary);
+    text-decoration: none;
+}
+
+.changeUsers-content {
+    display: flex;
+    flex-direction: row;
+    gap: 20px;
+    padding: 15px;
+}
+
+.changeUsers-person-role-type {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    flex: 2;
+}
+
+.changeUsers-person {
+    display: flex;
+    flex-direction: column;
+    border: 1px solid #e4e4e4;
+    border-radius: 10px;
+    padding: 25px;
+    gap: 30px;
+    font-size: 13px;
+}
+
+.changeUsers-person-header {
+    font-size: 20px;
+}
+
+.changeUsers-person-name-surname {
+    display: flex;
+    flex-direction: row;
+    width: 100%;
+    gap: 15px;
+}
+
+.changeUsers-person-name {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    flex: 1;
+}
+
+.changeUsers-person-surname {
+    display: flex;
+    flex-direction: column;
+    gap: 10px ;
+    flex: 1;
+}
+
+.changeUsers-person-input {
+    font-size: 15px;
+    padding: 10px;
+    border: 1px solid #e4e4e4;
+    border-radius: 10px;
+}
+
+.changeUsers-person-input:focus {
+    outline: none;
+}
+
+.changeUsers-person-telegram {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.changeUsers-search {
+    display: flex;
+    flex-direction: column;
+    border: 1px solid #e4e4e4;
+    border-radius: 10px;
+    padding: 25px;
+    gap: 20px;
+}
+
+.changeUsers-search-header {
+    font-size: 20px;
+}
+
+.changeUsers-search-details {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.changeUsers-search-infotype-important {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    flex: 1;
+}
+
+.changeUsers-role {
+    display: flex;
+    flex-direction: column;
+    gap: 30px;
+    border: 1px solid #e4e4e4;
+    border-radius: 10px;
+    padding: 25px;
+}
+
+.changeUsers-role-header {
+    font-size: 20px;
+}
+
+.changeUsers-role-content {
+    display: flex;
+    flex-direction: row;
+    gap: 10px;
+}
+
+.changeUsers-role-specific {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    flex: 1;
+    border: 1px solid #e4e4e4;
+    border-radius: 10px;
+    padding: 15px;
+    font-size: 13px;
+}
+
+.roleActive {
+    background-color: #f0f5ff;
+    border: 1px solid var(--primary) !important;
+}
+
+.changeUsers-infotype {
+    display: flex;
+    flex-direction: column;
+    gap: 30px;
+    border: 1px solid #e4e4e4;
+    border-radius: 10px;
+    padding: 25px;
+}
+
+.changeUsers-infotype-content {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.changeUsers-infotype-content div {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    font-size: 13px;
+}
+
+.changeUsers-important {
+    display: flex;
+    flex-direction: column;
+    background-color: #FEFCE8;
+    border: 1px solid #FDE047;
+    color: #A16207;
+    border-radius: 10px;
+    padding: 25px;
+    gap: 10px;
+}
+
+.changeUsers-important-header {
+    display: flex;
+    flex-direction: row;
+    gap: 5px;
+    align-items: center;
+    font-weight: bold;
+}
+
+
+.changeUsers-important-content {
+    padding-left: 20px;
+}
+
+.changeUsers-important-content li {
+    padding-top: 10px;
+}
+
+.changeUsers-type {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    border: 1px solid #e4e4e4;
+    border-radius: 10px;
+    padding: 25px;
+}
+
+.changeUsers-type-header {
+    font-size: 20px;
+}
+
+.changeUsers-type-content {
+    display: flex;
+    flex-direction: row;
+    gap: 10px;
+}
+
+.changeUsers-type-specific {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    font-size: 15px;
+    flex: 1;
+    align-items: center;
+    border: 1px solid #e4e4e4;
+    border-radius: 10px;
+    padding: 15px;
+}
+
+.changeUsers-type-specific-info {
+    display: flex;
+    flex-direction: column;
+    color: gray;
+    font-size: 13px;
+    align-items: center;
+}
+
+.changeUsers-date {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.changeUsers-date-header {
+    font-size: 20px;
+}
+
+.changeUsers-date-input {
+    border: 1px solid #e4e4e4;
+    border-radius: 10px;
+    padding: 10px;
+    font-size: 15px;
+    outline: none
+}
+
+.changeUsers-date-fast {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.changeUsers-date-fast-change {
+    display: flex;
+    flex-direction: row;
+    gap: 10px;
+}
+
+.changeUsers-date-fast-change-detail {
+    font-size: 13px;
+    padding: 5px;
+    border-radius: 10px;
+    cursor: pointer;
+}
+
+.price {
+    width: 100%;
+    text-align: center;
+    padding: 5px;
+    border-radius: 10px;
+    font-size: 13px;
+}
+
+.changeUsers-create {
+    display: flex;
+    flex-direction: row;
+    gap: 15px;
+    padding: 15px;
+}
+
+.changeUsers-create button {
+    display: flex;
+    flex-direction: row;
+    gap: 5px;
+    align-items: center;
+    padding: 10px 15px;
+    border: none;
+    border-radius: 10px;
+    color: white;
+    font-size: 16px;
+}
+
+.button-create {
+    background-color: var(--primary);
+}
+
+.button-cancel {
+    background-color: #6c757d;
+}
+
+.userRole {
+    padding: 5px;
+    max-width: max-content;
+    text-transform: uppercase;
+    border-radius: 10px;
+    display: inline-block;
+    font-size: 14px;
+}
+
+.none {
+    background-color: #f1f3f5;
+    color: #6c757d;
+}
+
+.admin {
+    background-color: #FFE4C4;
+    color: #C05621;
+}
+
+.basic {
+    background-color: #eaf2ff;
+    color: #4d8aff;
+}
+
+.special {
+    background-color: #f5f0ff;
+    color: #8a63d2;
+}
+
+.dynamic {
+    background-color: #e5f8ed;
+    color: #34c759
+}
+
+
+.expired {
+    background-color: #ffeeee;
+    color: #ff4d4d;
+}
+
