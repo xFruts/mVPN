@@ -1,0 +1,188 @@
+.countries-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    backdrop-filter: blur(6px);
+    background: rgba(0, 0, 0, 0.25);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 2000;
+}
+
+/* само окно */
+.countries-modal {
+    background: white;
+    border-radius: 20px;
+    box-shadow: 0 4px 25px rgba(0, 0, 0, 0.15);
+    width: 800px;
+    max-height: 800px;
+    height: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+
+.countries-header {
+    display: flex;
+    flex-direction: column;
+    font-size: 20px;
+    padding: 25px;
+    border-bottom: 1px solid #e4e4e4;
+}
+
+.countries-content {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    padding: 25px;
+
+    overflow-y: auto;
+}
+
+.countries-content-choose {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.countries-content-choose-country {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 15px;
+}
+
+.countries-content-country {
+    display: flex;
+    gap: 15px;
+    align-items: center;
+    flex: 0 0 calc(25% - 50px);
+    font-size: 15px;
+    padding: 0 10px;
+    margin: 0;
+    border: 1px solid #e4e4e4;
+    border-radius: 10px;
+}
+
+.countryActive {
+    border-color: var(--primary);
+    background-color: #f0f5ff;
+}
+
+.countries-content-subscription {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.countries-content-subscription-link {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 15px;
+    border: 1px solid #187a41;
+    border-radius: 10px;
+    background-color: #e9faef;
+    color: #187a41;
+}
+
+.countries-content-subscription-input {
+    display: flex;
+    flex-direction: row;
+    border: 1px solid #e4e4e4;
+    border-radius: 10px;
+    overflow: hidden;
+    background-color: #e9faef;
+}
+
+.countries-content-subscription-input input {
+    flex: 1;
+    border: none;
+    padding: 13px;
+    font-size: 16px;
+    outline: none;
+}
+
+.countries-content-subscription-input div {
+    display: flex;
+    border-left: 1px solid #e4e4e4;
+    padding: 10px 15px;
+    cursor: pointer;
+}
+
+.countries-custom-conf {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 20px;
+    background-color: #f0f5ff;
+    border: 1px solid var(--primary);
+    border-radius: 10px;
+    color: var(--primary);
+}
+
+.countries-conf {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    padding: 20px;
+    border: 1px solid #e4e4e4;
+    border-radius: 10px;
+    font-size: 13px;
+}
+
+.countries-conf-header {
+    display: flex;
+    flex-direction: row;
+    gap: 10px;
+}
+
+.vless {
+    padding: 5px;
+    background-color: #f5f0ff;
+    color: #8a63d2;
+    border-radius: 10px;
+}
+
+.countries-conf-header-active {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    color: #34c759;
+}
+
+.countries-instructions {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    font-size: 14px;
+    padding: 20px;
+}
+
+.countries-instructions div {
+    display: flex;
+    flex-direction: row;
+    gap: 5px;
+    font-size: 17px;
+}
+
+.countries-buttons {
+    display: flex;
+    justify-content: right;
+    padding: 25px;
+    border-top: 1px solid #e4e4e4;
+}
+
+.countries-buttons button {
+    border: none;
+    outline: none;
+    padding: 15px 20px;
+    background: #6c757d;
+    color: white;
+    border-radius: 10px;
+    font-size: 16px;
+}
