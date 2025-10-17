@@ -21,7 +21,6 @@ export default function MainAllUsers(){
                             <span>Добавить пользователя</span>
                         </div>
                     </NavLink>
-
                 </div>
             </div>
             <FilterAllUsers/>

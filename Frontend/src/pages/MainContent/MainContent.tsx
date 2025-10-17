@@ -10,6 +10,9 @@ import MainSettings from "../settings/MainSettings.tsx";
 import MainControlPanel from "../controlPanel/MainControlPanel.tsx";
 import AddUsers from "../allUsers/component/AddUsers/AddUsers.tsx";
 import ChangeUsers from "../allUsers/component/ChangeUsers/ChangeUsers.tsx";
+import AddVpnServers from "../vpnServers/components/AddVpnServers/AddVpnServers.tsx";
+import SettingsVpnServers from "../vpnServers/components/SettingsVpnServers/SettingVpnServers.tsx";
+import ViewingLogs from "../vpnServers/components/ViewingLogs/ViewingLogs.tsx";
 
 
 export default function MainContent() {
@@ -35,6 +38,9 @@ export default function MainContent() {
                 <Route path="/settings" Component={MainSettings} />
                 <Route path="/addUsers" Component={AddUsers} />
                 <Route path="/changeUsers" Component={ChangeUsers} />
+                <Route path="/addServer" Component={AddVpnServers} />
+                <Route path="/settingsServer" Component={SettingsVpnServers} />
+                <Route path="/logsServer" Component={ViewingLogs} />
             </Routes>
         </div>
     );
