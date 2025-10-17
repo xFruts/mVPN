@@ -20,10 +20,6 @@ import lombok.Setter;
 import lombok.experimental.FieldDefaults;
 import ru.maxow.mvpn.subscription.Subscription;
 
-
-/**
- * User entity representing a user in the system.
- */
 @Entity
 @Getter
 @Setter
@@ -48,4 +44,9 @@ public class User {
 
   @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
   List<Subscription> subscriptions = new ArrayList<>();
+
+  //Data for 3x-ui panel
+  UUID xuiId = UUID.randomUUID();
+
+  UUID xuiSubscription = UUID.randomUUID();
 }

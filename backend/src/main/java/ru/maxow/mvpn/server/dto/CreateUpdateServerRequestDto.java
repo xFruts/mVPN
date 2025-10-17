@@ -10,5 +10,11 @@ public record CreateUpdateServerRequestDto (
     Integer maxUsers,
     Integer maxTraffic, // in GB
     String login,
-    String password
+    String password,
+
+    //For 3x-ui panel
+    String xuiLogin,
+    String xuiPassword,
+    Integer port,
+    String webBasePath
 ) {}

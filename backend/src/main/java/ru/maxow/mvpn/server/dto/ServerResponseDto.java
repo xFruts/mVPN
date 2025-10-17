@@ -13,5 +13,13 @@ public record ServerResponseDto(
     Integer maxUsers,
     Integer maxTraffic, // in GB
     String ping,
-    Double uptime
+    Double uptime,
+
+    String login,
+    String password,
+
+    String xuiLogin,
+    String xuiPassword,
+    Integer port,
+    String webBasePath
 ) {}

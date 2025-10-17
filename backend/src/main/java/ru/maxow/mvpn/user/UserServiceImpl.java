@@ -184,4 +184,10 @@ public class UserServiceImpl implements UserService {
   public List<User> getUsersByRole(UserRole role) {
     return userRepository.findAllByRole(role);
   }
+
+  @Override
+  public UUID getUserVerificationCode(Long userId) {
+    User user = findUserById(userId);
+    return user.getVerificationCode();
+  }
 }
