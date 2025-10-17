@@ -92,7 +92,7 @@ export default function TableAllUsers() {
     }, []);
 
     return (
-        <div className="allusers-table" ref={menuRef}>
+        <div className="allusers-table" >
             <table className="table-users">
                 <tbody>
                 <tr>
@@ -165,7 +165,7 @@ export default function TableAllUsers() {
                             </div>
 
                             {isOpen === user.id && (
-                                <div className="modal">
+                                <div className="modal" ref={menuRef}>
                                     <div className="modal-name">
                                         <span>{user.firstname} {user.lastname}</span>
                                         <span style={{ color: "gray" }}>ID: {user.id}</span>

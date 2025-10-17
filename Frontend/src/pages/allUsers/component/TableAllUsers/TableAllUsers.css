@@ -58,17 +58,6 @@ td:has(.ID, .date) {
     color: #34c759;
 }
 
-.userActive {
-    display: flex;
-    flex-direction: row;
-    justify-content: space-between;
-}
-
-
-td:has(.userActive) {
-    padding-right: 10px;
-}
-
 .none {
     background-color: #f1f3f5;
     color: #6c757d;
