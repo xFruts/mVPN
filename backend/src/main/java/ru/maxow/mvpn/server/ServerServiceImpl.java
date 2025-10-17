@@ -8,6 +8,7 @@ import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import ru.maxow.mvpn.server.dto.CreateUpdateServerRequestDto;
 import ru.maxow.mvpn.server.dto.ListServerDto;
 import ru.maxow.mvpn.server.dto.ServerResponseDto;
@@ -64,6 +65,7 @@ public class ServerServiceImpl implements ServerService {
   }
 
   @Override
+  @Transactional
   public void deleteServer(Long id) {
     try {
       serverRepository.deleteById(id);

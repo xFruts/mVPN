@@ -24,6 +24,8 @@ import ru.maxow.mvpn.user.dto.UpdateUserRequestDto;
 import ru.maxow.mvpn.user.dto.UpdateUserRoleRequest;
 import ru.maxow.mvpn.user.dto.UserResponseDto;
 
+import java.util.UUID;
+
 
 /**
  * REST controller for managing users.
@@ -102,5 +104,10 @@ public class UserController {
       @PathVariable Long userId, @RequestBody UpdateUserRoleRequest request) {
     UserResponseDto updatedUser = userService.updateUserRole(userId, request.role());
     return ResponseEntity.ok(updatedUser);
+  }
+
+  @GetMapping("/{userId}/code")
+  public ResponseEntity<UUID> getVerificationCode(@PathVariable Long userId) {
+    return ResponseEntity.ok(userService.getUserVerificationCode(userId));
   }
 }

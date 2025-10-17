@@ -38,8 +38,18 @@ public class Server {
   //For connect to server and 3x-ui
   @Convert(converter = AttributeEncryptor.class)
   String login;
+
   @Convert(converter = AttributeEncryptor.class)
   String password;
+
+  @Convert(converter = AttributeEncryptor.class)
+  String xuiLogin;
+
+  @Convert(converter = AttributeEncryptor.class)
+  String xuiPassword;
+
+  Integer port;
+  String webBasePath;
 
   //For uptime calculation
   Long successfulChecks = 0L;

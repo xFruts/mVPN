@@ -10,5 +10,5 @@ import ru.maxow.mvpn.server.dto.ServerResponseDto;
 public interface ServerMapper {
   ServerResponseDto toDto(Server server);
   ListServerDto toListDto(Server servers);
-  Server updateFromDto(CreateUpdateServerRequestDto dto, @MappingTarget Server server);
+  void updateFromDto(CreateUpdateServerRequestDto dto, @MappingTarget Server server);
 }

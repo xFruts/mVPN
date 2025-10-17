@@ -103,5 +103,7 @@ public interface UserService {
    */
   List<User> getUsersByRole(UserRole role);
 
-  public boolean hasActiveSubscriptions(Long userId);
+  boolean hasActiveSubscriptions(Long userId);
+
+  UUID getUserVerificationCode(Long userId);
 }
