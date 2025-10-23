@@ -15,7 +15,7 @@ export default function MainAllUsers(){
                     <p className="count-text">27 пользователей найдено</p>
                 </div>
                 <div className="addusers-button">
-                    <NavLink to={"/addUsers"} className={`nav-link`}>
+                    <NavLink to={"/users/add"} className={`nav-link`}>
                         <div className="addusers-button-border">
                             <Plus size={20}/>
                             <span>Добавить пользователя</span>

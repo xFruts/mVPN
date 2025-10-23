@@ -175,12 +175,12 @@ export default function TableVpnServers() {
                                     </div>
                                     <div className="vpnservers-modal-change">
                                         <div className={"vpnservers-modal-change-main"}>
-                                            <NavLink to={"/settingsServer"} className="nav-link">
+                                            <NavLink to={"/servers/edit"} className="nav-link">
                                                 <div><Settings size={17}/>Настройки сервера</div>
                                             </NavLink>
                                             <div><RefreshCw size={17}/>Перезагрузить</div>
                                             <div><Wrench size={17}/>Режим обслуживания</div>
-                                            <NavLink to={"/logsServer"} className="nav-link">
+                                            <NavLink to={"/servers/log"} className="nav-link">
                                                 <div><ClipboardList size={17}/>Просмотр логов</div>
                                             </NavLink>
 
