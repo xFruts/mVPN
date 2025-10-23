@@ -31,7 +31,7 @@ export default function Sidebar() {
                     </NavLink>
                 </div>
                 <div className="padding">
-                    <NavLink to={"/allUsers"} className={`nav-link sidebar-users ${state == "all" ? "active" : ""}`} onClick={() => handleStateChange("all")}>
+                    <NavLink to={"/users"} className={`nav-link sidebar-users ${state == "all" ? "active" : ""}`} onClick={() => handleStateChange("all")}>
                         <div className="users">
                             <Users size={20}/>
                             <label>Пользователи</label>
@@ -47,7 +47,7 @@ export default function Sidebar() {
                     </NavLink>
                 </div>
                 <div className="padding">
-                    <NavLink to={"/vpnServers"} className={`nav-link sidebar-users ${state == "vpn" ? "active" : ""}`} onClick={() => handleStateChange("vpn")}>
+                    <NavLink to={"/servers"} className={`nav-link sidebar-users ${state == "vpn" ? "active" : ""}`} onClick={() => handleStateChange("vpn")}>
                         <div className="users">
                             <ShieldCheck size={20}/>
                             <label>VPN серверы</label>

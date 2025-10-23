@@ -13,7 +13,7 @@ export default function MainVpnServers() {
                     <p className="count-text">Управление серверами и мониторинг состояния</p>
                 </div>
                 <div className="vpnservers-button">
-                    <NavLink to={"/addServer"} className={`nav-link`}>
+                    <NavLink to={"/servers/add"} className={`nav-link`}>
                         <div className="vpnservers-button-border">
                             <Plus size={20}/>
                             <span>Добавить сервер</span>

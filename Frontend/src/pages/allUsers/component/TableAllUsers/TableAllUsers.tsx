@@ -193,7 +193,7 @@ export default function TableAllUsers() {
                                         )}
                                         <NavLink
                                             className="nav-link"
-                                            to="/changeUsers"
+                                            to="/users/edit"
                                             state={{
                                                 props: {
                                                     id: user.id,

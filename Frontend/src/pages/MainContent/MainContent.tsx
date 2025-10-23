@@ -10,7 +10,7 @@ import MainSettings from "../settings/MainSettings.tsx";
 import MainControlPanel from "../controlPanel/MainControlPanel.tsx";
 import AddUsers from "../allUsers/component/AddUsers/AddUsers.tsx";
 import ChangeUsers from "../allUsers/component/ChangeUsers/ChangeUsers.tsx";
-import AddVpnServers from "../vpnServers/components/AddVpnServers/AddVpnServers.tsx";
+import {AddVpnServers} from "../vpnServers/components/AddVpnServers/AddVpnServers.tsx";
 import SettingsVpnServers from "../vpnServers/components/SettingsVpnServers/SettingVpnServers.tsx";
 import ViewingLogs from "../vpnServers/components/ViewingLogs/ViewingLogs.tsx";
 
@@ -30,17 +30,17 @@ export default function MainContent() {
             </div>
             <Routes>
                 <Route path="/" Component={MainControlPanel} />
-                <Route path="/allUsers" Component={MainAllUsers} />
+                <Route path="/users" Component={MainAllUsers} />
                 <Route path="/sendMessages" Component={MainSendMessages} />
-                <Route path="/vpnServers" Component={MainVpnServers} />
+                <Route path="/servers" Component={MainVpnServers} />
                 <Route path="/promotional" Component={MainPromotional} />
                 <Route path="/analytics" Component={MainAnalytics} />
                 <Route path="/settings" Component={MainSettings} />
-                <Route path="/addUsers" Component={AddUsers} />
-                <Route path="/changeUsers" Component={ChangeUsers} />
-                <Route path="/addServer" Component={AddVpnServers} />
-                <Route path="/settingsServer" Component={SettingsVpnServers} />
-                <Route path="/logsServer" Component={ViewingLogs} />
+                <Route path="/users/add" Component={AddUsers} />
+                <Route path="/users/edit" Component={ChangeUsers} />
+                <Route path="/servers/add" Component={AddVpnServers} />
+                <Route path="/servers/edit" Component={SettingsVpnServers} />
+                <Route path="/servers/log" Component={ViewingLogs} />
             </Routes>
         </div>
     );

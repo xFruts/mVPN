@@ -1,0 +1,212 @@
+.addServer {
+    display: flex;
+    flex-direction: column;
+    padding: 30px;
+    font-family: "Nunito-sans", sans-serif;
+}
+
+.addServer-header {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    padding: 0 20px 20px;
+}
+
+.addServer-header-title {
+    display: flex;
+    flex-direction: column;
+}
+
+.addServer-header-back {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: var(--primary);
+    text-decoration: none;
+}
+
+.addServer-content {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    padding: 15px;
+}
+
+.addServer-info {
+    display: flex;
+    flex-direction: column;
+    border: 1px solid #e4e4e4;
+    border-radius: 10px;
+    padding: 25px;
+    gap: 30px;
+    font-size: 13px;
+}
+
+.addServer-info-header {
+    font-size: 20px;
+}
+
+.addServer-info-body {
+    display: flex;
+    flex-wrap: wrap;
+    flex-direction: row;
+    gap: 20px;
+    font-size: 15px;
+}
+
+.addServer-info-body-item {
+    display: flex;
+    flex-direction: column;
+    flex: 1 0 25%;
+    gap: 10px;
+}
+
+.addServer-input {
+    display: flex;
+    flex-direction: row;
+    gap: 10px;
+    font-size: 15px;
+    padding: 10px;
+    border: 1px solid #e4e4e4;
+    border-radius: 10px;
+    justify-content: space-between;
+    align-items: center;
+ }
+
+.addServer-input input {
+    font-size: 15px;
+    border: none;
+    width: 100%;
+}
+
+.addServer-input input:focus {
+     outline: none;
+ }
+
+.addServer-input:focus {
+     outline: none;
+ }
+
+.addServer-input select {
+    font-size: 15px;
+    border: none;
+    width: 100%;
+}
+
+.addServer-input select:focus {
+     outline: none;
+ }
+
+.addServer-access {
+    display: flex;
+    flex-direction: row;
+    border: 1px solid #e4e4e4;
+    border-radius: 10px;
+    padding: 15px;
+    gap: 30px;
+    font-size: 13px;
+}
+
+.addServer-access-content {
+    display: flex;
+    flex-direction: column;
+    flex: 1 0 33.3%;
+    gap: 20px;
+    padding: 15px;
+}
+
+.addServer-access-header {
+    font-size: 20px;
+}
+
+.addServer-access-body {
+    display: flex;
+    flex-direction: row;
+    width: 100%;
+    gap: 20px;
+    font-size: 15px;
+}
+
+.addServer-access-body-item {
+    display: flex;
+    flex-direction: column;
+    flex: 1 0 33.3%;
+    gap: 10px;
+}
+
+.addServer-access-safety {
+    display: flex;
+    flex-direction: column;
+    flex: 1 0 33.3%;
+    background-color: #FEFCE8;
+    border: 1px solid #FDE047;
+    color: #A16207;
+    border-radius: 10px;
+    padding: 25px;
+    gap: 10px;
+    font-size: 15px;
+    margin: 15px;
+}
+
+.addServer-access-safety div {
+    display: flex;
+    flex-direction: row;
+    gap: 5px;
+    align-items: center;
+}
+
+.addServer-button-recommendations {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    padding: 10px;
+}
+
+.addServer-recommendations {
+    display: flex;
+    flex-direction: column;
+    background-color: #f0f5ff;
+    width: 33%;
+    border: 1px solid var(--primary);
+    color: var(--primary);
+    border-radius: 10px;
+    padding: 25px;
+    gap: 10px;
+}
+
+.addServer-recommendations-header {
+    display: flex;
+    flex-direction: row;
+    gap: 5px;
+    align-items: center;
+    font-weight: bold;
+}
+
+
+.addServer-recommendations-content {
+    padding-left: 20px;
+}
+
+.addServer-recommendations-content li {
+    padding-top: 10px;
+}
+
+.addServer-button {
+    display: flex;
+    flex-direction: row;
+    gap: 15px;
+    padding: 15px;
+    align-items: start;
+}
+
+.addServer-button button {
+    display: flex;
+    flex-direction: row;
+    gap: 5px;
+    align-items: center;
+    padding: 10px 15px;
+    border: none;
+    border-radius: 10px;
+    color: white;
+    font-size: 16px;
+}

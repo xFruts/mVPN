@@ -35,7 +35,7 @@ export default function AddUsers() {
                     <span style={{fontSize: "23px"}}>Добавление пользователя</span>
                     <span style={{color: "gray"}}>Создание нового пользователя VPN сервиса</span>
                 </div>
-                <NavLink to={'/allusers'} className="addusers-header-back">
+                <NavLink to={'/users'} end className="addusers-header-back">
                     <MoveLeft size={13}/>
                     <span>Назад к списку</span>
                 </NavLink>
