@@ -20,12 +20,10 @@ import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.experimental.FieldDefaults;
+import ru.maxow.mvpn.tariff.TariffPlan;
 import ru.maxow.mvpn.user.User;
 import ru.maxow.mvpn.vpnconfig.VpnConfig;
 
-/**
- * Entity representing a subscription.
- */
 @Entity
 @Table(name = "subscriptions")
 @Getter
@@ -39,6 +37,10 @@ public class Subscription {
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "user_id", nullable = false)
   User user;
+
+  @ManyToOne(fetch = FetchType.LAZY)
+  @JoinColumn(name = "tariff_plan_id", nullable = false)
+  TariffPlan tariffPlan;
 
   @OneToMany(cascade = CascadeType.ALL, fetch = FetchType.LAZY, mappedBy = "subscription")
   List<VpnConfig> vpnConfigs = new ArrayList<>();
