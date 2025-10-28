@@ -1,4 +1,4 @@
-package ru.maxow.mvpn.handlers;
+package ru.maxow.mvpn.telegram.handlers;
 
 import java.util.List;
 import java.util.UUID;

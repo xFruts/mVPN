@@ -1,4 +1,4 @@
-package ru.maxow.mvpn.adapter.telegram;
+package ru.maxow.mvpn.telegram.adapter;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;

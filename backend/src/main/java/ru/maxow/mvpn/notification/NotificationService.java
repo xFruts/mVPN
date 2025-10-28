@@ -10,14 +10,10 @@ import org.jetbrains.annotations.NotNull;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
-import ru.maxow.mvpn.adapter.telegram.TelegramSenderService;
-import ru.maxow.mvpn.broadcast.Broadcast;
 import ru.maxow.mvpn.broadcast.BroadcastRequestDto;
 import ru.maxow.mvpn.broadcast.TargetAudience;
 import ru.maxow.mvpn.payment.PaymentSettingsResponseDto;
 import ru.maxow.mvpn.payment.PaymentSettingsService;
-import ru.maxow.mvpn.user.User;
-import ru.maxow.mvpn.user.UserService;
 import ru.maxow.mvpn.util.exception.NotFoundException;
 
 

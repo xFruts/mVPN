@@ -5,7 +5,7 @@ import org.springframework.context.annotation.Configuration;
 import org.telegram.telegrambots.meta.TelegramBotsApi;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 import org.telegram.telegrambots.updatesreceivers.DefaultBotSession;
-import ru.maxow.mvpn.adapter.telegram.VpnBot;
+import ru.maxow.mvpn.telegram.adapter.VpnBot;
 
 /**
  * Configuration class for setting up the Telegram Bots API.
