@@ -1,4 +1,4 @@
-package ru.maxow.mvpn.adapter.telegram;
+package ru.maxow.mvpn.telegram.adapter;
 
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;

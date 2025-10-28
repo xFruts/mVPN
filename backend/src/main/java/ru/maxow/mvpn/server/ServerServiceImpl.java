@@ -14,6 +14,9 @@ import ru.maxow.mvpn.server.dto.ListServerDto;
 import ru.maxow.mvpn.server.dto.ServerResponseDto;
 import ru.maxow.mvpn.util.exception.NotFoundException;
 
+import java.util.List;
+import java.util.Set;
+
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -34,6 +37,11 @@ public class ServerServiceImpl implements ServerService {
         .findById(id)
         .map(serverMapper::toDto)
         .orElseThrow(() -> new NotFoundException("Server", id));
+  }
+
+  @Override
+  public Set<Server> getServersById(List<Long> ids) {
+    return serverRepository.findAllByIdIn(ids);
   }
 
   @Override

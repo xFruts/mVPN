@@ -8,7 +8,7 @@ import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Component;
-import ru.maxow.mvpn.adapter.telegram.TelegramSenderService;
+import ru.maxow.mvpn.telegram.adapter.TelegramSenderService;
 import ru.maxow.mvpn.user.User;
 import ru.maxow.mvpn.user.UserRole;
 import ru.maxow.mvpn.user.UserService;

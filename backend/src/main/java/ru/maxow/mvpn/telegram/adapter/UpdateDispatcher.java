@@ -1,10 +1,10 @@
-package ru.maxow.mvpn.adapter.telegram;
+package ru.maxow.mvpn.telegram.adapter;
 
 import java.util.List;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.Update;
-import ru.maxow.mvpn.handlers.CommandHandler;
+import ru.maxow.mvpn.telegram.handlers.CommandHandler;
 
 /**
  * Dispatches incoming Telegram updates to the appropriate command handler.

@@ -6,10 +6,16 @@ import ru.maxow.mvpn.server.dto.CreateUpdateServerRequestDto;
 import ru.maxow.mvpn.server.dto.ListServerDto;
 import ru.maxow.mvpn.server.dto.ServerResponseDto;
 
+import java.util.List;
+import java.util.Set;
+
 public interface ServerService {
   Page<ListServerDto> getServers(Pageable pageable);
 
   ServerResponseDto getServer(Long id);
+
+  //For service use only
+  Set<Server> getServersById(List<Long> ids);
 
   ServerResponseDto createServer(CreateUpdateServerRequestDto request);
 
