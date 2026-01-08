@@ -1,0 +1,240 @@
+.editServer {
+    display: flex;
+    flex-direction: column;
+    padding: 30px;
+    font-family: "Nunito-sans", sans-serif;
+}
+
+.editServer-header {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    padding: 0 20px 20px;
+}
+
+.editServer-header-title {
+    display: flex;
+    flex-direction: column;
+}
+
+.editServer-header-back {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: var(--primary);
+    text-decoration: none;
+}
+
+.editServer-content {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    padding: 15px;
+}
+
+.editServer-content-fast {
+    display: flex;
+    flex-direction: column;
+    border: 1px solid #e4e4e4;
+    border-radius: 10px;
+    padding: 25px;
+    gap: 20px;
+    font-size: 20px;
+}
+
+.editServer-content-fast-body {
+    display: flex;
+    flex-direction: row;
+    gap: 20px;
+}
+
+.editServer-content-fast-body button {
+    display: flex;
+    align-items: center;
+    border: none;
+    border-radius: 10px;
+    gap: 5px;
+    padding: 10px;
+    font-size: 17px;
+}
+
+.editServer-content-fast-body-reload {
+    background-color: #FCEFB3;
+}
+
+.editServer-content-fast-body-reload:hover {
+    background-color: #FADF73;
+}
+
+.editServer-content-fast-body-setting {
+    background-color: #E5E7EB;
+}
+
+.editServer-content-fast-body-setting:hover {
+    background-color: #D1D5DB;
+}
+
+.editServer-content-settings {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    border: 1px solid #e4e4e4;
+    border-radius: 10px;
+}
+
+.editServer-content-settings-title {
+    display: flex;
+    flex-direction: row;
+    font-size: 15px;
+    border-bottom: 1px solid #e4e4e4;
+}
+
+.editServer-content-settings-title-item {
+    display: flex;
+    flex: 1 0 25%;
+    flex-direction: row;
+    gap: 10px;
+    padding: 10px 0;
+    align-items: center;
+    justify-content: center;
+}
+
+.settingActive {
+    color: var(--primary);
+    background-color: #f0f5ff;
+    border-bottom: 1px solid var(--primary);
+    border-top-left-radius: 10px;
+    border-top-right-radius: 10px;
+}
+
+.editServer-content-button {
+    display: flex;
+    flex-direction: row;
+    gap: 15px;
+    padding: 15px;
+    align-items: start;
+}
+
+.editServer-content-button button {
+    display: flex;
+    flex-direction: row;
+    gap: 5px;
+    align-items: center;
+    padding: 10px 15px;
+    border: none;
+    border-radius: 10px;
+    color: white;
+    font-size: 16px;
+}
+
+.editServer-content-settings-body {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    padding: 20px;
+}
+
+.setting-body {
+    display: flex;
+    flex-wrap: wrap;
+    flex-direction: row;
+    gap: 10px;
+}
+
+.setting-body-input {
+    display: flex;
+    flex-direction: column;
+    flex: 1 0 33.3%;
+    gap: 10px;
+    font-size: 17px;
+}
+
+.setting-body-input span {
+    color: gray;
+}
+
+.editServer-input {
+    display: flex;
+    flex-direction: row;
+    gap: 10px;
+    font-size: 15px;
+    padding: 10px;
+    border: 1px solid #e4e4e4;
+    border-radius: 10px;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.editServer-input select {
+    width: 100%;
+    border: none;
+    font-size: 15px;
+}
+
+.editServer-input select:focus {
+    outline: none;
+}
+
+.setting-safety {
+    display: flex;
+    flex-direction: column;
+    flex: 1 0 33.3%;
+    background-color: #FEFCE8;
+    border: 1px solid #FDE047;
+    color: #A16207;
+    border-radius: 10px;
+    padding: 25px;
+    gap: 10px;
+    font-size: 15px;
+}
+
+.setting-safety-title {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 5px;
+}
+
+.setting-checkbox {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.setting-checkbox-item {
+    display: flex;
+    flex-direction: row;
+    gap: 10px;
+    align-items: center;
+    font-size: 14px;
+}
+
+.setting-checkbox-text {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    color: gray;
+}
+
+.setting-metrics {
+    display: flex;
+    flex-direction: row;
+    gap: 10px;
+    padding: 20px;
+}
+
+.setting-metrics-item {
+    display: flex;
+    flex-direction: column;
+    flex: 1 0 25%;
+    gap: 10px;
+}
+
+.setting-metrics-item-header {
+    color: gray;
+    font-size: 14px;
+}
+
+.setting-metrics-item-text {
+    font-size: 22px;
+}
