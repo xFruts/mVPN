@@ -1,4 +1,4 @@
-.countries-overlay {
+.countriesOverlay {
     position: fixed;
     top: 0;
     left: 0;
@@ -12,8 +12,7 @@
     z-index: 2000;
 }
 
-/* само окно */
-.countries-modal {
+.countriesModal {
     background: white;
     border-radius: 20px;
     box-shadow: 0 4px 25px rgba(0, 0, 0, 0.15);
@@ -25,8 +24,7 @@
     gap: 15px;
 }
 
-
-.countries-header {
+.countriesHeader {
     display: flex;
     flex-direction: column;
     font-size: 20px;
@@ -34,7 +32,7 @@
     border-bottom: 1px solid #e4e4e4;
 }
 
-.countries-content {
+.countriesContent {
     display: flex;
     flex-direction: column;
     gap: 15px;
@@ -43,20 +41,20 @@
     overflow-y: auto;
 }
 
-.countries-content-choose {
+.countriesContentChoose {
     display: flex;
     flex-direction: column;
     gap: 10px;
 }
 
-.countries-content-choose-country {
+.countriesContentChooseCountry {
     display: flex;
     flex-direction: row;
     flex-wrap: wrap;
     gap: 15px;
 }
 
-.countries-content-country {
+.countriesContentCountry {
     display: flex;
     gap: 15px;
     align-items: center;
@@ -73,13 +71,13 @@
     background-color: #f0f5ff;
 }
 
-.countries-content-subscription {
+.countriesContentSubscription {
     display: flex;
     flex-direction: column;
     gap: 15px;
 }
 
-.countries-content-subscription-link {
+.countriesContentSubscriptionLink {
     display: flex;
     flex-direction: column;
     gap: 10px;
@@ -90,7 +88,7 @@
     color: #187a41;
 }
 
-.countries-content-subscription-input {
+.countriesContentSubscriptionInput {
     display: flex;
     flex-direction: row;
     border: 1px solid #e4e4e4;
@@ -99,7 +97,7 @@
     background-color: #e9faef;
 }
 
-.countries-content-subscription-input input {
+.countriesContentSubscriptionInput input {
     flex: 1;
     border: none;
     padding: 13px;
@@ -107,14 +105,14 @@
     outline: none;
 }
 
-.countries-content-subscription-input div {
+.countriesContentSubscriptionInput div {
     display: flex;
     border-left: 1px solid #e4e4e4;
     padding: 10px 15px;
     cursor: pointer;
 }
 
-.countries-custom-conf {
+.countriesCustomConf {
     display: flex;
     flex-direction: column;
     gap: 10px;
@@ -125,7 +123,7 @@
     color: var(--primary);
 }
 
-.countries-conf {
+.countriesConf {
     display: flex;
     flex-direction: column;
     gap: 15px;
@@ -135,7 +133,7 @@
     font-size: 13px;
 }
 
-.countries-conf-header {
+.countriesConfHeader {
     display: flex;
     flex-direction: row;
     gap: 10px;
@@ -148,14 +146,14 @@
     border-radius: 10px;
 }
 
-.countries-conf-header-active {
+.countriesConfHeaderActive {
     display: flex;
     align-items: center;
     gap: 5px;
     color: #34c759;
 }
 
-.countries-instructions {
+.countriesInstructions {
     display: flex;
     flex-direction: column;
     gap: 15px;
@@ -163,21 +161,21 @@
     padding: 20px;
 }
 
-.countries-instructions div {
+.countriesInstructions div {
     display: flex;
     flex-direction: row;
     gap: 5px;
     font-size: 17px;
 }
 
-.countries-buttons {
+.countriesButtons {
     display: flex;
     justify-content: right;
     padding: 25px;
     border-top: 1px solid #e4e4e4;
 }
 
-.countries-buttons button {
+.countriesButtons button {
     border: none;
     outline: none;
     padding: 15px 20px;

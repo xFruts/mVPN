@@ -1,7 +1,3 @@
 export default function PaymentDetails() {
-    return (
-        <>
-            Данные об оплате
-        </>
-    )
+    return <>Данные об оплате</>;
 }

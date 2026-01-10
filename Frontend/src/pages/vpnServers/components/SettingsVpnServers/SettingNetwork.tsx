@@ -1,48 +1,85 @@
-export default function SettingNetwork() {
-    return(
+import type { UseFormReturn } from 'react-hook-form';
+import { z } from 'zod';
+import { schema } from "./SettingVpnServers.tsx";
+import styles from "@pages/vpnServers/components/SettingsVpnServers/SettingVpnServers.module.css";
+
+export type FormData = z.infer<typeof schema>;
+
+interface BasicInfoProps {
+    form: UseFormReturn<FormData>;
+}
+
+export default function SettingNetwork({ form }: BasicInfoProps) {
+    const { register, formState: { errors } } = form;
+    return (
         <>
-            <div className="setting-body">
-                <div className={"setting-body-input"}>
+            <div className={styles.settingBody}>
+                <div className={styles.settingBodyInput}>
                     <span>Порт сервера</span>
                     <input
                         type={"text"}
-                        className="editServer-input"
-                        value={"51820"}
-                        name={"port"}/>
+                        className={styles.editServerInput}
+                        {...register('port')}
+                    />
+                    {errors.port && (
+                        <span style={{ color: "red" }}>
+                            {errors.port.message}
+                        </span>
+                    )}
                 </div>
-                <div className={"setting-body-input"}>
+                <div className={styles.settingBodyInput}>
                     <span>Keep Alive (секунды)</span>
                     <input
                         type={"text"}
-                        className="editServer-input"
-                        value={"25"}
-                        name={"keepAlive"}/>
+                        className={styles.editServerInput}
+                        {...register('keepAlive')}
+                    />
+                    {errors.keepAlive && (
+                        <span style={{ color: "red" }}>
+                             {errors.keepAlive.message}
+                        </span>
+                    )}
                 </div>
-                <div className={"setting-body-input"}>
+                <div className={styles.settingBodyInput}>
                     <span>Первичный DNS</span>
                     <input
                         type={"text"}
-                        className="editServer-input"
-                        value={"1.1.1.1"}
-                        name={"firstDNS"}/>
+                        className={styles.editServerInput}
+                        {...register('dnsSettings.primary')}
+                    />
+                    {errors.dnsSettings?.primary?.message && (
+                        <span style={{ color: "red" }}>
+                            {errors.dnsSettings.primary.message}
+                        </span>
+                    )}
                 </div>
-                <div className={"setting-body-input"}>
+                <div className={styles.settingBodyInput}>
                     <span>Вторичный DNS</span>
                     <input
                         type={"text"}
-                        className="editServer-input"
-                        value={"400"}
-                        name={"secondDNS"}/>
+                        className={styles.editServerInput}
+                        {...register('dnsSettings.secondary')}
+                    />
+                    {errors.dnsSettings?.secondary?.message && (
+                        <span style={{ color: "red" }}>
+                            {errors.dnsSettings.secondary.message}
+                        </span>
+                    )}
                 </div>
-                <div className={"setting-body-input"}>
+                <div className={styles.settingBodyInput}>
                     <span>Разрешенные IP адреса</span>
                     <input
                         type={"text"}
-                        className="editServer-input"
-                        value={"0.0.0.0/0"}
-                        name={"IP"}/>
+                        className={styles.editServerInput}
+                        {...register('allowedIPs')}
+                    />
+                    {errors.allowedIPs && (
+                        <span style={{ color: "red" }}>
+                            {errors.allowedIPs.message}
+                        </span>
+                    )}
                 </div>
             </div>
         </>
-    )
+    );
 }

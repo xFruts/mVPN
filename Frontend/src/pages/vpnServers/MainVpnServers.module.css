@@ -1,32 +1,32 @@
-.vpnservers-content {
+.vpnserversContent {
     display: flex;
     flex-direction: column;
     padding: 30px;
 }
 
-.vpnservers-header {
+.vpnserversHeader {
     display: flex;
     flex-direction: row;
     justify-content: space-between;
     padding-bottom: 50px;
 }
 
-.users-text {
+.usersText {
     font-weight: bold;
     font-size: 23px;
     margin: 0;
 }
 
-.count-text {
+.countText {
     color: grey;
     margin-top: 0;
 }
 
-.vpnservers-button {
+.vpnserversButton {
     padding: 0 15px;
 }
 
-.vpnservers-button-border {
+.vpnserversButtonBorder {
     display: flex;
     flex-direction: row;
     align-items: center;
@@ -37,11 +37,11 @@
     color: black;
 }
 
-.vpnservers-button-border:hover {
+.vpnserversButtonBorder:hover {
     background: #f0f5ff;
 }
 
-.vpnservers-button span {
+.vpnserversButton span {
     padding-left: 10px;
     margin: 0;
 }

@@ -1,7 +1,3 @@
 export default function TextMasseges() {
-    return(
-        <>
-            Текстовые сообщения
-        </>
-    )
+    return <>Текстовые сообщения</>;
 }

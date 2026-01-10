@@ -1,9 +1,9 @@
-import {NavLink, Route, Routes} from "react-router";
+import { NavLink, Route, Routes } from "react-router";
 import TextMasseges from "./component/TextMessages.tsx";
 import PaymentDetails from "./component/ PaymentDetails.tsx";
 
-export default function MainSendMessages(){
-    return(
+export default function MainSendMessages() {
+    return (
         <>
             <div className="send-header">
                 <span>Добавить пользователся</span>
@@ -12,7 +12,10 @@ export default function MainSendMessages(){
                     <NavLink to={"/"} className={"text-messages"}>
                         <span>Текстовые сообщения</span>
                     </NavLink>
-                    <NavLink to={"/paymentDetails"} className={"payment-details"}>
+                    <NavLink
+                        to={"/paymentDetails"}
+                        className={"payment-details"}
+                    >
                         <span>Данные об оплате</span>
                     </NavLink>
                 </div>

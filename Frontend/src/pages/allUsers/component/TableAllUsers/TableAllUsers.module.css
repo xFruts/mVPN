@@ -1,4 +1,4 @@
-.allusers-table {
+.allusersTable {
     max-height: 550px;
     min-height: 100px;
     height: auto;
@@ -9,27 +9,27 @@
     margin: 50px 15px 0 15px;
 }
 
-.table-title {
+.tableTitle {
     display: flex;
     flex-direction: row;
     align-items: center;
 }
 
-.table-title span{
+.tableTitle span {
     padding-right: 7px;
 }
 
-.table-users {
+.tableUsers {
     width: 100%;
     border-collapse: collapse;
     font-size: 18px;
 }
 
-.table-users tr + tr td {
+.tableUsers tr + tr td {
     border-top: 1px solid #e4e4e4;
 }
 
-.table-users td {
+.tableUsers td {
     padding: 15px 60px 15px 40px;
     box-sizing: border-box;
     font-size: 14px;
@@ -45,27 +45,14 @@ td:has(.ID, .date) {
     white-space: nowrap;
 }
 
-.countries {
-    display: flex;
-    flex-direction: row;
-    white-space: nowrap;
-}
-
-.countries span {
-    margin-right: 5px;
-    padding: 3px 7px;
-    background-color: #e5f8ed;
-    color: #34c759;
-}
-
 .none {
     background-color: #f1f3f5;
     color: #6c757d;
 }
 
 .admin {
-    background-color: #FFE4C4;
-    color: #C05621;
+    background-color: #ffe4c4;
+    color: #c05621;
 }
 
 .basic {
@@ -80,24 +67,22 @@ td:has(.ID, .date) {
 
 .dynamic {
     background-color: #e5f8ed;
-    color: #34c759
+    color: #34c759;
 }
-
 
 .expired {
     background-color: #ffeeee;
     color: #ff4d4d;
 }
 
-
-.role{
+.role {
     display: inline-block;
     padding: 3px 10px;
     border-radius: 25px;
     font-size: 12px;
 }
 
-.date{
+.date {
     display: flex;
     justify-content: space-between;
 }
@@ -114,14 +99,14 @@ td:has(.ID, .date) {
     border-radius: 15px;
 }
 
-.modal-name {
+.modalName {
     display: flex;
     flex-direction: column;
     border-bottom: 1px solid #e4e4e4;
     padding: 15px 30px 10px 15px;
 }
 
-.modal-change {
+.modalChange {
     display: flex;
     flex-direction: column;
     border-bottom: 1px solid #e4e4e4;
@@ -129,12 +114,12 @@ td:has(.ID, .date) {
     gap: 10px;
 }
 
-.modal-change-header {
+.modalChangeHeader {
     display: flex;
     flex-direction: column;
 }
 
-.modal-change div {
+.modalChange div {
     display: flex;
     align-items: center;
     gap: 5px;
@@ -146,7 +131,9 @@ td:has(.ID, .date) {
 
 .apiButton button {
     border: none;
-    font-family: Nunito Sans, sans-serif;
+    font-family:
+        Nunito Sans,
+        sans-serif;
 }
 
 .copy {

@@ -1,143 +1,177 @@
-import { useState, useRef, useEffect } from "react";
-import {MoveVertical, EllipsisVertical, Key, Pencil, Trash2, Timer} from 'lucide-react';
-import {ArrowUp, ArrowDown} from 'react-feather'
-import './TableAllUsers.css'
+import { useRef, useEffect } from "react";
+import {
+    MoveVertical,
+    EllipsisVertical,
+    Key,
+    Pencil,
+    Trash2,
+    Timer,
+} from "lucide-react";
+import { ArrowUp, ArrowDown } from "react-feather";
+import styles from "./TableAllUsers.module.css";
 import ReactDOM from "react-dom";
-import {NavLink} from "react-router";
+import { NavLink } from "react-router";
 import Countries from "../Countries/Countries.tsx";
-
-const Users = [
-    {
-        id: 1,
-        firstname: "Алексей",
-        lastname: "Петров",
-        telegramId: "",
-        role: "SPECIAL",
-        type: "TRIAL",
-        status: "CANCELLED",
-        countries: ["FI", "US", "RU", "NL", "DE", "SG"],
-        dateStart: "2021-02-11",
-        dateFinish: "2021-05-02"
-    },
-    {
-        id: 2,
-        firstname: "Алексей",
-        lastname: "Смирнов",
-        telegramId: "@her",
-        role: "BASIC",
-        type: "BASIC",
-        status: "EXPIRED",
-        countries: ["RU", "FI"],
-        dateStart: "2021-03-13",
-        dateFinish: "2021-08-11"
-    },
-    {
-        id: 3,
-        firstname: "Максим",
-        lastname: "Петров",
-        telegramId: "",
-        role: "ADMIN",
-        type: "PREMIUM",
-        status: "ACTIVE",
-        countries: ["RU"],
-        dateStart: "2021-01-06",
-        dateFinish: "2021-05-02"
-    },
-    {
-        id: 4,
-        firstname: "Максим",
-        lastname: "Петров",
-        telegramId: "@pebb",
-        role: "BASIC",
-        type: "NONE",
-        status: "NONE",
-        countries: ["RU"],
-        dateStart: "2021-03-20",
-        dateFinish: "2021-05-02"
-    }
-]
+import useUsersStore from "../../../../store/useUsersStore.ts";
 
 const ApiKey = "tg_api_1_570528";
 
-const titles = ["ID", "Пользователь", "Роль", "Тип подписки", "Статус", "Страна", "Срок действия"]
+const titles = [
+    "ID",
+    "Пользователь",
+    "Роль",
+    "Тип подписки",
+    "Статус",
+    "Страна",
+    "Срок действия",
+];
 
 export default function TableAllUsers() {
-    const [isOpen, setIsOpen] = useState(-1);
-    const [selectedUser, setSelectedUser] = useState<null | { id: number; country: string}>(null);
-    const [apiOpen, setApiOpen] = useState(false);
-    const [sort, setSort] = useState<string[]>(["", ""]);
+    const {
+        users,
+        sort,
+        selectedUser,
+        apiOpen,
+        isOpen,
+        setSort,
+        setSelectedUser,
+        setApiOpen,
+        toggleMenu,
+        resetMenu,
+    } = useUsersStore();
+
     const menuRef = useRef<HTMLDivElement>(null);
 
     const handleOpen = (userId: number, country: string) => {
         setSelectedUser({ id: userId, country });
     };
 
-    const handleClose = () => setSelectedUser(null);
+    const handleClose = () => resetMenu();
 
     const handleSort = (title: string) => {
-        sort[1] === "" ? setSort([title, "down"]) :
-        sort[1] === "down" ? setSort([title, "up"]) :
-        setSort(["", ""])
-    }
+        let newDirection: "up" | "down" | "" = "";
+        if (sort.field === title) {
+            if (sort.direction === "down") newDirection = "up";
+            else if (sort.direction === "up") newDirection = "";
+        } else {
+            newDirection = "down";
+        }
+        setSort(title, newDirection);
+    };
 
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
             if (!(event.target instanceof Node)) return;
             if (menuRef.current && !menuRef.current.contains(event.target)) {
-                setIsOpen(-1);
+                resetMenu();
             }
         };
         document.addEventListener("mousedown", handleClickOutside);
-        return () => document.removeEventListener("mousedown", handleClickOutside);
-    }, []);
+        return () =>
+            document.removeEventListener("mousedown", handleClickOutside);
+    }, [resetMenu]);
+
+    const sortedUsers = [...users].sort((a, b) => {
+        if (!sort.field) return 0;
+
+        const aValue = a[sort.field as keyof typeof a];
+        const bValue = b[sort.field as keyof typeof b];
+
+        if (sort.direction === "up") {
+            return String(aValue).localeCompare(String(bValue));
+        } else if (sort.direction === "down") {
+            return String(bValue).localeCompare(String(aValue));
+        }
+        return 0;
+    });
 
     return (
-        <div className="allusers-table" >
-            <table className="table-users">
+        <div className={styles.allusersTable}>
+            <table className={styles.tableUsers}>
                 <tbody>
                 <tr>
                     {titles.map((title) => (
                         <td key={title}>
-                            <div className={`table-title ${title}`}>
+                            <div className={`${styles.tableTitle} ${styles[title]}`}>
                                 <span>{title}</span>
                                 <div onClick={() => handleSort(title)}>
-                                    {sort[0] === title ?
-                                        sort[1] === "down" ? (<ArrowDown size={20}/>) :
-                                        sort[1] === "up" ? (<ArrowUp size={20}/>) :
-                                        <MoveVertical size={20}/> :
-                                        <MoveVertical size={20}/>}
+                                    {sort.field === title ? (
+                                        sort.direction === "down" ? (
+                                            <ArrowDown size={20} />
+                                        ) : sort.direction === "up" ? (
+                                            <ArrowUp size={20} />
+                                        ) : (
+                                            <MoveVertical size={20} />
+                                        )
+                                    ) : (
+                                        <MoveVertical size={20} />
+                                    )}
                                 </div>
                             </div>
                         </td>
                     ))}
                 </tr>
 
-                {Users.map((user) => (
+                {sortedUsers.map((user) => (
                     <tr key={user.id}>
-                        <td><div className="role basic ID">{user.id}</div></td>
                         <td>
-                            <div className="name">
-                                <span>{user.firstname} {user.lastname}</span>
+                            <div className={`${styles.role} ${styles.basic} ${styles.ID}`}>
+                                {user.id}
                             </div>
                         </td>
                         <td>
-                            <div className={`role ${user.role === "ADMIN" ? "admin" : user.role === "SPECIAL" ? "special" : "basic"}`}>
+                            <div className={styles.name}>
+                                    <span>
+                                        {user.firstname} {user.lastname}
+                                    </span>
+                            </div>
+                        </td>
+                        <td>
+                            <div
+                                className={`${styles.role} ${
+                                    user.role === "ADMIN"
+                                        ? styles.admin
+                                        : user.role === "SPECIAL"
+                                            ? styles.special
+                                            : styles.basic
+                                }`}
+                            >
                                 {user.role}
                             </div>
                         </td>
                         <td>
-                            <div className={`role ${user.type === "PREMIUM" ? "special" : user.type === "TRIAL" ? "dynamic" : user.type === "BASIC" ? "basic" : "none"}`}>
+                            <div
+                                className={`${styles.role} ${
+                                    user.type === "PREMIUM"
+                                        ? styles.special
+                                        : user.type === "TRIAL"
+                                            ? styles.dynamic
+                                            : user.type === "BASIC"
+                                                ? styles.basic
+                                                : styles.none
+                                }`}
+                            >
                                 {user.type}
                             </div>
                         </td>
                         <td>
-                            <div className={`role ${user.status === "ACTIVE" ? "dynamic" : user.status === "EXPIRED" ? "expired" : user.status === "CANCELLED" ? "basic" : "none"}`}>
+                            <div
+                                className={`${styles.role} ${
+                                    user.status === "ACTIVE"
+                                        ? styles.dynamic
+                                        : user.status === "EXPIRED"
+                                            ? styles.expired
+                                            : user.status === "CANCELLED"
+                                                ? styles.basic
+                                                : styles.none
+                                }`}
+                            >
                                 {user.status}
                             </div>
                         </td>
 
                         <td>
-                            <div className="countries">
+                            <div className={"countries"}>
                                 {user.countries.map((country) => (
                                     <span
                                         key={`${user.id}-${country}`}
@@ -151,48 +185,67 @@ export default function TableAllUsers() {
                         </td>
 
                         <td>
-                            <div className="date">
-                                <span style={{ color: "gray" }}>{user.dateFinish}</span>
+                            <div className={styles.date}>
+                                    <span style={{ color: "gray" }}>
+                                        {user.dateFinish}
+                                    </span>
                                 <EllipsisVertical
-                                    className="ellipsis"
+                                    className={styles.ellipsis}
                                     size={20}
-                                    onClick={
-                                        isOpen === user.id
-                                            ? () => setIsOpen(-1)
-                                            : () => setIsOpen(user.id)
-                                    }
+                                    onClick={() => toggleMenu(user.id)}
                                 />
                             </div>
 
                             {isOpen === user.id && (
-                                <div className="modal" ref={menuRef}>
-                                    <div className="modal-name">
-                                        <span>{user.firstname} {user.lastname}</span>
-                                        <span style={{ color: "gray" }}>ID: {user.id}</span>
+                                <div className={styles.modal} ref={menuRef}>
+                                    <div className={styles.modalName}>
+                                            <span>
+                                                {user.firstname} {user.lastname}
+                                            </span>
+                                        <span style={{ color: "gray" }}>
+                                                ID: {user.id}
+                                            </span>
                                     </div>
-                                    <div className="modal-change">
+                                    <div className={styles.modalChange}>
                                         {apiOpen ? (
                                             <>
-                                                <div className={"modal-change-header"}>
-                                                    <span style={{ color: "gray" }}>API ключ для Telegram:</span>
+                                                <div className={styles.modalChangeHeader}>
+                                                        <span style={{ color: "gray" }}>
+                                                            API ключ для Telegram:
+                                                        </span>
                                                     <div style={{ color: "orange" }}>
-                                                        <Timer size={20}/>
-                                                        <span>Дествителен 30 минут</span>
+                                                        <Timer size={20} />
+                                                        <span>Действителен 30 минут</span>
                                                     </div>
                                                 </div>
-                                                <div className="apiKey"><span>{ApiKey}</span></div>
-                                                <div className="apiButton">
-                                                    <button onClick={() => navigator.clipboard.writeText(ApiKey)} className="copy">Копировать</button>
-                                                    <button className="hide" onClick={() => setApiOpen(false)}>Скрыть</button>
+                                                <div className={styles.apiKey}>
+                                                    <span>{ApiKey}</span>
+                                                </div>
+                                                <div className={styles.apiButton}>
+                                                    <button
+                                                        onClick={() =>
+                                                            navigator.clipboard.writeText(ApiKey)
+                                                        }
+                                                        className="copy"
+                                                    >
+                                                        Копировать
+                                                    </button>
+                                                    <button
+                                                        className="hide"
+                                                        onClick={() => setApiOpen(false)}
+                                                    >
+                                                        Скрыть
+                                                    </button>
                                                 </div>
                                             </>
                                         ) : (
                                             <div onClick={() => setApiOpen(true)}>
-                                                <Key size={17}/>Получить API ключ
+                                                <Key size={17} />
+                                                Получить API ключ
                                             </div>
                                         )}
                                         <NavLink
-                                            className="nav-link"
+                                            className="navLink"
                                             to="/users/edit"
                                             state={{
                                                 props: {
@@ -209,9 +262,15 @@ export default function TableAllUsers() {
                                                 },
                                             }}
                                         >
-                                            <div><Pencil size={17}/>Редактировать</div>
+                                            <div>
+                                                <Pencil size={17} />
+                                                Редактировать
+                                            </div>
                                         </NavLink>
-                                        <div><Trash2 size={17}/>Удалить</div>
+                                        <div>
+                                            <Trash2 size={17} />
+                                            Удалить
+                                        </div>
                                     </div>
                                 </div>
                             )}
@@ -221,21 +280,22 @@ export default function TableAllUsers() {
                 </tbody>
             </table>
 
-            {selectedUser && (() => {
-                const user = Users.find(u => u.id === selectedUser.id);
-                if (!user) return null;
-                return ReactDOM.createPortal(
-                    <Countries
-                        userId={selectedUser.id}
-                        specificCountry={selectedUser.country}
-                        firstName={user.firstname}
-                        lastName={user.lastname}
-                        countries={user.countries}
-                        onClose={handleClose}
-                    />,
-                    document.body
-                );
-            })()}
+            {selectedUser &&
+                (() => {
+                    const user = sortedUsers.find((u) => u.id === selectedUser.id);
+                    if (!user) return null;
+                    return ReactDOM.createPortal(
+                        <Countries
+                            userId={selectedUser.id}
+                            specificCountry={selectedUser.country}
+                            firstName={user.firstname}
+                            lastName={user.lastname}
+                            countries={user.countries}
+                            onClose={handleClose}
+                        />,
+                        document.body,
+                    );
+                })()}
         </div>
     );
 }
