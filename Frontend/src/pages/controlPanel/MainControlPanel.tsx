@@ -1,7 +1,3 @@
 export default function MainControlPanel() {
-    return(
-        <>
-            Панель управления
-        </>
-    )
+    return <>Панель управления</>;
 }

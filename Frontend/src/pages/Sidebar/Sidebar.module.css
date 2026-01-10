@@ -1,25 +1,25 @@
-.sidebar-content {
+.sidebarContent {
     display: flex;
     flex-direction: column;
     height: 100%;
 }
 
-.border-right {
+.borderRight {
     border-right: 1px solid #e4e4e4;
 }
 
-.border-bottom {
+.borderBottom {
     border-bottom: 1px solid #e4e4e4;
 }
 
-.sidebar-logo {
+.sidebarLogo {
     display: flex;
     flex-direction: column;
     padding-bottom: 20px;
     margin: 30px 20px 0 50px;
 }
 
-.sidebar-logo label {
+.sidebarLogo label {
     font-size: 15px;
     color: gray;
 }
@@ -45,19 +45,16 @@
     color: black;
 }
 
-.sidebar-body {
+.sidebarBody {
     padding-top: 20px;
 }
 
-.sidebar-users {
+.sidebarUsers {
     display: flex;
     height: 50px;
     position: relative;
 }
 
-.padding {
-    padding: 0 20px 15px 20px;
-}
 .users {
     display: flex;
     justify-content: center;
@@ -65,14 +62,10 @@
     margin-left: 10px;
 }
 
-.nav-link {
-    color: inherit;
-    text-decoration: none;
-}
 
-.sidebar-users label {
+
+.sidebarUsers label {
     margin-left: 7px;
-
 }
 
 .active {
@@ -81,7 +74,7 @@
     border-radius: 20px;
 }
 
-.sidebar-users::before {
+.sidebarUsers::before {
     content: "";
     position: absolute;
     left: -40px;
@@ -94,6 +87,6 @@
     border-bottom-right-radius: 100px;
 }
 
-.sidebar-users:hover::before {
+.sidebarUsers:hover::before {
     background-color: var(--primary);
 }

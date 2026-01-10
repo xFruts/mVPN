@@ -1,22 +1,64 @@
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
 import { useState } from "react";
-import { MoveLeft, Save, User, Star, Crown, TriangleAlert, X, Ticket, Package, Gem } from 'lucide-react';
+import { MoveLeft, Save, TriangleAlert } from "lucide-react";
 import { NavLink, useLocation } from "react-router";
-import './ChangeUsers.css'
+import styles from "./ChangeUsers.module.css";
 import ReactDOM from "react-dom";
 import Countries from "../Countries/Countries.tsx";
+import {
+    USER_ROLES,
+    ROLE_CONFIG,
+    USER_TYPES,
+    TYPE_CONFIG,
+} from "@/constant.ts";
+
+const schema = z.object({
+    firstName: z.string(),
+    lastName: z.string(),
+    telegramId: z.string().optional(),
+    role: z.enum(USER_ROLES),
+    type: z.enum(USER_TYPES),
+    dateFinish: z.string().optional(),
+});
+
+type FormData = z.infer<typeof schema>;
+type UserRole = z.infer<typeof schema>["role"];
+type UserType = z.infer<typeof schema>["type"];
 
 export default function ChangeUsers() {
     const location = useLocation();
     const user = location.state?.props;
-    const [role, setRole] = useState(user.role)
-    const [type, setType] = useState(user.type)
-    const [date, setDate] = useState(user.dateFinish)
-    const [selectedUser, setSelectedUser] = useState<null | { id: number; country: string}>(null);
-    const [formData, setFormData] = useState({
-        firstName: user.firstname,
-        lastName: user.lastname,
-        telegramId: user.telegramId,
+    const [selectedUser, setSelectedUser] = useState<null | {
+        id: number;
+        country: string;
+    }>(null);
+
+    const {
+        register,
+        watch,
+        handleSubmit,
+        setValue,
+        formState: { errors },
+    } = useForm<FormData>({
+        resolver: zodResolver(schema),
+        defaultValues: {
+            firstName: user.firstname,
+            lastName: user.lastname,
+            telegramId: user.telegramId,
+            role: user.role,
+            type: user.type,
+            dateFinish: user.dateFinish,
+        },
     });
+
+    const onSubmit = (data: FormData) => {
+        console.log(data);
+    };
+
+    const role = watch("role");
+    const type = watch("type");
 
     const handleOpen = (userId: number, country: string) => {
         setSelectedUser({ id: userId, country });
@@ -24,159 +66,211 @@ export default function ChangeUsers() {
 
     const handleClose = () => setSelectedUser(null);
 
-    const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-        const { name, value } = event.target;
-
-        setFormData(prevFormData => ({
-            ...prevFormData,
-            [name]: value
-        }));
+    const addDaysToDate = (days: number) => {
+        const baseDateStr =
+            watch("dateFinish") || new Date().toISOString().split("T")[0];
+        const baseDate = new Date(baseDateStr);
+        baseDate.setDate(baseDate.getDate() + days);
+        const newDate = baseDate.toISOString().split("T")[0];
+        setValue("dateFinish", newDate);
     };
 
-    const getFutureDate = (days: number) => {
-        let d = new Date(date);
-        d.setDate(d.getDate() + days);
-        setDate(d.toISOString().slice(0, 10));
+    const resetDate = () => {
+        setValue("dateFinish", user.dateFinish);
     };
 
-    return(
-        <div className={"changeUsers"}>
-            <div className="changeUsers-header">
-                <div className="changeUsers-header-title">
-                    <span style={{fontSize: "23px"}}>Редактирование пользователя</span>
-                    <span style={{color: "gray"}}>Изменение данных пользователя #{user.id}</span>
+    return (
+        <div className={styles.changeUsers}>
+            <div className={styles.changeUsersHeader}>
+                <div className={styles.changeUsersHeaderTitle}>
+                    <span style={{ fontSize: "23px" }}>
+                        Редактирование пользователя
+                    </span>
+                    <span style={{ color: "gray" }}>
+                        Изменение данных пользователя #{user.id}
+                    </span>
                 </div>
-                <NavLink to={'/allusers'} className="changeUsers-header-back">
-                    <MoveLeft size={13}/>
+                <NavLink to={"/users"} end className={styles.changeUsersHeaderBack}>
+                    <MoveLeft size={13} />
                     <span>Назад к списку</span>
                 </NavLink>
             </div>
-            <div className={"changeUsers-content"}>
-                <div className={"changeUsers-person-role-type"}>
-                    <div className={"changeUsers-person"}>
-                        <div className={"changeUsers-person-header"}>
+            <div className={styles.changeUsersContent}>
+                <div className={styles.changeUsersPersonRoleType}>
+                    <div className={styles.changeUsersPerson}>
+                        <div className={styles.changeUsersPersonHeader}>
                             <span>Персональная информация</span>
                         </div>
-                        <div className={"changeUsers-person-name-surname"}>
-                            <div className={"changeUsers-person-name"}>
-                                <span>Имя <span style={{ color: "red"}}>*</span></span>
+                        <form
+                            id="change-user-form"
+                            onSubmit={handleSubmit(onSubmit)}
+                        >
+                            <div className={styles.changeUsersPersonNameSurname}>
+                                <div className={styles.changeUsersPersonName}>
+                                    <span>
+                                        Имя{" "}
+                                        <span style={{ color: "red" }}>*</span>
+                                    </span>
+                                    <input
+                                        type="text"
+                                        className={styles.changeUsersPersonInput}
+                                        placeholder="Введите имя"
+                                        {...register("firstName")}
+                                    />
+                                    {errors.firstName && (
+                                        <span style={{ color: "red" }}>
+                                            {errors.firstName.message}
+                                        </span>
+                                    )}
+                                </div>
+                                <div className={styles.changeUsersPersonSurname}>
+                                    <span>
+                                        Фамилия{" "}
+                                        <span style={{ color: "red" }}>*</span>
+                                    </span>
+                                    <input
+                                        type="text"
+                                        className={styles.changeUsersPersonInput}
+                                        placeholder="Введите фамилию"
+                                        {...register("lastName")}
+                                    />
+                                    {errors.lastName && (
+                                        <span style={{ color: "red" }}>
+                                            {errors.lastName.message}
+                                        </span>
+                                    )}
+                                </div>
+                            </div>
+                            <div className={styles.changeUsersPersonTelegram}>
+                                <span>Telegram ID (опционально)</span>
                                 <input
                                     type="text"
-                                    className="changeUsers-person-input"
+                                    className={styles.changeUsersPersonInput}
                                     placeholder="Введите имя"
-                                    name="firstName"
-                                    value={formData.firstName}
-                                    onChange={handleChange}/>
+                                    {...register("telegramId")}
+                                />
+                                {errors.telegramId && (
+                                    <span style={{ color: "red" }}>
+                                        {errors.telegramId.message}
+                                    </span>
+                                )}
+                                <span style={{ color: "gray" }}>
+                                    Если указан, пользователь сможет управлять
+                                    подпиской через Telegram бота
+                                </span>
                             </div>
-                            <div className={"changeUsers-person-surname"}>
-                                <span>Фамилия <span style={{ color: "red"}}>*</span></span>
-                                <input
-                                    type="text"
-                                    className="changeUsers-person-input"
-                                    placeholder="Введите фамилию"
-                                    name="lastName"
-                                    value={formData.lastName}
-                                    onChange={handleChange}/>
-                            </div>
-                        </div>
-                        <div className={"changeUsers-person-telegram"}>
-                            <span>Telegram ID (опционально)</span>
-                            <input
-                                type="text"
-                                className="changeUsers-person-input"
-                                placeholder="Введите имя"
-                                name="telegramId"
-                                value={formData.telegramId}
-                                onChange={handleChange}/>
-                            <span style={{color: "gray"}}>Если указан, пользователь сможет управлять подпиской через Telegram бота</span>
-                        </div>
+                        </form>
                     </div>
-                    <div className={"changeUsers-role"}>
-                        <div className={"changeUsers-role-header"}>
+                    <div className={styles.changeUsersRole}>
+                        <div className={styles.changeUsersRoleHeader}>
                             <span>Роль пользователя</span>
                         </div>
-                        <div className={"changeUsers-role-content"}>
-                            <div className={`changeUsers-role-specific ${role === "BASIC" ? `roleActive` : ``}`} onClick={() => setRole("BASIC")}>
-                                <span><User size={20}/></span>
-                                <span style={{fontSize: "15px", fontWeight: "bold"}}>BASIC</span>
-                                <span style={{color: "gray"}}>Базовые возможности</span>
-                            </div>
-                            <div className={`changeUsers-role-specific ${role === "SPECIAL" ? `roleActive` : ``}`} onClick={() => setRole("SPECIAL")}>
-                                <span><Star size={20}/></span>
-                                <span style={{fontSize: "15px", fontWeight: "bold"}}>SPECIAL</span>
-                                <span style={{color: "gray"}}>Семейный доступ</span>
-                            </div>
-                            <div className={`changeUsers-role-specific ${role === "ADMIN" ? `roleActive` : ``}`} onClick={() => setRole("ADMIN")}>
-                                <span><Crown size={20}/></span>
-                                <span style={{fontSize: "15px", fontWeight: "bold"}}>ADMIN</span>
-                                <span style={{color: "gray"}}>Полный доступ</span>
-                            </div>
+                        <div className={styles.changeUsersRoleContent}>
+                            {Object.entries(ROLE_CONFIG).map(
+                                ([typeKey, config]) => {
+                                    const IconComponent = config.icon;
+                                    return (
+                                        <div
+                                            key={typeKey}
+                                            className={`${styles.changeUsersRoleSpecific} ${
+                                                role === typeKey ? styles.roleActive : ""
+                                            }`}
+                                            onClick={() =>
+                                                setValue("role", typeKey as UserRole)
+                                            }
+                                        >
+                                            <span>
+                                                <IconComponent size={20} />
+                                            </span>
+                                            <span
+                                                style={{
+                                                    fontSize: "15px",
+                                                    fontWeight: "bold",
+                                                }}
+                                            >
+                                                {typeKey as UserRole}
+                                            </span>
+                                            <span style={{ color: "gray" }}>
+                                                {config.description}
+                                            </span>
+                                        </div>
+                                    );
+                                },
+                            )}
                         </div>
                     </div>
-                    <div className={"changeUsers-type"}>
-                        <div className={"changeUsers-type-header"}>
+                    <div className={styles.changeUsersType}>
+                        <div className={styles.changeUsersTypeHeader}>
                             Тип подписки
                         </div>
-                        <div className={"changeUsers-type-content"}>
-                            <div className={`changeUsers-type-specific ${type === "NONE" ? `roleActive` : ``}`} onClick={() => setType("NONE")}>
-                                <span><X size={20}/></span>
-                                <span>NONE</span>
-                                <span className={"price none"}>Без подписки</span>
-                                <div className={"changeUsers-type-specific-info"}>
-                                    <span>-</span>
-                                    <span>-</span>
-                                </div>
-                            </div>
-                            <div className={`changeUsers-type-specific ${type === "TRIAL" ? `roleActive` : ``}`} onClick={() => setType("TRIAL")}>
-                                <span><Ticket size={20}/></span>
-                                <span>TRIAL</span>
-                                <span className={"price trial"}>Бесплатно</span>
-                                <div className={"changeUsers-type-specific-info"}>
-                                    <span>7 дней</span>
-                                    <span>50 ГБ</span>
-                                </div>
-                            </div>
-                            <div className={`changeUsers-type-specific ${type === "BASIC" ? `roleActive` : ``}`} onClick={() => setType("BASIC")}>
-                                <span><Package size={20}/></span>
-                                <span>BASIC</span>
-                                <span className={"price basic"}>299 ₽</span>
-                                <div className={"changeUsers-type-specific-info"}>
-                                    <span>30 дней</span>
-                                    <span>300 ГБ</span>
-                                </div>
-                            </div>
-                            <div className={`changeUsers-type-specific ${type === "PREMIUM" ? `roleActive` : ``}`} onClick={() => setType("PREMIUM")}>
-                                <span><Gem size={20}/></span>
-                                <span>PREMIUM</span>
-                                <span className={"price special"}>2999 ₽</span>
-                                <div className={"changeUsers-type-specific-info"}>
-                                    <span>365 дней</span>
-                                    <span>Безлимит</span>
-                                </div>
-                            </div>
+                        <div className={styles.changeUsersTypeContent}>
+                            {Object.entries(TYPE_CONFIG).map(
+                                ([typeKey, config]) => {
+                                    const IconComponent = config.icon;
+                                    return (
+                                        <div
+                                            key={typeKey}
+                                            className={`${styles.changeUsersTypeSpecific} ${
+                                                type === typeKey ? styles.roleActive : ""
+                                            }`}
+                                            onClick={() =>
+                                                setValue("type", typeKey as UserType)
+                                            }
+                                        >
+                                            <span>
+                                                <IconComponent size={20} />
+                                            </span>
+                                            <span>{typeKey as UserType}</span>
+                                            <span
+                                                className={`${styles.price} ${styles[config.priceClass]}`}
+                                            >
+                                                {config.description}
+                                            </span>
+                                            <div className={styles.changeUsersTypeSpecificInfo}>
+                                                <span>{config.features[0]}</span>
+                                                <span>{config.features[1]}</span>
+                                            </div>
+                                        </div>
+                                    );
+                                },
+                            )}
                         </div>
-                        <div className={"changeUsers-date"}>
-                            <div className={"changeUsers-date-header"}>
+                        <div className={styles.changeUsersDate}>
+                            <div className={styles.changeUsersDateHeader}>
                                 <span>Срок действия</span>
                             </div>
                             <input
-                                className={"changeUsers-date-input"}
+                                className={styles.changeUsersDateInput}
                                 type="date"
-                                value={date}
-                                onChange={(e) => setDate(e.target.value)}/>
-                            <div className={"changeUsers-date-fast"}>
-                                <span style = {{fontSize : "13px", color: "gray"}}>Быстрое продление</span>
-                                <div className={"changeUsers-date-fast-change"}>
-                                    <div className={"changeUsers-date-fast-change-detail dynamic"} onClick={() => getFutureDate(1)}>
+                                {...register("dateFinish")}
+                            />
+                            <div className={styles.changeUsersDateFast}>
+                                <span style={{ fontSize: "13px", color: "gray" }}>
+                                    Быстрое продление
+                                </span>
+                                <div className={styles.changeUsersDateFastChange}>
+                                    <div
+                                        className={`${styles.changeUsersDateFastChangeDetail} ${styles.dynamic}`}
+                                        onClick={() => addDaysToDate(1)}
+                                    >
                                         +1 день
                                     </div>
-                                    <div className={"changeUsers-date-fast-change-detail basic"} onClick={() => getFutureDate(7)}>
+                                    <div
+                                        className={`${styles.changeUsersDateFastChangeDetail} ${styles.basic}`}
+                                        onClick={() => addDaysToDate(7)}
+                                    >
                                         +7 день
                                     </div>
-                                    <div className={"changeUsers-date-fast-change-detail special"} onClick={() => getFutureDate(30)}>
+                                    <div
+                                        className={`${styles.changeUsersDateFastChangeDetail} ${styles.special}`}
+                                        onClick={() => addDaysToDate(30)}
+                                    >
                                         +30 день
                                     </div>
-                                    <div className={"changeUsers-date-fast-change-detail none"} onClick={() => setDate(user.dateFinish)}>
+                                    <div
+                                        className={`${styles.changeUsersDateFastChangeDetail} ${styles.none}`}
+                                        onClick={() => resetDate()}
+                                    >
                                         Сброс даты
                                     </div>
                                 </div>
@@ -184,90 +278,99 @@ export default function ChangeUsers() {
                         </div>
                     </div>
                 </div>
-                <div className={"changeUsers-search-infotype-important"}>
-                    <div className={"changeUsers-search"}>
-                        <div className={"changeUsers-search-header"}>
+                <div className={styles.changeUsersSearchInfotypeImportant}>
+                    <div className={styles.changeUsersSearch}>
+                        <div className={styles.changeUsersSearchHeader}>
                             <span>Информация о пользователе</span>
                         </div>
-                        <div className={"changeUsers-search-details"}>
-                            <span style={{color: "gray", fontSize: "15px"}}>ID пользователя</span>
+                        <div className={styles.changeUsersSearchDetails}>
+                            <span style={{ color: "gray", fontSize: "15px" }}>
+                                ID пользователя
+                            </span>
                             <span>#{user.id}</span>
                         </div>
-                        <div className={"changeUsers-search-details"}>
-                            <span style={{color: "gray", fontSize: "15px"}}>Дата создания</span>
+                        <div className={styles.changeUsersSearchDetails}>
+                            <span style={{ color: "gray", fontSize: "15px" }}>
+                                Дата создания
+                            </span>
                             <span>{user.dateStart}</span>
                         </div>
-                        <div className={"changeUsers-search-details"}>
-                            <span style={{color: "gray", fontSize: "15px"}}>Страны</span>
-                            <div className="countries">
-                                {user.countries.map((country : string) => (
+                        <div className={styles.changeUsersSearchDetails}>
+                            <span style={{ color: "gray", fontSize: "15px" }}>
+                                Страны
+                            </span>
+                            <div className={"countries"}>
+                                {user.countries.map((country: string) => (
                                     <span
                                         key={`${user.id}-${country}`}
                                         onClick={() => handleOpen(user.id, country)}
                                         style={{ cursor: "pointer" }}
-                                        >{country}</span>
+                                    >
+                                        {country}
+                                    </span>
                                 ))}
                             </div>
                         </div>
                     </div>
-                    <div className={"changeUsers-infotype"}>
-                        <div className={"changeUsers-infotype-header"}>
+                    <div className={styles.changeUsersInfotype}>
+                        <div className={styles.changeUsersInfotypeHeader}>
                             <span>Информация о подписке</span>
                         </div>
-                        <div className={"changeUsers-infotype-content"}>
-                            <span style = {{color: "gray"}}>Подписка</span>
+                        <div className={styles.changeUsersInfotypeContent}>
+                            <span style={{ color: "gray" }}>Подписка</span>
                             <span>{type}</span>
-                            {
-                                type === "PREMIUM" ? (
-                                    <div style = {{color: "gray"}}>
-                                        <span>365 дней</span>
-                                        <span>Безлимит</span>
-                                        <span>2999 ₽</span>
-                                    </div>
-                                ) :
-                                type === "BASIC" ? (
-                                    <div style = {{color: "gray"}}>
-                                        <span>30 дней</span>
-                                        <span>300 ГБ</span>
-                                        <span>299 ₽</span>
-                                    </div>
-                                ) :
-                                type === "TRIAL" ? (
-                                    <div style = {{color: "gray"}}>
-                                        <span>7 дней</span>
-                                        <span>50 ГБ</span>
-                                        <span>Бесплатно</span>
-                                    </div>
-                                ) : (
-                                    <div style = {{color: "gray"}}>
-                                        <span>-</span>
-                                        <span>-</span>
-                                        <span>-</span>
-                                    </div>
-                                )
-                            }
+                            {type === "VIP" ? (
+                                <div style={{ color: "gray" }}>
+                                    <span>365 дней</span>
+                                    <span>Безлимит</span>
+                                    <span>2999 ₽</span>
+                                </div>
+                            ) : type === "BASIC" ? (
+                                <div style={{ color: "gray" }}>
+                                    <span>30 дней</span>
+                                    <span>300 ГБ</span>
+                                    <span>299 ₽</span>
+                                </div>
+                            ) : type === "TRIAL" ? (
+                                <div style={{ color: "gray" }}>
+                                    <span>7 дней</span>
+                                    <span>50 ГБ</span>
+                                    <span>Бесплатно</span>
+                                </div>
+                            ) : (
+                                <div style={{ color: "gray" }}>
+                                    <span>-</span>
+                                    <span>-</span>
+                                    <span>-</span>
+                                </div>
+                            )}
                         </div>
                     </div>
-                    <div className={"changeUsers-important"}>
-                        <div className={"changeUsers-important-header"}>
-                            <TriangleAlert size={20}/>
+                    <div className={styles.changeUsersImportant}>
+                        <div className={styles.changeUsersImportantHeader}>
+                            <TriangleAlert size={20} />
                             <span>Важно</span>
                         </div>
-                        <ul className={"changeUsers-important-content"}>
+                        <ul className={styles.changeUsersImportantContent}>
                             <li>Изменения вступят в силу немедленно</li>
                             <li>Пользователь получит уведомление</li>
-                            <li> При смене типа подписки, конфигурации обновятся</li>
+                            <li>
+                                При смене типа подписки, конфигурации обновятся
+                            </li>
                         </ul>
                     </div>
                 </div>
             </div>
-            <div className={"changeUsers-create"}>
-                <button className={"button-create"}><Save size={20}/>Сохранить изменения</button>
-                <button className={"button-cancel"}>Отмена</button>
+            <div className={styles.changeUsersCreate}>
+                <button form={"change-user-form"} className={"buttonCreate"}>
+                    <Save size={20} />
+                    Сохранить изменения
+                </button>
+                <button className={"buttonCancel"}>Отмена</button>
             </div>
 
-            {selectedUser && (() => {
-                return ReactDOM.createPortal(
+            {selectedUser &&
+                ReactDOM.createPortal(
                     <Countries
                         userId={selectedUser.id}
                         specificCountry={selectedUser.country}
@@ -276,9 +379,8 @@ export default function ChangeUsers() {
                         countries={user.countries}
                         onClose={handleClose}
                     />,
-                    document.body
-                );
-            })()}
+                    document.body,
+                )}
         </div>
-    )
+    );
 }

@@ -1,23 +1,23 @@
-.changeUsers {
+.addusers {
     display: flex;
     flex-direction: column;
     padding: 30px;
     font-family: "Nunito-sans", sans-serif;
 }
 
-.changeUsers-header {
+.addusersHeader {
     display: flex;
     flex-direction: row;
     justify-content: space-between;
     padding: 0 20px 20px;
 }
 
-.changeUsers-header-title {
+.addusersHeaderTitle {
     display: flex;
     flex-direction: column;
 }
 
-.changeUsers-header-back {
+.addusersHeaderBack {
     display: flex;
     align-items: center;
     gap: 10px;
@@ -25,21 +25,21 @@
     text-decoration: none;
 }
 
-.changeUsers-content {
+.addusersContent {
     display: flex;
     flex-direction: row;
     gap: 20px;
     padding: 15px;
 }
 
-.changeUsers-person-role-type {
+.addusersPersonRoleType {
     display: flex;
     flex-direction: column;
     gap: 20px;
     flex: 2;
 }
 
-.changeUsers-person {
+.addusersPerson {
     display: flex;
     flex-direction: column;
     border: 1px solid #e4e4e4;
@@ -49,49 +49,50 @@
     font-size: 13px;
 }
 
-.changeUsers-person-header {
+.addusersPersonHeader {
     font-size: 20px;
 }
 
-.changeUsers-person-name-surname {
+.addusersPersonNameSurname {
     display: flex;
     flex-direction: row;
     width: 100%;
     gap: 15px;
 }
 
-.changeUsers-person-name {
+.addusersPersonName {
     display: flex;
     flex-direction: column;
     gap: 10px;
     flex: 1;
 }
 
-.changeUsers-person-surname {
+.addusersPersonSurname {
     display: flex;
     flex-direction: column;
-    gap: 10px ;
+    gap: 10px;
     flex: 1;
 }
 
-.changeUsers-person-input {
+.addusersPersonInput {
     font-size: 15px;
     padding: 10px;
     border: 1px solid #e4e4e4;
     border-radius: 10px;
 }
 
-.changeUsers-person-input:focus {
+.addusersPersonInput:focus {
     outline: none;
 }
 
-.changeUsers-person-telegram {
+.addusersPersonTelegram {
     display: flex;
     flex-direction: column;
     gap: 10px;
+    padding-top: 15px;
 }
 
-.changeUsers-search {
+.addusersSearch {
     display: flex;
     flex-direction: column;
     border: 1px solid #e4e4e4;
@@ -100,24 +101,24 @@
     gap: 20px;
 }
 
-.changeUsers-search-header {
+.addusersSearchHeader {
     font-size: 20px;
 }
 
-.changeUsers-search-details {
+.addusersSearchDetails {
     display: flex;
     flex-direction: column;
     gap: 5px;
 }
 
-.changeUsers-search-infotype-important {
+.addusersSearchInfo {
     display: flex;
     flex-direction: column;
     gap: 20px;
     flex: 1;
 }
 
-.changeUsers-role {
+.addusersRole {
     display: flex;
     flex-direction: column;
     gap: 30px;
@@ -126,17 +127,17 @@
     padding: 25px;
 }
 
-.changeUsers-role-header {
+.addusersRoleHeader {
     font-size: 20px;
 }
 
-.changeUsers-role-content {
+.addusersRoleContent {
     display: flex;
     flex-direction: row;
     gap: 10px;
 }
 
-.changeUsers-role-specific {
+.addusersRoleSpecific {
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -153,40 +154,18 @@
     border: 1px solid var(--primary) !important;
 }
 
-.changeUsers-infotype {
+.addusersInfo {
     display: flex;
     flex-direction: column;
-    gap: 30px;
-    border: 1px solid #e4e4e4;
-    border-radius: 10px;
-    padding: 25px;
-}
-
-.changeUsers-infotype-content {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-}
-
-.changeUsers-infotype-content div {
-    display: flex;
-    flex-direction: column;
-    gap: 5px;
-    font-size: 13px;
-}
-
-.changeUsers-important {
-    display: flex;
-    flex-direction: column;
-    background-color: #FEFCE8;
-    border: 1px solid #FDE047;
-    color: #A16207;
+    background-color: #f0f5ff;
+    border: 1px solid var(--primary);
+    color: var(--primary);
     border-radius: 10px;
     padding: 25px;
     gap: 10px;
 }
 
-.changeUsers-important-header {
+.addusersInfoHeader {
     display: flex;
     flex-direction: row;
     gap: 5px;
@@ -194,16 +173,15 @@
     font-weight: bold;
 }
 
-
-.changeUsers-important-content {
+.addusersInfoContent {
     padding-left: 20px;
 }
 
-.changeUsers-important-content li {
+.addusersInfoContent li {
     padding-top: 10px;
 }
 
-.changeUsers-type {
+.addusersType {
     display: flex;
     flex-direction: column;
     gap: 20px;
@@ -212,17 +190,17 @@
     padding: 25px;
 }
 
-.changeUsers-type-header {
+.addusersTypeHeader {
     font-size: 20px;
 }
 
-.changeUsers-type-content {
+.addusersTypeContent {
     display: flex;
     flex-direction: row;
     gap: 10px;
 }
 
-.changeUsers-type-specific {
+.addusersTypeSpecific {
     display: flex;
     flex-direction: column;
     gap: 10px;
@@ -234,49 +212,12 @@
     padding: 15px;
 }
 
-.changeUsers-type-specific-info {
+.addusersTypeSpecificInfo {
     display: flex;
     flex-direction: column;
     color: gray;
     font-size: 13px;
     align-items: center;
-}
-
-.changeUsers-date {
-    display: flex;
-    flex-direction: column;
-    gap: 20px;
-}
-
-.changeUsers-date-header {
-    font-size: 20px;
-}
-
-.changeUsers-date-input {
-    border: 1px solid #e4e4e4;
-    border-radius: 10px;
-    padding: 10px;
-    font-size: 15px;
-    outline: none
-}
-
-.changeUsers-date-fast {
-    display: flex;
-    flex-direction: column;
-    gap: 5px;
-}
-
-.changeUsers-date-fast-change {
-    display: flex;
-    flex-direction: row;
-    gap: 10px;
-}
-
-.changeUsers-date-fast-change-detail {
-    font-size: 13px;
-    padding: 5px;
-    border-radius: 10px;
-    cursor: pointer;
 }
 
 .price {
@@ -287,14 +228,34 @@
     font-size: 13px;
 }
 
-.changeUsers-create {
+.none {
+    background-color: #f1f3f5;
+    color: #6c757d;
+}
+
+.trial {
+    background-color: #ffe4c4;
+    color: #c05621;
+}
+
+.basic {
+    background-color: #eaf2ff;
+    color: #4d8aff;
+}
+
+.vip {
+    background-color: #f5f0ff;
+    color: #8a63d2;
+}
+
+.addusersCreate {
     display: flex;
     flex-direction: row;
     gap: 15px;
     padding: 15px;
 }
 
-.changeUsers-create button {
+.addusersCreate button {
     display: flex;
     flex-direction: row;
     gap: 5px;
@@ -306,14 +267,6 @@
     font-size: 16px;
 }
 
-.button-create {
-    background-color: var(--primary);
-}
-
-.button-cancel {
-    background-color: #6c757d;
-}
-
 .userRole {
     padding: 5px;
     max-width: max-content;
@@ -323,34 +276,13 @@
     font-size: 14px;
 }
 
-.none {
-    background-color: #f1f3f5;
-    color: #6c757d;
-}
-
-.admin {
-    background-color: #FFE4C4;
-    color: #C05621;
-}
-
-.basic {
-    background-color: #eaf2ff;
-    color: #4d8aff;
-}
 
 .special {
     background-color: #f5f0ff;
     color: #8a63d2;
 }
 
-.dynamic {
-    background-color: #e5f8ed;
-    color: #34c759
+.admin {
+    background-color: #ffe4c4;
+    color: #c05621;
 }
-
-
-.expired {
-    background-color: #ffeeee;
-    color: #ff4d4d;
-}
-

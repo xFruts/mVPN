@@ -1,48 +1,82 @@
-export default function SettingMain() {
+import type { UseFormReturn } from 'react-hook-form';
+import { z } from 'zod';
+import { schema } from "./SettingVpnServers.tsx";
+import { BANDWIDTH, LOGGING } from "@/constant.ts";
+import styles from "@pages/vpnServers/components/SettingsVpnServers/SettingVpnServers.module.css";
+
+export type FormData = z.infer<typeof schema>;
+
+interface BasicInfoProps {
+    form: UseFormReturn<FormData>;
+}
+
+export default function SettingMain({ form }: BasicInfoProps) {
+    const { register, formState: { errors } } = form;
     return (
         <>
-            <div className="setting-body">
-                <div className={"setting-body-input"}>
+            <div className={styles.settingBody}>
+                <div className={styles.settingBodyInput}>
                     <span>Максимум пользователей</span>
                     <input
                         type={"number"}
-                        className="editServer-input"
-                        value={"400"}
-                        name={"maxUsers"}/>
+                        className={styles.editServerInput}
+                        {...register('maxUsers')}
+                    />
+                    {errors.maxUsers && (
+                        <span style={{ color: "red" }}>
+                                            {errors.maxUsers.message}
+                                        </span>
+                    )}
                 </div>
-                <div className={"setting-body-input"}>
+                <div className={styles.settingBodyInput}>
                     <span>Пропускная способность</span>
-                    <div className="editServer-input">
-                        <select>
-                            <option value={"100 Mbps"}>100 Mbps</option>
-                            <option value={"500 Mbps"}>500 Mbps</option>
-                            <option value={"1 Gbps"}>1 Gbps</option>
-                            <option value={"10 Gbps"}>10 Gbps</option>
+                    <div className={styles.editServerInput}>
+                        <select
+                            {...register('bandwidth')}
+                        >
+                            {Object.entries(BANDWIDTH).map(([, value]) => (
+                                <option value={value}>{value}</option>
+                            ))}
                         </select>
+                        {errors.bandwidth && (
+                            <span style={{ color: "red" }}>
+                                            {errors.bandwidth.message}
+                                        </span>
+                        )}
                     </div>
                 </div>
-                <div className={"setting-body-input"}>
+                <div className={styles.settingBodyInput}>
                     <span>Уровень логирования</span>
-                    <div className="editServer-input">
-                        <select>
-                            <option value={"Debug"}>Debug</option>
-                            <option value={"Info"}>Info</option>
-                            <option value={"Warning"}>Warning</option>
-                            <option value={"Error"}>Error</option>
+                    <div className={styles.editServerInput}>
+                        <select
+                            {...register('logging')}
+                        >
+                            {Object.entries(LOGGING).map(([, value]) => (
+                                <option value={value}>{value}</option>
+                            ))}
                         </select>
+                        {errors.logging && (
+                            <span style={{ color: "red" }}>
+                                            {errors.logging.message}
+                                        </span>
+                        )}
                     </div>
                 </div>
-                <div className={"setting-body-input"}></div>
+                <div className={styles.settingBodyInput}></div>
             </div>
-            <div className={"setting-checkbox"}>
-                <div className={"setting-checkbox-item"}>
-                    <input type={"checkbox"}/>
-                    <div className={"setting-checkbox-text"}>
-                        <span style={{color: "black"}}>Автоматическая перезагрузка</span>
-                        <span>Перезагружать сервер при критических ошибках</span>
+            <div className={styles.settingCheckbox}>
+                <div className={styles.settingCheckboxItem}>
+                    <input type={"checkbox"} {...register('automaticReboot')}/>
+                    <div className={styles.settingCheckboxText}>
+                        <span style={{ color: "black" }}>
+                            Автоматическая перезагрузка
+                        </span>
+                        <span>
+                            Перезагружать сервер при критических ошибках
+                        </span>
                     </div>
                 </div>
             </div>
         </>
-    )
+    );
 }

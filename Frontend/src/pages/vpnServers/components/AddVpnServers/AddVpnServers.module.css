@@ -5,19 +5,19 @@
     font-family: "Nunito-sans", sans-serif;
 }
 
-.addServer-header {
+.addServerHeader {
     display: flex;
     flex-direction: row;
     justify-content: space-between;
     padding: 0 20px 20px;
 }
 
-.addServer-header-title {
+.addServerHeaderTitle {
     display: flex;
     flex-direction: column;
 }
 
-.addServer-header-back {
+.addServerHeaderBack {
     display: flex;
     align-items: center;
     gap: 10px;
@@ -25,14 +25,14 @@
     text-decoration: none;
 }
 
-.addServer-content {
+.addServerContent {
     display: flex;
     flex-direction: column;
     gap: 20px;
     padding: 15px;
 }
 
-.addServer-info {
+.addServerInfo {
     display: flex;
     flex-direction: column;
     border: 1px solid #e4e4e4;
@@ -42,11 +42,11 @@
     font-size: 13px;
 }
 
-.addServer-info-header {
+.addServerInfoHeader {
     font-size: 20px;
 }
 
-.addServer-info-body {
+.addServerInfoBody {
     display: flex;
     flex-wrap: wrap;
     flex-direction: row;
@@ -54,14 +54,14 @@
     font-size: 15px;
 }
 
-.addServer-info-body-item {
+.addServerInfoBodyItem {
     display: flex;
     flex-direction: column;
     flex: 1 0 25%;
     gap: 10px;
 }
 
-.addServer-input {
+.addServerInput {
     display: flex;
     flex-direction: row;
     gap: 10px;
@@ -71,33 +71,33 @@
     border-radius: 10px;
     justify-content: space-between;
     align-items: center;
- }
+}
 
-.addServer-input input {
+.addServerInput input {
     font-size: 15px;
     border: none;
     width: 100%;
 }
 
-.addServer-input input:focus {
-     outline: none;
- }
+.addServerInput input:focus {
+    outline: none;
+}
 
-.addServer-input:focus {
-     outline: none;
- }
+.addServerInput:focus {
+    outline: none;
+}
 
-.addServer-input select {
+.addServerInput select {
     font-size: 15px;
     border: none;
     width: 100%;
 }
 
-.addServer-input select:focus {
-     outline: none;
- }
+.addServerInput select:focus {
+    outline: none;
+}
 
-.addServer-access {
+.addServerAccess {
     display: flex;
     flex-direction: row;
     border: 1px solid #e4e4e4;
@@ -105,9 +105,10 @@
     padding: 15px;
     gap: 30px;
     font-size: 13px;
+    margin-top: 15px;
 }
 
-.addServer-access-content {
+.addServerAccessContent {
     display: flex;
     flex-direction: column;
     flex: 1 0 33.3%;
@@ -115,11 +116,11 @@
     padding: 15px;
 }
 
-.addServer-access-header {
+.addServerAccessHeader {
     font-size: 20px;
 }
 
-.addServer-access-body {
+.addServerAccessBody {
     display: flex;
     flex-direction: row;
     width: 100%;
@@ -127,20 +128,20 @@
     font-size: 15px;
 }
 
-.addServer-access-body-item {
+.addServerAccessBodyItem {
     display: flex;
     flex-direction: column;
     flex: 1 0 33.3%;
     gap: 10px;
 }
 
-.addServer-access-safety {
+.addServerAccessSafety {
     display: flex;
     flex-direction: column;
     flex: 1 0 33.3%;
-    background-color: #FEFCE8;
-    border: 1px solid #FDE047;
-    color: #A16207;
+    background-color: #fefce8;
+    border: 1px solid #fde047;
+    color: #a16207;
     border-radius: 10px;
     padding: 25px;
     gap: 10px;
@@ -148,21 +149,21 @@
     margin: 15px;
 }
 
-.addServer-access-safety div {
+.addServerAccessSafety div {
     display: flex;
     flex-direction: row;
     gap: 5px;
     align-items: center;
 }
 
-.addServer-button-recommendations {
+.addServerButtonRecommendations {
     display: flex;
     flex-direction: row;
     justify-content: space-between;
     padding: 10px;
 }
 
-.addServer-recommendations {
+.addServerRecommendations {
     display: flex;
     flex-direction: column;
     background-color: #f0f5ff;
@@ -174,7 +175,7 @@
     gap: 10px;
 }
 
-.addServer-recommendations-header {
+.addServerRecommendationsHeader {
     display: flex;
     flex-direction: row;
     gap: 5px;
@@ -182,16 +183,15 @@
     font-weight: bold;
 }
 
-
-.addServer-recommendations-content {
+.addServerRecommendationsContent {
     padding-left: 20px;
 }
 
-.addServer-recommendations-content li {
+.addServerRecommendationsContent li {
     padding-top: 10px;
 }
 
-.addServer-button {
+.addServerButton {
     display: flex;
     flex-direction: row;
     gap: 15px;
@@ -199,7 +199,7 @@
     align-items: start;
 }
 
-.addServer-button button {
+.addServerButton button {
     display: flex;
     flex-direction: row;
     gap: 5px;
@@ -209,4 +209,5 @@
     border-radius: 10px;
     color: white;
     font-size: 16px;
+    height: 40px;
 }

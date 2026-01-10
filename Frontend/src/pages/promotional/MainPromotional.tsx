@@ -1,7 +1,3 @@
-export default function MainPromotional(){
-    return(
-        <>
-            Промокоды
-        </>
-    )
+export default function MainPromotional() {
+    return <>Промокоды</>;
 }

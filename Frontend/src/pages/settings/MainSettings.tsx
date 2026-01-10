@@ -1,7 +1,3 @@
 export default function MainSettings() {
-    return(
-        <>
-            Настройки
-        </>
-    )
+    return <>Настройки</>;
 }

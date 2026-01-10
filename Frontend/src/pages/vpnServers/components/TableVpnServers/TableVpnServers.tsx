@@ -1,77 +1,42 @@
-import { useState, useRef, useEffect } from "react";
-import {MoveVertical, EllipsisVertical, Settings, Trash2, RefreshCw, Wrench, ClipboardList} from 'lucide-react';
-import {ArrowUp, ArrowDown} from 'react-feather'
-import './TableVpnServers.css'
-import {NavLink} from "react-router";
+import { useRef, useEffect } from "react";
+import {
+    MoveVertical,
+    EllipsisVertical,
+    Settings,
+    Trash2,
+    RefreshCw,
+    Wrench,
+    ClipboardList,
+} from "lucide-react";
+import { ArrowUp, ArrowDown } from "react-feather";
+import styles from "./TableVpnServers.module.css";
+import { NavLink } from "react-router";
+import useServersStore from "../../../../store/useServersStore";
 
-const Servers = [
-    {
-        id: 1,
-        name: "server1",
-        location: "Finland",
-        ip: "94.183.190.23",
-        status: "ONLINE",
-        load: 67,
-        usage: 20,
-        maxUsers: 50,
-        maxTraffic: 300,
-        ping: 3,
-        uptime: 66.67
-    },
-    {
-        id: 2,
-        name: "server2",
-        location: "Russia",
-        ip: "94.183.190.23",
-        status: "OFFLINE",
-        load: 50,
-        usage: null,
-        maxUsers: 100,
-        maxTraffic: 1024,
-        ping: 17,
-        uptime: 50.00
-    },
-    {
-        id: 3,
-        name: "server3",
-        location: "USA",
-        ip: "94.183.190.23",
-        status: "MAINTENANCE",
-        load: 90,
-        usage: 100,
-        maxUsers: 150,
-        maxTraffic: 1024,
-        ping: 57,
-        uptime: 99.90
-    },
-    {
-        id: 4,
-        name: "server4",
-        location: "Germany",
-        ip: "94.183.190.23",
-        status: "ONLINE",
-        load: 30,
-        usage: 10,
-        maxUsers: 25,
-        maxTraffic: 500,
-        ping: 103,
-        uptime: 90.00
-    }
-]
-
-const titles = ["Сервер", "Статус", "Загрузка", "Пользователи", "Пинг", "Uptime", "Пропускная способность"]
+const titles = [
+    "Сервер",
+    "Статус",
+    "Загрузка",
+    "Пользователи",
+    "Пинг",
+    "Uptime",
+    "Пропускная способность",
+];
 
 export default function TableVpnServers() {
-    const [isOpen, setIsOpen] = useState(-1);
-    const [sort, setSort] = useState<string[]>(["", ""]);
+    const { servers, sort, isOpen, setIsOpen, setSort } = useServersStore();
     const menuRef = useRef<HTMLDivElement>(null);
 
-
     const handleSort = (title: string) => {
-        sort[1] === "" ? setSort([title, "down"]) :
-            sort[1] === "down" ? setSort([title, "up"]) :
-                setSort(["", ""])
-    }
+        let newDirection: "up" | "down" | "" = "";
+        if (sort.field === title) {
+            if (sort.direction === "down") newDirection = "up";
+            else if (sort.direction === "up") newDirection = "";
+        } else {
+            newDirection = "down";
+        }
+        setSort(title, newDirection);
+    };
 
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
@@ -81,82 +46,114 @@ export default function TableVpnServers() {
             }
         };
         document.addEventListener("mousedown", handleClickOutside);
-        return () => document.removeEventListener("mousedown", handleClickOutside);
-    }, []);
+        return () =>
+            document.removeEventListener("mousedown", handleClickOutside);
+    }, [setIsOpen]);
 
     return (
-        <div className="vpnservers-table">
-            <table className="table-servers">
+        <div className={styles.vpnserversTable}>
+            <table className={styles.tableServers}>
                 <tbody>
                 <tr>
                     {titles.map((title) => (
                         <td key={title}>
-                            <div className={`table-title ${title}`}>
+                            <div className={`${styles.tableTitle} ${styles[title]}`}>
                                 <span>{title}</span>
-                                {
-                                    title !== "Сервер" ? (
-                                        <div onClick={() => handleSort(title)}>
-                                            {sort[0] === title ?
-                                                sort[1] === "down" ? (<ArrowDown size={20}/>) :
-                                                    sort[1] === "up" ? (<ArrowUp size={20}/>) :
-                                                        <MoveVertical size={20}/> :
-                                                <MoveVertical size={20}/>}
-                                        </div>
-                                    ) : null
-                                }
+                                {title !== "Сервер" ? (
+                                    <div onClick={() => handleSort(title)}>
+                                        {sort.field === title ? (
+                                            sort.direction === "down" ? (
+                                                <ArrowDown size={20} />
+                                            ) : sort.direction === "up" ? (
+                                                <ArrowUp size={20} />
+                                            ) : (
+                                                <MoveVertical size={20} />
+                                            )
+                                        ) : (
+                                            <MoveVertical size={20} />
+                                        )}
+                                    </div>
+                                ) : null}
                             </div>
                         </td>
                     ))}
                 </tr>
 
-                {Servers.map((server) => (
+                {servers.map((server) => (
                     <tr key={server.id}>
                         <td>
-                            <div className="server-name">
-                                <span className="name">{server.name}</span>
-                                <span className="location">{server.location}</span>
-                                <span className="ip">{server.ip}</span>
+                            <div className={styles.serverName}>
+                                <span className={styles.name}>{server.name}</span>
+                                <span className={styles.location}>{server.location}</span>
+                                <span className={styles.ip}>{server.ip}</span>
                             </div>
                         </td>
                         <td>
-                            <div className={`status ${server.status === "ONLINE" ? "online" : server.status === "OFFLINE" ? "offline" : "maintenance"}`}>
+                            <div
+                                className={`${styles.status} ${
+                                    server.status === "ONLINE"
+                                        ? styles.online
+                                        : server.status === "OFFLINE"
+                                            ? styles.offline
+                                            : styles.maintenance
+                                }`}
+                            >
                                 {server.status}
                             </div>
                         </td>
                         <td>
-                            <div className="progress-container">
-                                <div className="progress-bar">
-                                    <div className={`progress-bar-fill ${server.load < 50 ? `backgroundcolor-green` : server.load < 80 ? `backgroundcolor-orange` : `backgroundcolor-red`}`} style={{width: `${server.load}%`}}></div>
+                            <div className={styles.progressContainer}>
+                                <div className={styles.progressBar}>
+                                    <div
+                                        className={`${styles.progressBarFill} ${
+                                            server.load < 50
+                                                ? styles.backgroundcolorGreen
+                                                : server.load < 80
+                                                    ? styles.backgroundcolorOrange
+                                                    : styles.backgroundcolorRed
+                                        }`}
+                                        style={{ width: `${server.load}%` }}
+                                    ></div>
                                 </div>
-                                <span className="progress-label">{server.load}%</span>
+                                <span className={styles.progressLabel}>
+                                        {server.load}%
+                                    </span>
                             </div>
                         </td>
                         <td>
-                            <div className={"users"}>
-                                <span>{server.usage === null ? `0` : `${server.usage}`} / {server.maxUsers}</span>
+                            <div className={styles.users}>
+                                    <span>
+                                        {server.usage === null ? `0` : `${server.usage}`} / {server.maxUsers}
+                                    </span>
                             </div>
                         </td>
-
                         <td>
-                            <div className={`ping ${server.ping < 50 ? `color-green` : server.ping < 100 ? `color-orange` : `color-red`}`}>
+                            <div
+                                className={`${styles.ping} ${
+                                    server.ping < 50
+                                        ? styles.colorGreen
+                                        : server.ping < 100
+                                            ? styles.colorOrange
+                                            : styles.colorRed
+                                }`}
+                            >
                                 <span>{server.ping}ms</span>
                             </div>
                         </td>
                         <td>
-                            <div className="uptime">
+                            <div className={styles.uptime}>
                                 <span>{server.uptime}%</span>
                             </div>
                         </td>
                         <td>
-                            <div className={"maxtraffic-dot"}>
-                                <span className={"maxtraffic"}>
-                                    {server.maxTraffic < 1024
-                                        ? `${server.maxTraffic} Mbps`
-                                        : `${(server.maxTraffic / 1024).toFixed(0)} Gbps`
-                                    }
-                                </span>
+                            <div className={styles.maxtrafficDot}>
+                                    <span className={styles.maxtraffic}>
+                                        {server.maxTraffic < 1024
+                                            ? `${server.maxTraffic} Mbps`
+                                            : `${(server.maxTraffic / 1024).toFixed(0)} Gbps`}
+                                    </span>
                                 <EllipsisVertical
-                                    className="ellipsis"
+                                    className={styles.ellipsis}
                                     size={20}
                                     onClick={
                                         isOpen === server.id
@@ -167,25 +164,39 @@ export default function TableVpnServers() {
                             </div>
 
                             {isOpen === server.id && (
-                                <div className="vpnservers-modal" ref={menuRef}>
-                                    <div className="vpnservers-modal-name">
-                                        <span className="name">{server.name}</span>
-                                        <span className="location">{server.location}</span>
-                                        <span className="ip">{server.ip}</span>
+                                <div className={styles.vpnserversModal} ref={menuRef}>
+                                    <div className={styles.vpnserversModalName}>
+                                        <span className={styles.name}>{server.name}</span>
+                                        <span className={styles.location}>{server.location}</span>
+                                        <span className={styles.ip}>{server.ip}</span>
                                     </div>
-                                    <div className="vpnservers-modal-change">
-                                        <div className={"vpnservers-modal-change-main"}>
-                                            <NavLink to={"/servers/edit"} className="nav-link">
-                                                <div><Settings size={17}/>Настройки сервера</div>
+                                    <div className={styles.vpnserversModalChange}>
+                                        <div className={styles.vpnserversModalChangeMain}>
+                                            <NavLink to={"/servers/edit"} className={"navLink"}>
+                                                <div>
+                                                    <Settings size={17} />
+                                                    Настройки сервера
+                                                </div>
                                             </NavLink>
-                                            <div><RefreshCw size={17}/>Перезагрузить</div>
-                                            <div><Wrench size={17}/>Режим обслуживания</div>
-                                            <NavLink to={"/servers/log"} className="nav-link">
-                                                <div><ClipboardList size={17}/>Просмотр логов</div>
+                                            <div>
+                                                <RefreshCw size={17} />
+                                                Перезагрузить
+                                            </div>
+                                            <div>
+                                                <Wrench size={17} />
+                                                Режим обслуживания
+                                            </div>
+                                            <NavLink to={"/servers/log"} className={"navLink"}>
+                                                <div>
+                                                    <ClipboardList size={17} />
+                                                    Просмотр логов
+                                                </div>
                                             </NavLink>
-
                                         </div>
-                                        <div className={"delete"}><Trash2 size={17}/>Удалить сервер</div>
+                                        <div className={styles.delete}>
+                                            <Trash2 size={17} />
+                                            Удалить сервер
+                                        </div>
                                     </div>
                                 </div>
                             )}
