@@ -1,7 +1,7 @@
 package ru.maxow.mvpn.user.dto;
 
 
-import ru.maxow.mvpn.subscription.SubscriptionResponseDto;
+import ru.maxow.mvpn.subscription.dto.SubscriptionResponseDto;
 
 /**
  * DTO for user response.

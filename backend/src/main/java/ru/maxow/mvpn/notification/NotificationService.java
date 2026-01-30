@@ -1,19 +1,15 @@
 package ru.maxow.mvpn.notification;
 
-import java.time.LocalDate;
-import java.util.List;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
-import org.jetbrains.annotations.NotNull;
 import org.springframework.kafka.core.KafkaTemplate;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import ru.maxow.mvpn.broadcast.BroadcastRequestDto;
 import ru.maxow.mvpn.broadcast.TargetAudience;
-import ru.maxow.mvpn.payment.PaymentSettingsResponseDto;
-import ru.maxow.mvpn.payment.PaymentSettingsService;
+import ru.maxow.mvpn.payment.paymentsettings.dto.PaymentSettingsResponseDto;
+import ru.maxow.mvpn.payment.paymentsettings.PaymentSettingsService;
 import ru.maxow.mvpn.util.exception.NotFoundException;
 
 
@@ -29,13 +25,13 @@ public class NotificationService {
   public static final String BROADCAST_TOPIC_NAME = "broadcast-requests";
 
   PaymentSettingsService paymentSettingsService;
-  KafkaTemplate<String, BroadcastRequestDto> kafkaTemplate;
+  //KafkaTemplate<String, BroadcastRequestDto> kafkaTemplate;
 
   /**
-   * Sends payment reminders to all regular users on the payment date.
+   * Sends payment reminders to all users with role REGULAR on the payment date.
    * Scheduled to run daily at 9 AM.
    */
-  @Scheduled(cron = "0 0 * * * ?")
+  /*@Scheduled(cron = "0 0 * * * ?")
   public void sendPaymentReminders() {
     PaymentSettingsResponseDto settings;
     try {
@@ -53,9 +49,9 @@ public class NotificationService {
       log.info("Sending payment reminder request to Kafka topic: {}", BROADCAST_TOPIC_NAME);
       kafkaTemplate.send(BROADCAST_TOPIC_NAME, request);
     }
-  }
+  }*/ //TODO: Раскомментировать после перенастройки payment settings
 
-  @NotNull
+  /*@NotNull
   private static BroadcastRequestDto getBroadcastPaymentMessage(LocalDate paymentDate, PaymentSettingsResponseDto settings) {
     String messageText = String.format(
         """
@@ -70,6 +66,6 @@ public class NotificationService {
     );
 
     return new BroadcastRequestDto(messageText, TargetAudience.REGULAR, List.of());
-  }
+  }*/
 
 }

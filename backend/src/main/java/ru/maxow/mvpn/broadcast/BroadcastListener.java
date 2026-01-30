@@ -26,12 +26,7 @@ public class BroadcastListener {
   UserService userService;
   TelegramSenderService senderService;
 
-  /**
-   * Listens to the broadcast topic and handles incoming broadcast requests.
-   *
-   * @param broadcastRequestDto the broadcast request data transfer object
-   */
-  @KafkaListener(topics = BroadcastService.BROADCAST_TOPIC_NAME, groupId = "broadcast-group-dev")
+  @KafkaListener(topics = "${app.kafka.topics.broadcast}", groupId = "${app.kafka.groups.broadcast}")
   public void handleBroadcast(BroadcastRequestDto broadcastRequestDto) {
     if (broadcastRequestDto == null
         || broadcastRequestDto.message() == null

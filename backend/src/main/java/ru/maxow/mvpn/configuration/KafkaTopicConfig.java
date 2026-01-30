@@ -19,7 +19,7 @@ public class KafkaTopicConfig {
    */
   @Bean
   public NewTopic broadcastTopic() {
-    return TopicBuilder.name(BroadcastService.BROADCAST_TOPIC_NAME)
+    return TopicBuilder.name("${app.kafka.topics.broadcast}")
         .partitions(1)
         .replicas(1)
         .build();

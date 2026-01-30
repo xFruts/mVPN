@@ -12,13 +12,13 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Mapper(componentModel = "spring")
-public interface TariffPlanMapper {
+public interface TariffMapper {
 
   @Mapping(target = "servers", ignore = true)
-  void updateFromDto(CreateUpdateRequestTariffPlanDto dto, @MappingTarget TariffPlan tariffPlan);
+  void updateFromDto(CreateUpdateRequestTariffPlanDto dto, @MappingTarget Tariff tariff);
 
   @Mapping(target = "serverLocation", source = "servers")
-  TariffPlanResponseDto toResponseDto(TariffPlan tariffPlan);
+  TariffPlanResponseDto toResponseDto(Tariff tariff);
 
   default List<Pair<Long, String>> mapServersToPairs(List<Server> servers) {
     if (servers == null) {

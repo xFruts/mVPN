@@ -1,6 +1,7 @@
 package ru.maxow.mvpn.telegram.adapter;
 
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
@@ -12,6 +13,7 @@ import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
  * It extends TelegramLongPollingBot to receive updates via long polling.
  */
 @Component
+@ConditionalOnProperty(prefix = "bot", name = "enabled", havingValue = "true")
 public class VpnBot extends TelegramLongPollingBot {
 
   private final UpdateDispatcher dispatcher;

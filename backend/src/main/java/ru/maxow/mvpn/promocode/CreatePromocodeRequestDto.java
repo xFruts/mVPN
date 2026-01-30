@@ -1,7 +1,7 @@
 package ru.maxow.mvpn.promocode;
 
 import jakarta.validation.constraints.Min;
-import org.jetbrains.annotations.NotNull;
+import jakarta.validation.constraints.NotNull;
 
 public record CreatePromocodeRequestDto(
     @NotNull

@@ -15,9 +15,9 @@ import java.util.List;
 @RequestMapping("v1/tariffs")
 @RequiredArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
-public class TariffPlanController {
+public class TariffController {
 
-  TariffPlanService tariffPlanService;
+  TariffService tariffPlanService;
 
   @GetMapping
   ResponseEntity<List<TariffPlanResponseDto>> getAllTariffPlans() {

@@ -1,6 +1,5 @@
 package ru.maxow.mvpn.subscription;
 
-import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -11,18 +10,13 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
-import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.experimental.FieldDefaults;
-import ru.maxow.mvpn.tariff.TariffPlan;
 import ru.maxow.mvpn.user.User;
-import ru.maxow.mvpn.vpnconfig.VpnConfig;
 
 @Entity
 @Table(name = "subscriptions")
@@ -37,17 +31,6 @@ public class Subscription {
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "user_id", nullable = false)
   User user;
-
-  @ManyToOne(fetch = FetchType.LAZY)
-  @JoinColumn(name = "tariff_plan_id", nullable = false)
-  TariffPlan tariffPlan;
-
-  @OneToMany(cascade = CascadeType.ALL, fetch = FetchType.LAZY, mappedBy = "subscription")
-  List<VpnConfig> vpnConfigs = new ArrayList<>();
-
-  @Enumerated(EnumType.STRING)
-  @Column(nullable = false)
-  SubscriptionType type;
 
   @Column(nullable = false)
   LocalDateTime startDate;

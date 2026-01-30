@@ -65,13 +65,6 @@ public class UserController {
     return ResponseEntity.status(HttpStatus.CREATED).body(createdUser);
   }
 
-  /**
-   * Updates an existing user.
-   *
-   * @param userId the ID of the user to update
-   * @param dto the updated user data
-   * @return the updated user
-   */
   @PutMapping("/{userId}")
   public ResponseEntity<UserResponseDto> updateUser(
       @PathVariable Long userId, @RequestBody UpdateUserRequestDto dto) {
