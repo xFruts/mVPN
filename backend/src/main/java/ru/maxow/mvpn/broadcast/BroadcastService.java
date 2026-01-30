@@ -2,27 +2,40 @@ package ru.maxow.mvpn.broadcast;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.kafka.core.KafkaTemplate;
+import org.springframework.kafka.support.SendResult;
 import org.springframework.stereotype.Service;
 
-/** Service for sending broadcast requests to a Kafka topic. */
+import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
+
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class BroadcastService {
 
-  public static final String BROADCAST_TOPIC_NAME = "broadcast-requests";
+  @Value("${app.kafka.topics.broadcast}")
+  public String broadcastTopicName;
 
-  private final KafkaTemplate<String, BroadcastRequestDto> kafkaTemplate;
+  private KafkaTemplate<String, BroadcastRequestDto> kafkaTemplate;
 
-  /**
-   * Sends a broadcast request to the Kafka topic.
-   *
-   * @param broadcastRequestDto the broadcast request data transfer object
-   */
   public void sendBroadcast(BroadcastRequestDto broadcastRequestDto) {
-    log.info("Sending broadcast request to topic Kafka: {}", BROADCAST_TOPIC_NAME);
-    kafkaTemplate.send(BROADCAST_TOPIC_NAME, broadcastRequestDto);
+    String key = UUID.randomUUID().toString();
+    log.info("Attempting to send broadcast request to topic: {}, key: {}", broadcastTopicName, key);
+    CompletableFuture<SendResult<String, BroadcastRequestDto>> future =
+        kafkaTemplate.send(broadcastTopicName, key, broadcastRequestDto);
+
+    future.whenComplete((result, ex) -> {
+      if (ex == null) {
+        log.info("Sent broadcast successfully. Topic: {}, Partition: {}, Offset: {}",
+            broadcastTopicName,
+            result.getRecordMetadata().partition(),
+            result.getRecordMetadata().offset());
+      } else {
+        log.error("Failed to send broadcast to topic: {}", broadcastTopicName, ex);
+      }
+      });
   }
 
 }

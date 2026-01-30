@@ -27,7 +27,7 @@ import java.util.Optional;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-@FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
+@FieldDefaults(level = AccessLevel.PRIVATE)
 public class XuiPanelServiceImpl implements XuiPanelService {
   WebClient.Builder webClientBuilder;
   ObjectMapper objectMapper;

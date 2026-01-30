@@ -22,6 +22,7 @@ spring:
       value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
 
 bot:
+  enabled: ${BOT_ENABLED:false}
   token: ${TELEGRAM_BOT_TOKEN}
   username: ${TELEGRAM_BOT_USERNAME}
 
@@ -32,3 +33,10 @@ minio:
     secret: minioadmin
   bucket:
     name: user-configs
+
+app:
+  kafka:
+    topics:
+      broadcast: ${KAFKA_BROADCAST_TOPIC:broadcast-requests}
+    groups:
+      broadcast: ${KAFKA_BROADCAST_GROUP:broadcast-group}

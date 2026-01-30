@@ -12,9 +12,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ru.maxow.mvpn.subscription.SubscriptionRepository;
-import ru.maxow.mvpn.subscription.SubscriptionRequestDto;
 import ru.maxow.mvpn.subscription.SubscriptionService;
-import ru.maxow.mvpn.subscription.SubscriptionType;
 import ru.maxow.mvpn.user.dto.CreateUserRequestDto;
 import ru.maxow.mvpn.user.dto.ListUserDto;
 import ru.maxow.mvpn.user.dto.UpdateUserRequestDto;
@@ -22,9 +20,6 @@ import ru.maxow.mvpn.user.dto.UserResponseDto;
 import ru.maxow.mvpn.util.exception.BadRequestException;
 import ru.maxow.mvpn.util.exception.NotFoundException;
 
-/**
- * Service implementation for managing users.
- */
 @Service
 @Slf4j
 @RequiredArgsConstructor
@@ -57,18 +52,7 @@ public class UserServiceImpl implements UserService {
     userRepository.save(user);
     log.info("User with id: {} created successfully", user.getId());
 
-    createSubscriptionForUser(user, dto.subscriptionType());
-
     return userMapper.toUserResponseDto(user);
-  }
-
-  private void createSubscriptionForUser(User user, SubscriptionType type) {
-    if (type != null) {
-      SubscriptionRequestDto subscriptionRequestDto = new SubscriptionRequestDto(type);
-      subscriptionService.createSubscription(user.getId(), subscriptionRequestDto);
-      log.info("Subscription of type {} created for user with id: {}",
-          type, user.getId());
-    }
   }
 
   @Override
@@ -96,9 +80,6 @@ public class UserServiceImpl implements UserService {
   private void updateUserSubscription(User user, UpdateUserRequestDto dto) {
     subscriptionRepository.findFirstByUserOrderByStartDateDesc(user)
         .ifPresent(subscription -> {
-          if (dto.subscriptionType() != null) {
-            subscription.setType(dto.subscriptionType());
-          }
           if (dto.subscriptionStatus() != null) {
             subscription.setStatus(dto.subscriptionStatus());
           }
@@ -108,7 +89,7 @@ public class UserServiceImpl implements UserService {
           subscriptionRepository.save(subscription);
           log.info("Subscription for user with ID: {} updated successfully", user.getId());
         });
-  }
+  } //TODO: refactor with SubscriptionService
 
   private User findUserById(Long id) {
     return userRepository.findById(id).orElseThrow(() ->

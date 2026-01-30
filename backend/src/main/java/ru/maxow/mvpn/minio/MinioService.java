@@ -17,10 +17,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
-/**
- * Service for handling file operations with MinIO.
- */
-@Slf4j
+/*@Slf4j
 @Service
 @RequiredArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
@@ -47,12 +44,12 @@ public class MinioService {
     }
   }
 
-  /**
+  *
    * Uploads a file to MinIO.
    *
    * @param file the file to upload
    * @return the name of the uploaded object
-   */
+
   public String uploadFile(MultipartFile file) {
     try {
       String objectName = UUID.randomUUID()
@@ -72,12 +69,12 @@ public class MinioService {
       throw new RuntimeException("Could not upload file to MinIO.", e);
     }
   }
-  /**
+  *
    * Downloads a file from MinIO.
    *
    * @param objectName the name of the object to download
    * @return an InputStream of the downloaded file
-   */
+
   public InputStream downloadFile(String objectName) {
     try {
       return minioClient.getObject(
@@ -91,11 +88,11 @@ public class MinioService {
     }
   }
 
-  /**
+  *
    * Deletes a file from MinIO.
    *
    * @param objectName the name of the object to delete
-   */
+
   public void deleteFile(String objectName) {
     try {
       minioClient.removeObject(
@@ -109,4 +106,4 @@ public class MinioService {
       throw new RuntimeException("Could not delete file from MinIO.", e);
     }
   }
-}
+}*/

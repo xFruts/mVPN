@@ -24,7 +24,7 @@ import java.util.Set;
 @Getter
 @Setter
 @FieldDefaults(level = AccessLevel.PRIVATE)
-public class TariffPlan {
+public class Tariff {
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
   Long id;
@@ -41,7 +41,7 @@ public class TariffPlan {
   @ManyToMany(fetch = FetchType.LAZY)
   @JoinTable(
       name = "tariff_plan_servers",
-      joinColumns = @JoinColumn(name = "tariff_plan_id"),
+      joinColumns = @JoinColumn(name = "tariff_id"),
       inverseJoinColumns = @JoinColumn(name = "server_id")
   )
   Set<Server> servers = new HashSet<>();

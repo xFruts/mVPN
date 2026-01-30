@@ -6,13 +6,14 @@ import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import ru.maxow.mvpn.subscription.SubscriptionRequestDto;
 import ru.maxow.mvpn.subscription.SubscriptionService;
-import ru.maxow.mvpn.subscription.SubscriptionType;
+import ru.maxow.mvpn.subscription.dto.CreateUpdateSubscriptionDto;
 import ru.maxow.mvpn.user.UserRepository;
 import ru.maxow.mvpn.user.UserService;
 import ru.maxow.mvpn.util.exception.BadRequestException;
 import ru.maxow.mvpn.util.exception.NotFoundException;
+
+import java.time.LocalDateTime;
 
 @Slf4j
 @Service
@@ -36,12 +37,14 @@ public class PromocodeFacadeImpl implements PromocodeFacade {
     if (userService.hasActiveSubscriptions(userId)) {
       throw new BadRequestException("User has active subscriptions");
     }
-
-    // Validate and use the promocode
-    // This will throw exceptions if the code is invalid or cannot be used
     promocodeService.usePromocode(code);
 
-    SubscriptionRequestDto dto = new SubscriptionRequestDto(SubscriptionType.TRIAL);
+    CreateUpdateSubscriptionDto dto = new CreateUpdateSubscriptionDto(
+        userId,
+        LocalDateTime.now(),
+        LocalDateTime.now().plusMonths(1),
+        "ACTIVE"
+    ); //TODO: Костыль. Убрать хардкод и сделать возможность создание разных промокодов
     subscriptionService.createSubscription(userId, dto);
     log.info("Promocode {} applied successfully for user {}", code, userId);
   }

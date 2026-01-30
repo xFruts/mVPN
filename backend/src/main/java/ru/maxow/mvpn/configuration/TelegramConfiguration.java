@@ -1,5 +1,6 @@
 package ru.maxow.mvpn.configuration;
 
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.telegram.telegrambots.meta.TelegramBotsApi;
@@ -11,6 +12,7 @@ import ru.maxow.mvpn.telegram.adapter.VpnBot;
  * Configuration class for setting up the Telegram Bots API.
  */
 @Configuration
+@ConditionalOnProperty(prefix = "bot", name = "enabled", havingValue = "true")
 public class TelegramConfiguration {
   /**
    * Creates and configures the TelegramBotsApi bean.

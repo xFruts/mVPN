@@ -5,9 +5,6 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
-/**
- * Configuration class for MinIO client.
- */
 @Configuration
 public class MinioConfig {
 
@@ -20,11 +17,6 @@ public class MinioConfig {
   @Value("${minio.access.secret}")
   private String secretKey;
 
-  /**
-   * Creates and configures a MinioClient bean.
-   *
-   * @return the configured MinioClient instance
-   */
   @Bean
   public MinioClient minioClient() {
     return MinioClient.builder()

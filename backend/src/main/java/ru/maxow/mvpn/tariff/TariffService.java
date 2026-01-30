@@ -5,7 +5,7 @@ import ru.maxow.mvpn.tariff.dto.TariffPlanResponseDto;
 
 import java.util.List;
 
-public interface TariffPlanService {
+public interface TariffService {
   TariffPlanResponseDto createTariffPlan(CreateUpdateRequestTariffPlanDto dto);
 
   TariffPlanResponseDto updateTariffPlan(Long id, CreateUpdateRequestTariffPlanDto dto);

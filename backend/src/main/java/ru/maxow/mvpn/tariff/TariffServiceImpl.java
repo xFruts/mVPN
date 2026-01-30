@@ -15,39 +15,39 @@ import java.util.List;
 @Service
 @RequiredArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
-public class TariffPlanServiceImpl implements TariffPlanService {
+public class TariffServiceImpl implements TariffService {
 
-  TariffPlanRepository tariffPlanRepository;
-  TariffPlanMapper tariffPlanMapper;
+  TariffRepository tariffPlanRepository;
+  TariffMapper tariffMapper;
   ServerService serverService;
 
   @Override
   @Transactional
   public TariffPlanResponseDto createTariffPlan(CreateUpdateRequestTariffPlanDto dto) {
-    TariffPlan tariffPlan = new TariffPlan();
-    tariffPlanMapper.updateFromDto(dto, tariffPlan);
+    Tariff tariff = new Tariff();
+    tariffMapper.updateFromDto(dto, tariff);
 
-    tariffPlan.setServers(serverService.getServersById(dto.serverIds()));
-    TariffPlan createdTariffPlan = tariffPlanRepository.save(tariffPlan);
-    return tariffPlanMapper.toResponseDto(createdTariffPlan);
+    tariff.setServers(serverService.getServersById(dto.serverIds()));
+    Tariff createdTariff = tariffPlanRepository.save(tariff);
+    return tariffMapper.toResponseDto(createdTariff);
   }
 
   @Override
   @Transactional
   public TariffPlanResponseDto updateTariffPlan(Long id, CreateUpdateRequestTariffPlanDto dto) {
-    TariffPlan existingTariffPlan = tariffPlanRepository.findById(id)
-        .orElseThrow(() -> new NotFoundException("TariffPlan", id));
+    Tariff existingTariff = tariffPlanRepository.findById(id)
+        .orElseThrow(() -> new NotFoundException("Tariff", id));
 
-    tariffPlanMapper.updateFromDto(dto, existingTariffPlan);
-    TariffPlan updatedTariffPlan = tariffPlanRepository.save(existingTariffPlan);
-    return  tariffPlanMapper.toResponseDto(updatedTariffPlan);
+    tariffMapper.updateFromDto(dto, existingTariff);
+    Tariff updatedTariff = tariffPlanRepository.save(existingTariff);
+    return  tariffMapper.toResponseDto(updatedTariff);
   }
 
   @Override
   @Transactional(readOnly = true)
   public List<TariffPlanResponseDto> getAllTariffPlans() {
     return tariffPlanRepository.findAll().stream()
-        .map(tariffPlanMapper::toResponseDto)
+        .map(tariffMapper::toResponseDto)
         .toList();
   }
 
@@ -55,8 +55,8 @@ public class TariffPlanServiceImpl implements TariffPlanService {
   @Transactional(readOnly = true)
   public TariffPlanResponseDto getTariffPlanById(Long id) {
     return tariffPlanRepository.findById(id)
-        .map(tariffPlanMapper::toResponseDto)
-        .orElseThrow(() -> new NotFoundException("TariffPlan", id));
+        .map(tariffMapper::toResponseDto)
+        .orElseThrow(() -> new NotFoundException("Tariff", id));
   }
 
   @Override
@@ -65,7 +65,7 @@ public class TariffPlanServiceImpl implements TariffPlanService {
     if (tariffPlanRepository.existsById(id)) {
       tariffPlanRepository.deleteById(id);
     } else {
-      throw new NotFoundException("TariffPlan", id);
+      throw new NotFoundException("Tariff", id);
     }
   }
 }
