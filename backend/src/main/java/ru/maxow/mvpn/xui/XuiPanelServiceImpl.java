@@ -83,7 +83,6 @@ public class XuiPanelServiceImpl implements XuiPanelService {
   }
 
   private Mono<String> login(WebClient webClient, String username, String password) {
-    log.info("username: {}, password: {}", username, password);
     return webClient.post()
         .uri("/login")
         .contentType(MediaType.APPLICATION_FORM_URLENCODED)
