@@ -82,3 +82,24 @@ export const SERVER_LOCATION = {
 export const BANDWIDTH = ["100 Mbps", "500 Mbps", "1 Gbps", "10Gbps"] as const
 
 export const LOGGING = ["Debug", "Info", "Warning", "Error"] as const;
+
+export const BANK = ["Сбербанк", " ВТБ", "Тинькофф", "Альфа-Банк", "Райффайзен", "Газпромбанк"] as const;
+
+export const SAMPLES = [
+    {
+        name: "Выберите шаблон...",
+        description: ""
+    },
+    {
+        name: "Maintenance",
+        description: "Внимание! Плановое техническое обслуживание серверов [НАЗВАНИЕ СЕРВЕРА] [ДАТА] с [ВРЕМЯ НАЧАЛА] до [ВРЕМЯ ОКОНЧАНИЯ]. Возможны кратковременные перебои в работе."
+    },
+    {
+        name: "Payment-reminder",
+        description: "Напоминаем, что срок действия вашей подписки истекает [ДАТА]. Пожалуйста, продлите ее, чтобы избежать перерывов в доступе."
+    },
+    {
+        name: "New-server",
+        description: "Отличные новости! Мы добавили новый сервер в [ЛОКАЦИЯ], чтобы сделать ваше подключение еще быстрее и стабильнее."
+    }
+]

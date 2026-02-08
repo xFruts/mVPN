@@ -66,3 +66,7 @@ body {
     background-color: #e5f8ed;
     color: #34c759;
 }
+
+p {
+    margin: 0;
+}
