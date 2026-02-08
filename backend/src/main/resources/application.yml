@@ -20,6 +20,25 @@ spring:
     producer:
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
       value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+  security:
+    oauth2:
+      client:
+        provider:
+            keycloak:
+              issuer-uri: http://localhost:8040/realms/mID-realm
+              jwk-set-uri: http://host.docker.internal:8040/realms/mID-realm/protocol/openid-connect/certs
+              authorization-uri: http://localhost:8040/realms/mID-realm/protocol/openid-connect/auth
+              token-uri: http://host.docker.internal:8040/realms/mID-realm/protocol/openid-connect/token
+              user-info-uri: http://host.docker.internal:8040/realms/mID-realm/protocol/openid-connect/userinfo
+        registration:
+            keycloak:
+                provider: keycloak
+                client-id: ${KEYCLOAK_CLIENT_ID}
+                client-secret: ${KEYCLOAK_CLIENT_SECRET}
+                scope:
+                  - openid
+                  - profile
+                  - email
 
 bot:
   enabled: ${BOT_ENABLED:false}

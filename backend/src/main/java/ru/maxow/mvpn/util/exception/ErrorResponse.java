@@ -6,9 +6,6 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.experimental.FieldDefaults;
 
-/**
- * Represents an error response with a message and a timestamp.
- */
 @Getter
 @Setter
 @AllArgsConstructor
@@ -16,4 +13,6 @@ import lombok.experimental.FieldDefaults;
 public class ErrorResponse {
   String message;
   Long timestamp;
+  String errorCode;
+  String correlationId;
 }
