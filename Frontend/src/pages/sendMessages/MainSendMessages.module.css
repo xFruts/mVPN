@@ -1,0 +1,255 @@
+.send {
+    display: flex;
+    flex-direction: column;
+    padding: 30px;
+}
+
+
+.sendHeader {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    padding-bottom: 50px;
+}
+
+.sendHeaderTitle {
+    font-size: 23px;
+    font-weight: bold;
+}
+
+.sendHeaderSubtitle {
+    color: grey;
+}
+
+.sendChoice {
+    display: flex;
+    gap: 20px;
+    margin-top: 25px;
+    border-bottom: #e4e4e4 solid 1px;
+    color: grey;
+}
+
+.sendChoice div {
+    padding: 5px;
+}
+
+.sendChoice span {
+    font-size: 15px;
+}
+
+.active {
+    border-bottom: var(--primary) solid 1px;
+    color: var(--primary);
+}
+
+.sendContent {
+    display: flex;
+    flex-direction: row;
+}
+
+.sendMany {
+    display: flex;
+    flex-direction: column;
+}
+
+.sendMain {
+    display: flex;
+    flex-direction: column;
+    margin: 10px;
+    gap: 5px;
+    border: #e4e4e4 solid 1px;
+    border-radius: 10px;
+}
+
+.Samples {
+    border: #e4e4e4 solid 1px;
+    border-radius: 10px;
+    max-width: 100%;
+    padding: 10px;
+}
+
+.TextMessages {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin: 20px;
+}
+
+.textarea {
+    resize: none;
+    border: #e4e4e4 solid 1px;
+    border-radius: 10px;
+    font-size: 17px;
+    padding: 10px;
+    height: 15vh;
+}
+
+.sendViewing {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin: 10px;
+    padding: 20px;
+    border: #e4e4e4 solid 1px;
+    border-radius: 10px;
+}
+
+.sendViewingMain {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    border: #e4e4e4 solid 10px;
+    border-radius: 10px;
+    padding: 15px;
+    background-color: #f0f5ff;
+    height: 17vh;
+    justify-content: space-between;
+}
+
+.sendViewingMain span {
+    color: gray;
+    font-size: 12px;
+}
+
+.sendViewingText {
+    background-color: var(--primary);
+    padding: 7px;
+    border-radius: 10px 10px 0 10px;
+    max-width: 100%;
+    max-height: 11vh;
+    overflow-y: auto;
+}
+
+.sendViewingText p {
+    color: white;
+    overflow-wrap: break-word;
+    word-break: break-word;
+}
+
+.sendViewingDate {
+    justify-self: right;
+    align-items: center;
+    display: flex;
+    margin-top: 5px;
+}
+
+.sendViewingText {
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255, 255, 255, 0.3) transparent;
+}
+
+.sendViewingText::-webkit-scrollbar {
+    width: 4px;
+}
+
+.sendViewingText::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.sendViewingText::-webkit-scrollbar-thumb {
+    background-color: rgba(255, 255, 255, 0.3);
+    border-radius: 10px;
+}
+
+.sendViewingText::-webkit-scrollbar-thumb:hover {
+    background-color: rgba(255, 255, 255, 0.5);
+}
+
+.sendRecipients {
+    display: flex;
+    flex-direction: column;
+    border: #e4e4e4 solid 1px;
+    border-radius: 10px;
+    margin: 10px;
+    padding: 20px;
+    gap: 15px;
+}
+
+.Recipients {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+}
+
+.Recipients label {
+    flex: 1;
+}
+
+.roleRecipients {
+    border: #e4e4e4 solid 1px;
+    border-radius: 10px;
+    padding: 10px;
+}
+
+.sendStats {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    padding: 20px;
+    margin: 10px;
+    border: #e4e4e4 solid 1px;
+    border-radius: 10px;
+}
+
+.sendStats div {
+    display: flex;
+    justify-content: space-between;
+}
+
+.sendButton {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+}
+
+.sendButtonItem {
+    display: flex;
+    flex-direction: row;
+}
+
+.sendButtonItem button {
+    display: flex;
+    flex-direction: row;
+    gap: 5px;
+    align-items: center;
+    border: #e4e4e4 solid 1px;
+    border-radius: 10px;
+    padding: 5px 10px;
+    margin: 10px;
+    max-height: 36px;
+}
+
+.sendButton input {
+    border: #e4e4e4 solid 1px;
+    border-radius: 10px;
+    margin: 10px;
+    padding: 10px 15px;
+    max-height: 36px;
+}
+
+.Payment {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    padding: 20px;
+}
+
+.PaymentDetails {
+    display: flex;
+    flex-direction: row;
+    gap: 10px;
+}
+
+.PaymentDetails div {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    flex: 1;
+}
+
+.PaymentDetails input, select {
+    border: #e4e4e4 solid 1px;
+    border-radius: 10px;
+    padding: 10px;
+}

@@ -69,9 +69,9 @@
 }
 
 .active {
-    color: var(--primary);
-    background-color: #f0f5ff;
-    border-radius: 20px;
+    color: var(--primary) !important;
+    background-color: #f0f5ff !important;
+    border-radius: 20px !important;
 }
 
 .sidebarUsers::before {
