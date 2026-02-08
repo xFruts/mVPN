@@ -9,7 +9,6 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-import reactor.core.publisher.Mono;
 
 import java.util.UUID;
 
@@ -22,9 +21,10 @@ public class ConfigController {
   ConfigFacade configFacade;
 
   @GetMapping(value = "/{verificationCode}", produces = MediaType.TEXT_PLAIN_VALUE)
-  public Mono<ResponseEntity<String>> getSubscriptionConfig(@PathVariable UUID verificationCode) {
-    return configFacade.getSubscriptionConfig(verificationCode)
-        .map(ResponseEntity::ok)
-        .defaultIfEmpty(ResponseEntity.notFound().build());
+  public ResponseEntity<String> getConfig(@PathVariable UUID verificationCode) {
+    String config = configFacade.getSubscriptionConfig(verificationCode);
+    return ResponseEntity.ok()
+        .contentType(MediaType.TEXT_PLAIN)
+        .body(config);
   }
 }

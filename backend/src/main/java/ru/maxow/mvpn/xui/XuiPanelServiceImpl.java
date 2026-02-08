@@ -10,11 +10,12 @@ import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.util.MultiValueMap;
 import org.springframework.util.StringUtils;
-import org.springframework.web.reactive.function.BodyInserters;
-import org.springframework.web.reactive.function.client.WebClient;
-import reactor.core.publisher.Mono;
+import org.springframework.web.client.RestClient;
 import ru.maxow.mvpn.server.Server;
 import ru.maxow.mvpn.user.User;
 
@@ -27,84 +28,87 @@ import java.util.Optional;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-@FieldDefaults(level = AccessLevel.PRIVATE)
+@FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class XuiPanelServiceImpl implements XuiPanelService {
-  WebClient.Builder webClientBuilder;
+  RestClient.Builder restClientBuilder;
   ObjectMapper objectMapper;
 
   @Override
-  public Mono<String> getVlessConfig(Server server, User user) {
+  public String getVlessConfig(Server server, User user) {
     String baseUrl = String.format("http://%s:%d", server.getIp(), server.getPort());
     if (StringUtils.hasText(server.getWebBasePath())) {
       baseUrl += "/" + server.getWebBasePath();
     }
     log.info("baseUrl: {}", baseUrl);
-    WebClient webClient = webClientBuilder.baseUrl(baseUrl).build();
+    RestClient restClient = restClientBuilder.baseUrl(baseUrl).build();
 
-    return login(webClient, server.getXuiLogin(), server.getPassword())
-        .flatMap(sessionCookie -> getInbounds(webClient, sessionCookie)
-            .flatMap(inbounds ->
-                findVlessConfigInInbounds(inbounds, user.getFullName(), server.getIp())))
-        .onErrorResume(e -> {
-          if (e.getMessage()
-              .contains("VLESS config for user " + user.getFullName() + " not found")) {
-            log.warn("Config for user {} not found on server {}. Creating a new one.",
-                user.getFullName(), server.getName());
-            return createClient(server, user)
-                .then(getVlessConfig(server, user));
-          }
-          return Mono.error(e);
-        });
+    try {
+      String sessionCookie = login(restClient, server.getXuiLogin(), server.getPassword());
+      XuiInboundsResponse inbounds = getInbounds(restClient, sessionCookie);
+      return findVlessConfigInInbounds(inbounds, user.getFullName(), server.getIp());
+    } catch (RuntimeException e) {
+      if (e.getMessage() != null &&
+          e.getMessage().contains("VLESS config for user " + user.getFullName() + " not found")) {
+        log.warn("Config for user {} not found on server {}. Creating a new one.",
+            user.getFullName(), server.getName());
+        createClient(server, user);
+        return getVlessConfig(server, user);
+      }
+      throw e;
+    }
   }
 
   @Override
-  public Mono<Void> createClient(Server server, User user) {
+  public void createClient(Server server, User user) {
     String baseUrl = String.format("http://%s:%d", server.getIp(), server.getPort());
     if (StringUtils.hasText(server.getWebBasePath())) {
       baseUrl += "/" + server.getWebBasePath();
     }
-    WebClient webClient = webClientBuilder.baseUrl(baseUrl).build();
+    RestClient restClient = restClientBuilder.baseUrl(baseUrl).build();
 
-    return login(webClient, server.getXuiLogin(), server.getPassword())
-        .flatMap(sessionCookie -> getInbounds(webClient, sessionCookie)
-            .flatMap(inbounds -> {
-              Optional<XuiInboundsResponse.Inbound> vlessInboundOpt = inbounds.getObj().stream()
-                  .filter(inbound -> "vless".equalsIgnoreCase(inbound.getProtocol()))
-                  .findFirst();
+    String sessionCookie = login(restClient, server.getXuiLogin(), server.getPassword());
+    XuiInboundsResponse inbounds = getInbounds(restClient, sessionCookie);
 
-              if (vlessInboundOpt.isEmpty()) {
-                return Mono.error(
-                    new RuntimeException("No VLESS inbound found on server " + server.getName()));
-              }
+    Optional<XuiInboundsResponse.Inbound> vlessInboundOpt = inbounds.getObj().stream()
+        .filter(inbound -> "vless".equalsIgnoreCase(inbound.getProtocol()))
+        .findFirst();
 
-              return addClientToInbound(webClient, sessionCookie, vlessInboundOpt.get(), user);
-            })
-        ).then();
+    if (vlessInboundOpt.isEmpty()) {
+      throw new RuntimeException("No VLESS inbound found on server " + server.getName());
+    }
+
+    addClientToInbound(restClient, sessionCookie, vlessInboundOpt.get(), user);
   }
 
-  private Mono<String> login(WebClient webClient, String username, String password) {
-    return webClient.post()
+  private String login(RestClient restClient, String username, String password) {
+    MultiValueMap<String, String> formData = new LinkedMultiValueMap<>();
+    formData.add("username", username);
+    formData.add("password", password);
+
+    ResponseEntity<Void> response = restClient.post()
         .uri("/login")
         .contentType(MediaType.APPLICATION_FORM_URLENCODED)
-        .body(BodyInserters.fromFormData("username", username).with("password", password))
+        .body(formData)
         .retrieve()
-        .toBodilessEntity()
-        .map(response ->
-            Optional.ofNullable(response.getHeaders().getFirst(HttpHeaders.SET_COOKIE)))
-        .flatMap(cookieOpt -> cookieOpt.map(Mono::just)
-            .orElseGet(() -> Mono.error(new RuntimeException("Login failed: No session cookie"))));
+        .toBodilessEntity();
+
+    String cookie = response.getHeaders().getFirst(HttpHeaders.SET_COOKIE);
+    if (cookie == null) {
+      throw new RuntimeException("Login failed: No session cookie");
+    }
+    return cookie;
   }
 
-  private Mono<XuiInboundsResponse> getInbounds(WebClient webClient, String sessionCookie) {
-    return webClient.get()
+  private XuiInboundsResponse getInbounds(RestClient restClient, String sessionCookie) {
+    return restClient.get()
         .uri("/panel/api/inbounds/list")
         .header(HttpHeaders.COOKIE, sessionCookie)
         .retrieve()
-        .bodyToMono(XuiInboundsResponse.class);
+        .body(XuiInboundsResponse.class);
   }
 
-  private Mono<Void> addClientToInbound(
-      WebClient webClient, String sessionCookie, XuiInboundsResponse.Inbound inbound, User user) {
+  private void addClientToInbound(
+      RestClient restClient, String sessionCookie, XuiInboundsResponse.Inbound inbound, User user) {
     try {
       ObjectNode newClientNode = objectMapper.createObjectNode();
       newClientNode.put("id", String.valueOf(user.getXuiId()));
@@ -130,39 +134,40 @@ public class XuiPanelServiceImpl implements XuiPanelService {
 
       String clientSettings = objectMapper.writeValueAsString(clientsWrapper);
 
-      return webClient.post()
+      MultiValueMap<String, String> formData = new LinkedMultiValueMap<>();
+      formData.add("id", String.valueOf(inbound.getId()));
+      formData.add("settings", clientSettings);
+
+      String response = restClient.post()
           .uri("/panel/api/inbounds/addClient")
           .header(HttpHeaders.COOKIE, sessionCookie)
           .contentType(MediaType.APPLICATION_FORM_URLENCODED)
-          .body(BodyInserters.fromFormData("id", String.valueOf(inbound.getId()))
-              .with("settings", clientSettings))
+          .body(formData)
           .retrieve()
-          .bodyToMono(String.class)
-          .doOnSuccess(response ->
-              log.info("Successfully added client {} to inbound {} on server {}. Response: {}",
-                  user.getFullName(), inbound.getId(), "serverName", response))
-          .then();
+          .body(String.class);
+
+      log.info("Successfully added client {} to inbound {} on server {}. Response: {}",
+          user.getFullName(), inbound.getId(), "serverName", response);
     } catch (JsonProcessingException e) {
-      return Mono.error(new RuntimeException("Failed to prepare new client settings", e));
+      throw new RuntimeException("Failed to prepare new client settings", e);
     }
   }
 
-  private Mono<String> findVlessConfigInInbounds(
+  private String findVlessConfigInInbounds(
       XuiInboundsResponse inboundsResponse, String userEmail, String serverIp) {
     if (inboundsResponse == null
         || !inboundsResponse.isSuccess()
         || inboundsResponse.getObj() == null) {
-      return Mono.error(new RuntimeException("Failed to get inbounds or inbounds list is empty"));
+      throw new RuntimeException("Failed to get inbounds or inbounds list is empty");
     }
 
-    return Mono.justOrEmpty(inboundsResponse.getObj().stream()
-            .filter(inbound -> "vless".equalsIgnoreCase(inbound.getProtocol()))
-            .flatMap(inbound -> findClientInInbound(inbound, userEmail).stream())
-            .map(client ->
-                generateVlessLink(client, serverIp, inboundsResponse.getObj().getFirst()))
-            .findFirst())
-        .switchIfEmpty(
-            Mono.error(new RuntimeException("VLESS config for user " + userEmail + " not found")));
+    return inboundsResponse.getObj().stream()
+        .filter(inbound -> "vless".equalsIgnoreCase(inbound.getProtocol()))
+        .flatMap(inbound -> findClientInInbound(inbound, userEmail).stream())
+        .map(client -> generateVlessLink(client, serverIp, inboundsResponse.getObj().getFirst()))
+        .filter(java.util.Objects::nonNull)
+        .findFirst()
+        .orElseThrow(() -> new RuntimeException("VLESS config for user " + userEmail + " not found"));
   }
 
   private Optional<XuiClient> findClientInInbound(
