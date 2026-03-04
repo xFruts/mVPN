@@ -1,0 +1,6 @@
+type: object
+required:
+  - role
+properties:
+  role:
+    $ref: './UserRole.yaml'

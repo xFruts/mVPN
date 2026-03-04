@@ -1,0 +1,50 @@
+# Группа для пути /v1/promocodes (без ID)
+PromocodesCollection:
+  get:
+    summary: Получить список всех промокодов
+    tags: [Promocodes]
+    responses:
+      '200':
+        description: Список промокодов
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                $ref: '../components/schemas/promocodes/PromocodeResponseDto.yaml'
+  post:
+    summary: Создать новый промокод
+    tags: [Promocodes]
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '../components/schemas/promocodes/CreatePromocodeRequestDto.yaml'
+    responses:
+      '201':
+        description: Промокод успешно создан
+        content:
+          application/json:
+            schema:
+              $ref: '../components/schemas/promocodes/PromocodeResponseDto.yaml'
+      '400':
+        $ref: '../components/responses/error/BadRequest.yaml'
+
+# Группа для пути /v1/promocodes/{id}
+PromocodeSingle:
+  delete:
+    summary: Удалить промокод
+    tags: [Promocodes]
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+    responses:
+      '204':
+        description: Промокод удален
+      '404':
+        $ref: '../components/responses/error/NotFound.yaml'

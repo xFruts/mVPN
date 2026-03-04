@@ -1,0 +1,16 @@
+type: object
+required:
+  - message
+  - targetAudience
+properties:
+  message:
+    type: string
+    maxLength: 1000
+    example: К оплате 100 рублей на карту Сбера по номеру 88005553535
+  targetAudience:
+    $ref: './TargetAudience.yaml'
+  customUserIds:
+    type: array
+    items:
+      type: integer
+      format: int64

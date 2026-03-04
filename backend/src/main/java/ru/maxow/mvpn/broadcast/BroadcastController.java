@@ -22,7 +22,7 @@ public class BroadcastController {
    *
    * @param broadcastRequestDto the broadcast request containing the message and target audience
    */
-  @PostMapping("/v1/broadcast")
+  @PostMapping("/v1/broadcasts")
   public void sendBroadcast(@RequestBody BroadcastRequestDto broadcastRequestDto) {
     broadcastService.sendBroadcast(broadcastRequestDto);
   }

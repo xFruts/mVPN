@@ -1,0 +1,54 @@
+type: object
+required:
+  - name
+  - location
+  - ip
+  - status
+  - maxUsers
+  - maxTraffic
+properties:
+  name:
+    type: string
+    example: "Germany-VPN-01"
+  location:
+    type: string
+    example: "Frankfurt"
+  ip:
+    type: string
+    format: ipv4  # Swagger умеет валидировать IP!
+    description: Публичный IPv4 адрес сервера
+    example: "192.168.1.10"
+  status:
+    $ref: './ServerStatus.yaml'
+  maxUsers:
+    type: integer
+    format: int32
+    minimum: 1
+    example: 100
+  maxTraffic:
+    type: integer
+    format: int32
+    description: Лимит трафика в ГБ
+    example: 5000
+  login:
+    type: string
+    description: SSH логин
+  password:
+    type: string
+    format: password # Скрывает символы в UI
+    description: SSH пароль
+  xuiLogin:
+    type: string
+    description: Логин от 3x-ui панели
+  xuiPassword:
+    type: string
+    format: password
+  port:
+    type: integer
+    format: int32
+    minimum: 1
+    maximum: 65535
+    example: 2053
+  webBasePath:
+    type: string
+    example: "/xui"

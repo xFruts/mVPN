@@ -1,0 +1,16 @@
+type: object
+required:
+  - fullName
+  - role
+properties:
+  fullName:
+    type: string
+    minLength: 1
+    example: "Alexey Petrov"
+  userTelegramId:
+    type: integer
+    format: int64
+    description: ID пользователя в Telegram
+    example: 123456789
+  role:
+    $ref: './UserRole.yaml'

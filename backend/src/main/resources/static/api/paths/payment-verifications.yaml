@@ -1,0 +1,78 @@
+# POST /v1/payment-verifications
+PaymentVerificationsCollection:
+  post:
+    summary: Создать заявку на проверку платежа
+    tags: [Payment Verifications]
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '../components/schemas/payment-verifications/CreateUpdatePaymentVerificationDto.yaml'
+    responses:
+      '201':
+        description: Заявка успешно создана
+        content:
+          application/json:
+            schema:
+              $ref: '../components/schemas/payment-verifications/PaymentVerificationResponseDto.yaml'
+      '400':
+        $ref: '../components/responses/error/BadRequest.yaml'
+
+# POST /v1/payment-verifications/{id}/approve
+PaymentVerificationsApprove:
+  post:
+    summary: Одобрить платеж
+    tags: [Payment Verifications]
+    parameters:
+      - name: id
+        in: path
+        required: true
+        description: ID верификации
+        schema:
+          type: integer
+          format: int64
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '../components/schemas/payment-verifications/PaymentVerificationRequestDto.yaml'
+    responses:
+      '200':
+        description: Платеж успешно одобрен
+        content:
+          application/json:
+            schema:
+              $ref: '../components/schemas/payment-verifications/PaymentVerificationResponseDto.yaml'
+      '404':
+        $ref: '../components/responses/error/NotFound.yaml'
+
+# POST /v1/payment-verifications/{id}/reject
+PaymentVerificationsReject:
+  post:
+    summary: Отклонить платеж
+    tags: [Payment Verifications]
+    parameters:
+      - name: id
+        in: path
+        required: true
+        description: ID верификации
+        schema:
+          type: integer
+          format: int64
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '../components/schemas/payment-verifications/PaymentVerificationRequestDto.yaml'
+    responses:
+      '200':
+        description: Платеж отклонен
+        content:
+          application/json:
+            schema:
+              $ref: '../components/schemas/payment-verifications/PaymentVerificationResponseDto.yaml'
+      '404':
+        $ref: '../components/responses/error/NotFound.yaml'

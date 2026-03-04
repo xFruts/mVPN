@@ -1,0 +1,24 @@
+type: object
+required:
+  - userId
+  - startDate
+  - endDate
+  - status
+properties:
+  userId:
+    type: integer
+    format: int64
+    description: ID пользователя
+    example: 100500
+  startDate:
+    type: string
+    format: date-time
+    description: Дата начала (ISO-8601)
+    example: "2024-01-01T00:00:00"
+  endDate:
+    type: string
+    format: date-time
+    description: Дата окончания (ISO-8601)
+    example: "2024-02-01T00:00:00"
+  status:
+    $ref: './SubscriptionStatus.yaml'

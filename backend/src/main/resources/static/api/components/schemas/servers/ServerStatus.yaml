@@ -1,0 +1,6 @@
+type: string
+description: Статус сервера VPN
+enum:
+  - ACTIVE
+  - INACTIVE
+  - MAINTENANCE

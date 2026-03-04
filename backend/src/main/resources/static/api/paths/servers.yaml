@@ -1,0 +1,118 @@
+ServersCollection:
+  get:
+    summary: Получить список серверов (с пагинацией)
+    tags: [Servers]
+    parameters:
+      - name: page
+        in: query
+        description: Номер страницы (0..N)
+        schema:
+          type: integer
+          default: 0
+      - name: size
+        in: query
+        description: Количество элементов на странице
+        schema:
+          type: integer
+          default: 10
+      - name: sort
+        in: query
+        description: Сортировка (например, id,desc)
+        schema:
+          type: array
+          items:
+            type: string
+    responses:
+      '200':
+        description: Успешный ответ
+        content:
+          application/json:
+            schema:
+              $ref: '../components/schemas/servers/PageListServerDto.yaml'
+
+  post:
+    summary: Добавить новый сервер
+    tags: [Servers]
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '../components/schemas/servers/CreateUpdateServerRequestDto.yaml'
+    responses:
+      '201':
+        description: Сервер создан
+        content:
+          application/json:
+            schema:
+              $ref: '../components/schemas/servers/ServerResponseDto.yaml'
+      '400':
+        $ref: '../components/responses/error/BadRequest.yaml'
+
+ServerSingle:
+  put:
+    summary: Обновить данные сервера
+    tags: [Servers]
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '../components/schemas/servers/CreateUpdateServerRequestDto.yaml'
+    responses:
+      '200':
+        description: Сервер обновлен
+        content:
+          application/json:
+            schema:
+              $ref: '../components/schemas/servers/ServerResponseDto.yaml'
+      '404':
+        $ref: '../components/responses/error/NotFound.yaml'
+
+  delete:
+    summary: Удалить сервер
+    tags: [Servers]
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+    responses:
+      '204':
+        description: Сервер удален
+      '404':
+        $ref: '../components/responses/error/NotFound.yaml'
+
+ServerStatusUpdate:
+  patch:
+    summary: Изменить статус сервера
+    description: Быстрое переключение статуса (ACTIVE/MAINTENANCE) через параметр запроса
+    tags: [Servers]
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      - name: status
+        in: query  # @RequestParam в Spring = query в OpenAPI
+        required: true
+        schema:
+          $ref: '../components/schemas/servers/ServerStatus.yaml'
+    responses:
+      '200':
+        description: Статус обновлен
+        content:
+          application/json:
+            schema:
+              $ref: '../components/schemas/servers/ServerResponseDto.yaml'

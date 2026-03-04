@@ -1,0 +1,17 @@
+allOf:
+  # Наследуем поля message, timestamp, errorCode...
+  - $ref: './ErrorResponse.yaml'
+  # Добавляем специфику
+  - type: object
+    required:
+      - fieldErrors
+    properties:
+      fieldErrors:
+        type: object
+        description: "Карта ошибок валидации: поле -> сообщение"
+        # Map<String, String> в OpenAPI описывается как object с additionalProperties
+        additionalProperties:
+          type: string
+        example:
+          email: "must be a well-formed email address"
+          amount: "must be greater than 0"

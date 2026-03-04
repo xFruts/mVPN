@@ -1,0 +1,14 @@
+post:
+  summary: Запуск массовой рассылки
+  operationId: sendBroadcast
+  tags:
+    - Broadcasts
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: '../components/schemas/broadcasts/BroadcastRequestDto.yaml'
+  responses:
+    202:
+      description: Рассылка принята

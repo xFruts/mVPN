@@ -1,0 +1,101 @@
+# URL: /v1/tariffs
+TariffsCollection:
+  get:
+    summary: Получить все тарифные планы
+    tags: [Tariffs]
+    responses:
+      '200':
+        description: Список тарифов
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                $ref: '../components/schemas/tariffs/TariffPlanResponseDto.yaml'
+      '500':
+        $ref: '../components/responses/error/InternalServerError.yaml'
+
+  post:
+    summary: Создать новый тариф
+    tags: [Tariffs]
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '../components/schemas/tariffs/CreateUpdateRequestTariffPlanDto.yaml'
+    responses:
+      '200': # В коде ResponseEntity.ok(), хотя по REST лучше 201
+        description: Тариф создан
+        content:
+          application/json:
+            schema:
+              $ref: '../components/schemas/tariffs/TariffPlanResponseDto.yaml'
+      '400':
+        $ref: '../components/responses/error/BadRequest.yaml'
+
+# URL: /v1/tariffs/{id}
+TariffSingle:
+  get:
+    summary: Получить тариф по ID
+    tags: [Tariffs]
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+    responses:
+      '200':
+        description: Тариф найден
+        content:
+          application/json:
+            schema:
+              $ref: '../components/schemas/tariffs/TariffPlanResponseDto.yaml'
+      '404':
+        $ref: '../components/responses/error/NotFound.yaml'
+
+  put:
+    summary: Обновить тариф
+    tags: [Tariffs]
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '../components/schemas/tariffs/CreateUpdateRequestTariffPlanDto.yaml'
+    responses:
+      '200':
+        description: Тариф обновлен
+        content:
+          application/json:
+            schema:
+              $ref: '../components/schemas/tariffs/TariffPlanResponseDto.yaml'
+      '404':
+        $ref: '../components/responses/error/NotFound.yaml'
+
+  delete:
+    summary: Удалить тариф
+    tags: [Tariffs]
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+    responses:
+      '204':
+        description: Тариф удален (нет тела ответа)
+      '404':
+        $ref: '../components/responses/error/NotFound.yaml'
+      '409': # Conflict - если тариф используется пользователями
+        description: Невозможно удалить тариф, так как он используется

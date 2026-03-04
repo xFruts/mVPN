@@ -1,0 +1,146 @@
+# URL: /v1/users
+UsersCollection:
+  get:
+    summary: Получить список пользователей (Пагинация)
+    tags: [Users]
+    parameters:
+      - name: page
+        in: query
+        schema:
+          type: integer
+          default: 0
+      - name: size
+        in: query
+        schema:
+          type: integer
+          default: 10
+      - name: sort
+        in: query
+        schema:
+          type: array
+          items:
+            type: string
+    responses:
+      '200':
+        description: Страница с пользователями
+        content:
+          application/json:
+            schema:
+              $ref: '../components/schemas/users/PageListUserDto.yaml'
+      '500':
+        $ref: '../components/responses/error/InternalServerError.yaml'
+
+  post:
+    summary: Создать нового пользователя
+    tags: [Users]
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '../components/schemas/users/CreateUserRequestDto.yaml'
+    responses:
+      '201':
+        description: Пользователь создан
+        content:
+          application/json:
+            schema:
+              $ref: '../components/schemas/users/UserResponseDto.yaml'
+      '400':
+        $ref: '../components/responses/error/BadRequest.yaml'
+
+# URL: /v1/users/{userId}
+UserSingle:
+  put:
+    summary: Обновить данные пользователя
+    tags: [Users]
+    parameters:
+      - name: userId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '../components/schemas/users/UpdateUserRequestDto.yaml'
+    responses:
+      '200':
+        description: Пользователь обновлен
+        content:
+          application/json:
+            schema:
+              $ref: '../components/schemas/users/UserResponseDto.yaml'
+      '404':
+        $ref: '../components/responses/error/NotFound.yaml'
+
+  delete:
+    summary: Удалить пользователя
+    tags: [Users]
+    parameters:
+      - name: userId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+    responses:
+      '204':
+        description: Пользователь удален
+      '404':
+        $ref: '../components/responses/error/NotFound.yaml'
+
+# URL: /v1/users/{userId}/role
+UserRoleUpdate:
+  patch:
+    summary: Изменить роль пользователя
+    tags: [Users]
+    parameters:
+      - name: userId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '../components/schemas/users/UpdateUserRoleRequest.yaml'
+    responses:
+      '200':
+        description: Роль обновлена
+        content:
+          application/json:
+            schema:
+              $ref: '../components/schemas/users/UserResponseDto.yaml'
+      '404':
+        $ref: '../components/responses/error/NotFound.yaml'
+
+# URL: /v1/users/{userId}/code
+UserVerificationCode:
+  get:
+    summary: Получить код верификации пользователя
+    tags: [Users]
+    parameters:
+      - name: userId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+    responses:
+      '200':
+        description: Код верификации (UUID)
+        content:
+          application/json:
+            schema:
+              type: string
+              format: uuid
+              example: "550e8400-e29b-41d4-a716-446655440000"
+      '404':
+        $ref: '../components/responses/error/NotFound.yaml'

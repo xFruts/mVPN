@@ -1,0 +1,118 @@
+# URL: /v1/subscriptions/user/{userId}
+SubscriptionsByUser:
+  post:
+    summary: Создать подписку для пользователя
+    description: Внимание! userId передается и в пути, и в теле запроса.
+    tags: [Subscriptions]
+    parameters:
+      - name: userId
+        in: path
+        required: true
+        description: ID пользователя
+        schema:
+          type: integer
+          format: int64
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '../components/schemas/subscriptions/CreateUpdateSubscriptionDto.yaml'
+    responses:
+      '201':
+        description: Подписка успешно создана
+        content:
+          application/json:
+            schema:
+              $ref: '../components/schemas/subscriptions/SubscriptionResponseDto.yaml'
+      '400':
+        $ref: '../components/responses/error/BadRequest.yaml'
+      '404':
+        $ref: '../components/responses/error/NotFound.yaml'
+
+  get:
+    summary: Получить все подписки пользователя
+    tags: [Subscriptions]
+    parameters:
+      - name: userId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+    responses:
+      '200':
+        description: Список подписок
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                $ref: '../components/schemas/subscriptions/SubscriptionResponseDto.yaml'
+      '404':
+        $ref: '../components/responses/error/NotFound.yaml'
+
+
+# URL: /v1/subscriptions/{id}
+SubscriptionById:
+  get:
+    summary: Получить подписку по ID
+    tags: [Subscriptions]
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+    responses:
+      '200':
+        description: Подписка найдена
+        content:
+          application/json:
+            schema:
+              $ref: '../components/schemas/subscriptions/SubscriptionResponseDto.yaml'
+      '404':
+        $ref: '../components/responses/error/NotFound.yaml'
+
+  put:
+    summary: Обновить подписку
+    tags: [Subscriptions]
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '../components/schemas/subscriptions/CreateUpdateSubscriptionDto.yaml'
+    responses:
+      '200':
+        description: Подписка обновлена
+        content:
+          application/json:
+            schema:
+              $ref: '../components/schemas/subscriptions/SubscriptionResponseDto.yaml'
+      '404':
+        $ref: '../components/responses/error/NotFound.yaml'
+
+  delete:
+    summary: Удалить подписку
+    tags: [Subscriptions]
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+    responses:
+      '204':
+        description: Подписка удалена
+      '404':
+        $ref: '../components/responses/error/NotFound.yaml'

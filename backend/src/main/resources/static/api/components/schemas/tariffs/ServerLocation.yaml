@@ -1,0 +1,15 @@
+type: object
+description: Краткая информация о сервере (локация)
+required:
+  - id
+  - location
+properties:
+  id:
+    type: integer
+    format: int64
+    description: ID сервера
+    example: 15
+  location:
+    type: string
+    description: Название локации (страна/город)
+    example: "Germany - Frankfurt"

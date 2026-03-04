@@ -1,0 +1,19 @@
+type: object
+required:
+  - id
+  - fullName
+  - role
+properties:
+  id:
+    type: integer
+    format: int64
+  fullName:
+    type: string
+  userTelegramId:
+    type: integer
+    format: int64
+  role:
+    $ref: './UserRole.yaml'
+  subscription:
+    description: Информация о подписке пользователя
+    $ref: '../subscriptions/SubscriptionResponseDto.yaml'
