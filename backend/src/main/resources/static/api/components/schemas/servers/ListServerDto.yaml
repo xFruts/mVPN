@@ -1,0 +1,32 @@
+type: object
+properties:
+  id:
+    type: integer
+    format: int64
+  name:
+    type: string
+  location:
+    type: string
+  ip:
+    type: string
+    format: ipv4
+  status:
+    $ref: './ServerStatus.yaml'
+  load:
+    type: integer
+    description: Загрузка CPU/RAM в процентах
+    example: 45
+  usage:
+    type: integer
+    description: Текущее количество активных юзеров
+  maxUsers:
+    type: integer
+  maxTraffic:
+    type: integer
+  ping:
+    type: string
+    example: "25ms"
+  uptime:
+    type: number
+    format: double
+    description: Время аптайма в процентах

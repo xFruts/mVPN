@@ -1,0 +1,17 @@
+allOf:
+  # Наследуем поля из ListServerDto, чтобы не дублировать name, ip и т.д.
+  - $ref: './ListServerDto.yaml'
+  - type: object
+    properties:
+      login:
+        type: string
+      password:
+        type: string
+      xuiLogin:
+        type: string
+      xuiPassword:
+        type: string
+      port:
+        type: integer
+      webBasePath:
+        type: string

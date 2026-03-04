@@ -1,0 +1,5 @@
+description: Ошибка валидации данных или некорректный запрос
+content:
+  application/json:
+    schema:
+      $ref: '../../schemas/error/ValidationErrorResponse.yaml'

@@ -1,0 +1,4 @@
+type: http
+scheme: bearer
+bearerFormat: JWT
+description: Токен авторизации, получаемый из Keycloak (Роль VPN_ADMIN)

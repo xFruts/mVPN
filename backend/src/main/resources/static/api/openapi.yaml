@@ -1,0 +1,79 @@
+openapi: 3.2.0
+info:
+  title: mVPN API
+  version: 0.5.0
+  contact:
+    name: Maxow Support
+    email: maxowinc@gmail.com
+
+servers:
+  - url: /api
+    description: Локальный сервер
+
+security:
+  - bearerAuth: []
+
+paths:
+  /v1/broadrasts:
+    $ref: './paths/broadcasts.yaml'
+  /v1/payment-settings:
+    $ref: './paths/payment-settings.yaml#/PaymentSettingsCollection'
+
+  /v1/payment-settings/{id}:
+    $ref: './paths/payment-settings.yaml#/PaymentSettingsSingleById'
+
+  /v1/payment-settings/{billingMonth}:
+    $ref: './paths/payment-settings.yaml#/PaymentSettingsSingleByMonth'
+
+  /v1/payment-verifications:
+    $ref: './paths/payment-verifications.yaml#/PaymentVerificationsCollection'
+
+  /v1/payment-verifications/{id}/approve:
+    $ref: './paths/payment-verifications.yaml#/PaymentVerificationsApprove'
+
+  /v1/payment-verifications/{id}/reject:
+    $ref: './paths/payment-verifications.yaml#/PaymentVerificationsReject'
+
+  /v1/promocodes:
+    $ref: './paths/promocodes.yaml#/PromocodesCollection'
+
+  /v1/promocodes/{id}:
+    $ref: './paths/promocodes.yaml#/PromocodeSingle'
+
+  /v1/servers:
+    $ref: './paths/servers.yaml#/ServersCollection'
+
+  /v1/servers/{id}:
+    $ref: './paths/servers.yaml#/ServerSingle'
+
+  /v1/servers/{id}/status:
+    $ref: './paths/servers.yaml#/ServerStatusUpdate'
+
+  /v1/subscriptions/{id}:
+    $ref: './paths/subscriptions.yaml#/SubscriptionById'
+
+  /v1/subscriptions/user/{userId}:
+    $ref: './paths/subscriptions.yaml#/SubscriptionsByUser'
+
+  /v1/tariffs:
+    $ref: './paths/tariffs.yaml#/TariffsCollection'
+
+  /v1/tariffs/{id}:
+    $ref: './paths/tariffs.yaml#/TariffSingle'
+
+  /v1/users:
+    $ref: './paths/users.yaml#/UsersCollection'
+
+  /v1/users/{userId}:
+    $ref: './paths/users.yaml#/UserSingle'
+
+  /v1/users/{userId}/role:
+    $ref: './paths/users.yaml#/UserRoleUpdate'
+
+  /v1/users/{userId}/code:
+    $ref: './paths/users.yaml#/UserVerificationCode'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      $ref: './components/securitySchemas/bearerAuth.yaml'

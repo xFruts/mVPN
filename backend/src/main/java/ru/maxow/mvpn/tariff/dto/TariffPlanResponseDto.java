@@ -8,6 +8,6 @@ public record TariffPlanResponseDto(
     String name,
     Integer maxDevices,
     Integer trafficLimitGb,
-    List<Pair<Long, String>> serverLocation
+    List<ServerLocation> serverLocation
 ) {
 }

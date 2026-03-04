@@ -1,0 +1,7 @@
+type: string
+enum:
+  - ALL
+  - REGULAR
+  - VIP
+  - ADMIN
+  - CUSTOM_LIST

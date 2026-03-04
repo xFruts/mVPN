@@ -1,0 +1,7 @@
+type: string
+description: Статус подписки
+enum:
+  - ACTIVE
+  - EXPIRED
+  - CANCELED
+example: ACTIVE

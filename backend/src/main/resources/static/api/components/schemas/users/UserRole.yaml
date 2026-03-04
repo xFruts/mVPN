@@ -1,0 +1,7 @@
+type: string
+description: Роль пользователя в системе
+enum:
+  - REGULAR
+  - SPECIAL
+  - ADMIN
+example: REGULAR

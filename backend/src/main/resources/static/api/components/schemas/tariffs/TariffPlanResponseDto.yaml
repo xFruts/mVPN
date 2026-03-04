@@ -1,0 +1,31 @@
+type: object
+description: Тарифный план (ответ сервера)
+required:
+  - id
+  - name
+  - maxDevices
+  - trafficLimitGb
+  - serverLocation
+properties:
+  id:
+    type: integer
+    format: int64
+    example: 1
+  name:
+    type: string
+    example: "Premium 4K"
+  maxDevices:
+    type: integer
+    format: int32
+    example: 5
+  trafficLimitGb:
+    type: integer
+    format: int32
+    description: Лимит трафика (ГБ)
+    example: 100
+  serverLocation:
+    type: array
+    description: Список доступных локаций на этом тарифе
+    items:
+      # Ссылка на новый файл ServerLocation.yaml
+      $ref: './ServerLocation.yaml'

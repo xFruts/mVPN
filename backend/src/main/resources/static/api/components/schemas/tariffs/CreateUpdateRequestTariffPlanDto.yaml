@@ -1,0 +1,30 @@
+type: object
+required:
+  - name
+  - maxDevices
+  - trafficLimitGb
+  - serverIds
+properties:
+  name:
+    type: string
+    description: Название тарифа
+    example: "Premium 4K"
+  maxDevices:
+    type: integer
+    format: int32
+    minimum: 1
+    description: Лимит устройств на один аккаунт
+    example: 5
+  trafficLimitGb:
+    type: integer
+    format: int32
+    minimum: 1
+    description: Лимит трафика в ГБ
+    example: 100
+  serverIds:
+    type: array
+    description: Список ID серверов, доступных на этом тарифе
+    items:
+      type: integer
+      format: int64
+    example: [10, 25, 33]

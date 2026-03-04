@@ -1,0 +1,26 @@
+type: object
+description: Стандартный ответ с ошибкой
+required:
+  - message
+  - timestamp
+  - errorCode
+  - correlationId
+properties:
+  message:
+    type: string
+    description: Читаемое сообщение об ошибке
+    example: "Resource not found"
+  timestamp:
+    type: integer
+    format: int64
+    description: Время возникновения ошибки (Unix timestamp)
+    example: 1698765432100
+  errorCode:
+    type: string
+    description: Внутренний код ошибки для программной обработки
+    example: "NOT_FOUND"
+  correlationId:
+    type: string
+    format: uuid
+    description: Уникальный ID запроса для трассировки (логгирование)
+    example: "a1b2c3d4-e5f6-7890-1234-567890abcdef"

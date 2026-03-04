@@ -1,0 +1,7 @@
+type: string
+description: Статус промокода
+enum:
+  - ACTIVE
+  - EXPIRED
+  - USED
+example: ACTIVE

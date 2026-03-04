@@ -1,0 +1,17 @@
+type: object
+required:
+  - usageLimit
+  - validDays
+properties:
+  usageLimit:
+    type: integer
+    format: int32
+    minimum: 1             # @Min(1)
+    description: Сколько раз можно применить промокод
+    example: 100
+  validDays:
+    type: integer
+    format: int32
+    minimum: 1             # @Min(1)
+    description: Срок действия в днях
+    example: 30
