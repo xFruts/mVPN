@@ -196,6 +196,12 @@
             <groupId>jakarta.annotation</groupId>
             <artifactId>jakarta.annotation-api</artifactId>
         </dependency>
+
+        <dependency>
+            <groupId>io.swagger.parser.v3</groupId>
+            <artifactId>swagger-parser</artifactId>
+            <version>2.1.22</version>
+        </dependency>
     </dependencies>
 
     <build>
@@ -210,9 +216,12 @@
 
                     <generatorName>spring</generatorName>
 
+
                     <!-- Пакеты, куда будет сгенерирован код -->
                     <apiPackage>ru.maxow.mvpn.api</apiPackage>
                     <modelPackage>ru.maxow.mvpn.model</modelPackage>
+
+                    <skipValidateSpec>true</skipValidateSpec>
 
                     <!-- Настройки генерации -->
                     <configOptions>
@@ -237,8 +246,6 @@
                         </goals>
                         <configuration>
                             <skip>false</skip>
-                            <additionalProperties>removeEnumValuePrefix=false</additionalProperties>
-                            <inputSpec>${project.basedir}/src/main/resources/static/api/openapi.yaml</inputSpec>
                         </configuration>
                     </execution>
                 </executions>

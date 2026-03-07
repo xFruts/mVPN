@@ -12,7 +12,9 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.multipart.MultipartException;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.stream.Collectors;
 
@@ -20,17 +22,47 @@ import java.util.stream.Collectors;
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
+  private static final String CORRELATION_ID_KEY = "correlation-id";
+  private static final String MSG_RESOURCE_NOT_FOUND = "Resource not found";
+  private static final String MSG_INVALID_REQUEST = "Invalid request parameters";
+  private static final String MSG_METHOD_NOT_ALLOWED = "Method not allowed";
+  private static final String MSG_UNEXPECTED = "An unexpected error occurred";
+
   @ResponseStatus(HttpStatus.NOT_FOUND)
   @ExceptionHandler(NotFoundException.class)
   public ErrorResponse handleNotFoundException(NotFoundException ex, WebRequest request) {
     log.info("Entity not found: entity={}, id={}, path={}",
         ex.getEntityName(),
         ex.getIdentifier(),
-        request.getDescription(false));
+        extractPath(request));
     return new ErrorResponse(
-        "Resource not found",
+        MSG_RESOURCE_NOT_FOUND,
         System.currentTimeMillis(),
         "NOT_FOUND",
+        getOrGenerateCorrelationId()
+    );
+  }
+
+  @ResponseStatus(HttpStatus.NOT_FOUND)
+  @ExceptionHandler(NoResourceFoundException.class)
+  public ErrorResponse handleNoResourceFoundException(NoResourceFoundException ex, WebRequest request) {
+    log.info("No resource found: path={}", extractPath(request));
+    return new ErrorResponse(
+        MSG_RESOURCE_NOT_FOUND,
+        System.currentTimeMillis(),
+        "RESOURCE_NOT_FOUND",
+        getOrGenerateCorrelationId()
+    );
+  }
+
+  @ResponseStatus(HttpStatus.METHOD_NOT_ALLOWED)
+  @ExceptionHandler(HttpRequestMethodNotSupportedException.class)
+  public ErrorResponse handleHttpRequestNotSupportedException(HttpRequestMethodNotSupportedException ex, WebRequest request) {
+    log.warn("Method not allowed: method={}, path={}", ex.getMethod(), extractPath(request));
+    return new ErrorResponse(
+        MSG_METHOD_NOT_ALLOWED,
+        System.currentTimeMillis(),
+        "METHOD_NOT_ALLOWED",
         getOrGenerateCorrelationId()
     );
   }
@@ -39,15 +71,15 @@ public class GlobalExceptionHandler {
   @ExceptionHandler({
       BadRequestException.class,
       MultipartException.class,
-      HttpRequestMethodNotSupportedException.class
+      IllegalArgumentException.class
   })
   public ErrorResponse handleBadRequestException(Exception ex, WebRequest request) {
-    log.warn("Bad Request: type={}, path={}",
+    log.warn("Bad request: type={}, path={}",
         ex.getClass().getSimpleName(),
-        request.getDescription(false));
+        extractPath(request));
     String errorCode = determineErrorCode(ex);
     return new ErrorResponse(
-        "Invalid request parameters",
+        MSG_INVALID_REQUEST,
         System.currentTimeMillis(),
         errorCode,
         getOrGenerateCorrelationId());
@@ -76,9 +108,11 @@ public class GlobalExceptionHandler {
         .stream()
         .collect(Collectors.toMap(
             FieldError::getField,
-            error -> error.getDefaultMessage() != null ? error.getDefaultMessage() : "Invalid value"
+            error -> error.getDefaultMessage() != null ? error.getDefaultMessage() : "Invalid value",
+            (left, right) -> left.equals(right) ? left : left + "; " + right,
+            LinkedHashMap::new
         ));
-    log.warn("Validation failed: fields={}", fieldErrors.keySet());
+    log.warn("Validation failed: fields={}, path={}", fieldErrors.keySet(), extractPath(request));
     return new ValidationErrorResponse(
         "Validation failed",
         System.currentTimeMillis(),
@@ -92,13 +126,9 @@ public class GlobalExceptionHandler {
   @ExceptionHandler(Exception.class)
   public ErrorResponse handleGlobalException(Exception ex, WebRequest request) {
     String correlationId = getOrGenerateCorrelationId();
-
-    log.error("Unexpected error [correlationId={}]: path={}",
-        correlationId,
-        request.getDescription(false));
-    log.error("Exception details: ", ex);
+    log.error("Unexpected error [correlationId={}]: path={}", correlationId, extractPath(request), ex);
     return new ErrorResponse(
-        "An unexpected error occurred",
+        MSG_UNEXPECTED,
         System.currentTimeMillis(),
         "INTERNAL_ERROR",
         correlationId
@@ -108,16 +138,24 @@ public class GlobalExceptionHandler {
   private String determineErrorCode(Exception ex) {
     if (ex instanceof BadRequestException) return "BAD_REQUEST";
     if (ex instanceof MultipartException) return "INVALID_FILE_UPLOAD";
-    if (ex instanceof HttpRequestMethodNotSupportedException) return "METHOD_NOT_ALLOWED";
+    if (ex instanceof IllegalArgumentException) return "BAD_REQUEST";
     return "BAD_REQUEST";
   }
 
   private String getOrGenerateCorrelationId() {
-    String correlationId = MDC.get("correlation-id");
-    if (correlationId == null) {
+    String correlationId = MDC.get(CORRELATION_ID_KEY);
+    if (correlationId == null || correlationId.isBlank()) {
       correlationId = java.util.UUID.randomUUID().toString();
-      MDC.put("correlation-id", correlationId);
+      MDC.put(CORRELATION_ID_KEY, correlationId);
     }
     return correlationId;
+  }
+
+  private String extractPath(WebRequest request) {
+    String description = request.getDescription(false); // uri=/path?query
+    if (description == null) return "unknown";
+    String path = description.startsWith("uri=") ? description.substring(4) : description;
+    int queryIndex = path.indexOf('?');
+    return queryIndex >= 0 ? path.substring(0, queryIndex) : path;
   }
 }
