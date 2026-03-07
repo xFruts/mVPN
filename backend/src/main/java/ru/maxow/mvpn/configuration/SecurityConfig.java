@@ -46,10 +46,26 @@ public class SecurityConfig {
         .csrf(AbstractHttpConfigurer::disable)
 
         .authorizeHttpRequests(auth -> auth
-            .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
+            // Swagger UI и API документация
+            .requestMatchers(
+                "/v3/api-docs",
+                "/v3/api-docs/**",
+                "/swagger-ui/**",
+                "/swagger-ui.html",
+                "/swagger-resources/**",
+                "/webjars/**"
+            ).permitAll()
+            .requestMatchers("/api/openapi.yaml", "/api/components/**", "/api/paths/**").permitAll()
+
+            // Actuator endpoints
             .requestMatchers("/actuator/health", "/actuator/info").permitAll()
 
-            .requestMatchers("/api/**").hasRole("VPN_ADMIN")
+            // API endpoints требуют роль VPN_ADMIN
+            .requestMatchers("/api/users/**", "/api/servers/**", "/api/tariffs/**").hasRole("VPN_ADMIN")
+            .requestMatchers("/api/subscriptions/**", "/api/promocodes/**").hasRole("VPN_ADMIN")
+            .requestMatchers("/api/broadcasts/**", "/api/payment-settings/**").hasRole("VPN_ADMIN")
+            .requestMatchers("/api/payment-verifications/**").hasRole("VPN_ADMIN")
+
             .anyRequest().authenticated()
         )
 
