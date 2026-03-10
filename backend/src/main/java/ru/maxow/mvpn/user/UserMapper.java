@@ -1,20 +1,19 @@
 package ru.maxow.mvpn.user;
 
-import java.util.Collections;
+import java.time.OffsetDateTime;
 import java.util.Comparator;
-import java.util.List;
 import java.util.Optional;
 
 import lombok.RequiredArgsConstructor;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.Named;
+import ru.maxow.mvpn.model.CreateUserRequestDto;
+import ru.maxow.mvpn.model.ListUserDto;
+import ru.maxow.mvpn.model.SubscriptionResponseDto;
+import ru.maxow.mvpn.model.UserResponseDto;
 import ru.maxow.mvpn.subscription.Subscription;
 import ru.maxow.mvpn.subscription.SubscriptionMapper;
-import ru.maxow.mvpn.subscription.dto.SubscriptionResponseDto;
-import ru.maxow.mvpn.user.dto.CreateUserRequestDto;
-import ru.maxow.mvpn.user.dto.ListUserDto;
-import ru.maxow.mvpn.user.dto.UserResponseDto;
 
 @Mapper(componentModel = "spring")
 @RequiredArgsConstructor
@@ -35,20 +34,17 @@ public abstract class UserMapper {
     if (subscriptionOptional.isPresent()) {
       Subscription subscription = subscriptionOptional.get();
 
-      return new ListUserDto(
-          user.getId(),
-          user.getFullName(),
-          user.getRole().name(),
-          subscription.getStatus(),
-          subscription.getEndDate()
-      );
+      return new ListUserDto()
+          .id(user.getId())
+          .fullName(user.getFullName())
+          .role(user.getRole().name())
+          .subscriptionStatus(subscription.getStatus())
+          .endDate(OffsetDateTime.from(subscription.getEndDate()));
     }
-    return new ListUserDto(
-        user.getId(),
-        user.getFullName(),
-        user.getRole().name()
-        , null, null
-    );
+    return new ListUserDto()
+        .id(user.getId())
+        .fullName(user.getFullName())
+        .role(user.getRole().name());
   }
 
   @Named("userToSubscriptionDto")

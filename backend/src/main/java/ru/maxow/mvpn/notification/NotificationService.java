@@ -4,13 +4,8 @@ import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
-import ru.maxow.mvpn.broadcast.BroadcastRequestDto;
-import ru.maxow.mvpn.broadcast.TargetAudience;
-import ru.maxow.mvpn.payment.paymentsettings.dto.PaymentSettingsResponseDto;
 import ru.maxow.mvpn.payment.paymentsettings.PaymentSettingsService;
-import ru.maxow.mvpn.util.exception.NotFoundException;
 
 
 /**

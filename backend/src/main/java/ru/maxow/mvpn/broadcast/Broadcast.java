@@ -11,6 +11,7 @@ import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 import lombok.experimental.FieldDefaults;
+import ru.maxow.mvpn.model.TargetAudience;
 
 /**
  * Entity representing a broadcast message to be sent to users.

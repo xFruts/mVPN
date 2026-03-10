@@ -3,8 +3,8 @@ package ru.maxow.mvpn.subscription;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.MappingTarget;
-import ru.maxow.mvpn.subscription.dto.CreateUpdateSubscriptionDto;
-import ru.maxow.mvpn.subscription.dto.SubscriptionResponseDto;
+import ru.maxow.mvpn.model.CreateUpdateSubscriptionDto;
+import ru.maxow.mvpn.model.SubscriptionResponseDto;
 
 @Mapper(componentModel = "spring")
 public interface SubscriptionMapper {

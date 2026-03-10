@@ -1,6 +1,7 @@
 package ru.maxow.mvpn.promocode;
 
 import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.UUID;
 import lombok.AccessLevel;
@@ -9,6 +10,9 @@ import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import ru.maxow.mvpn.model.CreatePromocodeRequestDto;
+import ru.maxow.mvpn.model.PromocodeResponseDto;
+import ru.maxow.mvpn.model.PromocodeStatus;
 import ru.maxow.mvpn.util.exception.BadRequestException;
 import ru.maxow.mvpn.util.exception.NotFoundException;
 
@@ -25,8 +29,8 @@ public class PromocodeServiceImpl implements  PromocodeService {
   public PromocodeResponseDto createPromocode(CreatePromocodeRequestDto requestDto) {
     Promocode promocode = new Promocode();
     promocode.setCode(generateUniqueCode());
-    promocode.setUsageLimit(requestDto.usageLimit());
-    promocode.setExpirationDate(LocalDateTime.now().plusDays(requestDto.validDays()));
+    promocode.setUsageLimit(requestDto.getUsageLimit());
+    promocode.setExpirationDate(OffsetDateTime.now().plusDays(requestDto.getValidDays()));
     promocode.setStatus(PromocodeStatus.ACTIVE);
 
     Promocode savedPromocode = promocodeRepository.save(promocode);
@@ -56,7 +60,7 @@ public class PromocodeServiceImpl implements  PromocodeService {
       throw new BadRequestException("Promocode is not active");
     }
 
-    if (promocode.getExpirationDate().isBefore(LocalDateTime.now())) {
+    if (promocode.getExpirationDate().isBefore(OffsetDateTime.now())) {
       promocode.setStatus(PromocodeStatus.EXPIRED);
       promocodeRepository.save(promocode);
       throw new BadRequestException("Promocode is expired");

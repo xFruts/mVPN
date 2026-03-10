@@ -8,15 +8,12 @@ import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import ru.maxow.mvpn.model.*;
 import ru.maxow.mvpn.subscription.SubscriptionRepository;
-import ru.maxow.mvpn.subscription.SubscriptionService;
-import ru.maxow.mvpn.user.dto.CreateUserRequestDto;
-import ru.maxow.mvpn.user.dto.ListUserDto;
-import ru.maxow.mvpn.user.dto.UpdateUserRequestDto;
-import ru.maxow.mvpn.user.dto.UserResponseDto;
 import ru.maxow.mvpn.util.exception.BadRequestException;
 import ru.maxow.mvpn.util.exception.NotFoundException;
 
@@ -29,14 +26,27 @@ public class UserServiceImpl implements UserService {
   UserRepository userRepository;
   SubscriptionRepository subscriptionRepository;
   UserMapper userMapper;
-  SubscriptionService subscriptionService;
 
   @Override
   @Transactional(readOnly = true)
-  public Page<ListUserDto> findAllAsPage(Pageable pageable) {
-    Page<User> users = userRepository.findAll(pageable);
+  public PageListUserDto findAllAsPage(Integer page, Integer size, List<String> sort) {
+    Sort sorting = (sort == null || sort.isEmpty())
+        ? Sort.unsorted()
+        : Sort.by(sort.stream().map(s -> {
+            String[] parts = s.split(",");
+            return parts.length == 2 && parts[1].equalsIgnoreCase("desc")
+                ? Sort.Order.desc(parts[0])
+                : Sort.Order.asc(parts[0]);
+          }).toList());
 
-    return users.map(userMapper::toListUserDto);
+    Page<User> users = userRepository.findAll(PageRequest.of(page, size, sorting));
+
+    return new PageListUserDto()
+        .content(users.getContent().stream().map(userMapper::toListUserDto).toList())
+        .totalElements(users.getTotalElements())
+        .totalPages(users.getTotalPages())
+        .size(users.getSize())
+        .number(users.getNumber());
   }
 
   @Override
@@ -60,14 +70,14 @@ public class UserServiceImpl implements UserService {
   public UserResponseDto updateUser(Long id, UpdateUserRequestDto dto) {
     User existingUser = findUserById(id);
 
-    if (dto.fullName() != null && !dto.fullName().isBlank()) {
-      existingUser.setFullName(dto.fullName());
+    if (dto.getFullName() != null && !dto.getFullName().isBlank()) {
+      existingUser.setFullName(dto.getFullName());
     }
-    if (dto.userTelegramId() != null) {
-      existingUser.setUserTelegramId(dto.userTelegramId());
+    if (dto.getUserTelegramId() != null) {
+      existingUser.setUserTelegramId(dto.getUserTelegramId());
     }
-    if (dto.role() != null) {
-      existingUser.setRole(dto.role());
+    if (dto.getRole() != null) {
+      existingUser.setRole(dto.getRole());
     }
 
     updateUserSubscription(existingUser, dto);
@@ -80,11 +90,11 @@ public class UserServiceImpl implements UserService {
   private void updateUserSubscription(User user, UpdateUserRequestDto dto) {
     subscriptionRepository.findFirstByUserOrderByStartDateDesc(user)
         .ifPresent(subscription -> {
-          if (dto.subscriptionStatus() != null) {
-            subscription.setStatus(dto.subscriptionStatus());
+          if (dto.getSubscriptionStatus() != null) {
+            subscription.setStatus(dto.getSubscriptionStatus());
           }
-          if (dto.subscriptionEndDate() != null) {
-            subscription.setEndDate(dto.subscriptionEndDate());
+          if (dto.getSubscriptionEndDate() != null) {
+            subscription.setEndDate(dto.getSubscriptionEndDate());
           }
           subscriptionRepository.save(subscription);
           log.info("Subscription for user with ID: {} updated successfully", user.getId());

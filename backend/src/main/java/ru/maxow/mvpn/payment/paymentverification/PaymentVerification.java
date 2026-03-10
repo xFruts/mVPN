@@ -3,6 +3,7 @@ package ru.maxow.mvpn.payment.paymentverification;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
+import ru.maxow.mvpn.model.VerificationStatus;
 import ru.maxow.mvpn.user.User;
 
 import java.math.BigDecimal;

@@ -1,7 +1,7 @@
 package ru.maxow.mvpn.subscription;
 
-import ru.maxow.mvpn.subscription.dto.CreateUpdateSubscriptionDto;
-import ru.maxow.mvpn.subscription.dto.SubscriptionResponseDto;
+import ru.maxow.mvpn.model.CreateUpdateSubscriptionDto;
+import ru.maxow.mvpn.model.SubscriptionResponseDto;
 
 import java.util.List;
 
@@ -18,5 +18,5 @@ public interface SubscriptionService {
 
   List<SubscriptionResponseDto> findSubscriptionsByUserId(Long id);
 
-  void extendSubscription(Long userId, Integer billingMonth);
+  void extendSubscription(Long userId, String billingMonth);
 }

@@ -12,10 +12,13 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
+
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.experimental.FieldDefaults;
+import ru.maxow.mvpn.model.SubscriptionStatus;
 import ru.maxow.mvpn.user.User;
 
 @Entity
@@ -33,10 +36,10 @@ public class Subscription {
   User user;
 
   @Column(nullable = false)
-  LocalDateTime startDate;
+  OffsetDateTime startDate;
 
   @Column(nullable = false)
-  LocalDateTime endDate;
+  OffsetDateTime endDate;
 
   @Enumerated(EnumType.STRING)
   @Column(nullable = false)

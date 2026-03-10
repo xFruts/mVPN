@@ -1,7 +1,7 @@
 package ru.maxow.mvpn.payment.paymentverification;
 
-import ru.maxow.mvpn.payment.paymentverification.dto.CreateUpdatePaymentVerificationDto;
-import ru.maxow.mvpn.payment.paymentverification.dto.PaymentVerificationResponseDto;
+import ru.maxow.mvpn.model.CreateUpdatePaymentVerificationDto;
+import ru.maxow.mvpn.model.PaymentVerificationResponseDto;
 
 public interface PaymentVerificationService {
   PaymentVerificationResponseDto create(CreateUpdatePaymentVerificationDto dto);

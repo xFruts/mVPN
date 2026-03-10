@@ -1,7 +1,8 @@
 package ru.maxow.mvpn.tariff;
 
-import ru.maxow.mvpn.tariff.dto.CreateUpdateRequestTariffPlanDto;
-import ru.maxow.mvpn.tariff.dto.TariffPlanResponseDto;
+
+import ru.maxow.mvpn.model.CreateUpdateRequestTariffPlanDto;
+import ru.maxow.mvpn.model.TariffPlanResponseDto;
 
 import java.util.List;
 

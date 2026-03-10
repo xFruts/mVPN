@@ -4,9 +4,9 @@ import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.MappingTarget;
 import org.springframework.data.util.Pair;
+import ru.maxow.mvpn.model.CreateUpdateRequestTariffPlanDto;
+import ru.maxow.mvpn.model.TariffPlanResponseDto;
 import ru.maxow.mvpn.server.Server;
-import ru.maxow.mvpn.tariff.dto.CreateUpdateRequestTariffPlanDto;
-import ru.maxow.mvpn.tariff.dto.TariffPlanResponseDto;
 
 import java.util.ArrayList;
 import java.util.List;

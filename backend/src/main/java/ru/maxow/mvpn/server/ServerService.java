@@ -1,20 +1,19 @@
 package ru.maxow.mvpn.server;
 
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
-import ru.maxow.mvpn.server.dto.CreateUpdateServerRequestDto;
-import ru.maxow.mvpn.server.dto.ListServerDto;
-import ru.maxow.mvpn.server.dto.ServerResponseDto;
+import ru.maxow.mvpn.model.CreateUpdateServerRequestDto;
+import ru.maxow.mvpn.model.PageListServerDto;
+import ru.maxow.mvpn.model.ServerResponseDto;
+import ru.maxow.mvpn.model.ServerStatus;
 
 import java.util.List;
 import java.util.Set;
 
 public interface ServerService {
-  Page<ListServerDto> getServers(Pageable pageable);
+  PageListServerDto getServers(Integer page, Integer size, List<String> sort);
 
   ServerResponseDto getServer(Long id);
 
-  //For service use only
+  // For service use only
   Set<Server> getServersById(List<Long> ids);
 
   ServerResponseDto createServer(CreateUpdateServerRequestDto request);

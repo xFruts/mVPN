@@ -5,62 +5,45 @@ import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-import org.springframework.validation.annotation.Validated;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.multipart.MultipartFile;
-import ru.maxow.mvpn.subscription.dto.CreateUpdateSubscriptionDto;
-import ru.maxow.mvpn.subscription.dto.SubscriptionResponseDto;
+import ru.maxow.mvpn.api.SubscriptionsApi;
+import ru.maxow.mvpn.model.CreateUpdateSubscriptionDto;
+import ru.maxow.mvpn.model.SubscriptionResponseDto;
 
 @Slf4j
-@Validated
 @RestController
-@RequestMapping("v1/subscriptions")
 @RequiredArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
-public class SubscriptionController {
+public class SubscriptionController implements SubscriptionsApi {
 
   SubscriptionService subscriptionService;
 
-  @PostMapping("/user/{userId}")
-  public ResponseEntity<SubscriptionResponseDto> createSubscription(
-      @PathVariable Long userId,
-      @RequestBody @Validated CreateUpdateSubscriptionDto subscriptionRequestDto) {
-    SubscriptionResponseDto createdSubscription =
-        subscriptionService.createSubscription(userId, subscriptionRequestDto);
-    return ResponseEntity.status(HttpStatus.CREATED).body(createdSubscription);
+  @Override
+  public SubscriptionResponseDto v1SubscriptionsUserUserIdPost(
+      Long userId,
+      CreateUpdateSubscriptionDto createUpdateSubscriptionDto) {
+    return subscriptionService.createSubscription(userId, createUpdateSubscriptionDto);
   }
 
-  @GetMapping("/{id}")
-  public ResponseEntity<SubscriptionResponseDto> getSubscriptionById(@PathVariable Long id) {
-    return ResponseEntity.ok(subscriptionService.findSubscriptionById(id));
+  @Override
+  public SubscriptionResponseDto v1SubscriptionsIdGet(Long id) {
+    return subscriptionService.findSubscriptionById(id);
   }
 
-  @GetMapping("/user/{userId}")
-  public ResponseEntity<List<SubscriptionResponseDto>> getSubscriptionsByUserId(
-      @PathVariable Long userId) {
-    return ResponseEntity.ok(subscriptionService.findSubscriptionsByUserId(userId));
+  @Override
+  public List<SubscriptionResponseDto> v1SubscriptionsUserUserIdGet(Long userId) {
+    return subscriptionService.findSubscriptionsByUserId(userId);
   }
 
-  @PutMapping("/{id}")
-  public ResponseEntity<SubscriptionResponseDto> updateSubscription(
-      @PathVariable Long id,
-      @RequestBody @Validated CreateUpdateSubscriptionDto subscriptionRequestDto) {
-    return ResponseEntity.ok(subscriptionService.updateSubscription(id, subscriptionRequestDto));
+  @Override
+  public SubscriptionResponseDto v1SubscriptionsIdPut(
+      Long id,
+      CreateUpdateSubscriptionDto createUpdateSubscriptionDto) {
+    return subscriptionService.updateSubscription(id, createUpdateSubscriptionDto);
   }
 
-  @DeleteMapping("/{id}")
-  public ResponseEntity<Void> deleteSubscription(@PathVariable Long id) {
+  @Override
+  public void v1SubscriptionsIdDelete(Long id) {
     subscriptionService.deleteSubscription(id);
-    return ResponseEntity.noContent().build();
   }
 }

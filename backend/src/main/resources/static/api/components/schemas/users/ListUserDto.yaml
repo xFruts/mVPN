@@ -6,7 +6,7 @@ properties:
   fullName:
     type: string
   role:
-    type: string # Или ссылка на Enum, если хочешь строгости
+    type: string
     example: "ADMIN"
   subscriptionStatus:
     $ref: '../subscriptions/SubscriptionStatus.yaml'

@@ -6,12 +6,14 @@ import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import ru.maxow.mvpn.server.dto.CreateUpdateServerRequestDto;
-import ru.maxow.mvpn.server.dto.ListServerDto;
-import ru.maxow.mvpn.server.dto.ServerResponseDto;
+import ru.maxow.mvpn.model.CreateUpdateServerRequestDto;
+import ru.maxow.mvpn.model.PageListServerDto;
+import ru.maxow.mvpn.model.ServerResponseDto;
+import ru.maxow.mvpn.model.ServerStatus;
 import ru.maxow.mvpn.util.exception.NotFoundException;
 
 import java.util.List;
@@ -27,8 +29,24 @@ public class ServerServiceImpl implements ServerService {
   ServerMapper serverMapper;
 
   @Override
-  public Page<ListServerDto> getServers(Pageable pageable) {
-    return serverRepository.findAll(pageable).map(serverMapper::toListDto);
+  public PageListServerDto getServers(Integer page, Integer size, List<String> sort) {
+    Sort sorting = (sort == null || sort.isEmpty())
+        ? Sort.unsorted()
+        : Sort.by(sort.stream().map(s -> {
+          String[] parts = s.split(",");
+          return parts.length == 2 && parts[1].equalsIgnoreCase("desc")
+              ? Sort.Order.desc(parts[0])
+              : Sort.Order.asc(parts[0]);
+        }).toList());
+
+    Page<Server> servers = serverRepository.findAll(PageRequest.of(page, size, sorting));
+
+    return new PageListServerDto()
+        .content(servers.getContent().stream().map(serverMapper::toListDto).toList())
+        .totalElements(servers.getTotalElements())
+        .totalPages(servers.getTotalPages())
+        .size(servers.getSize())
+        .number(servers.getNumber());
   }
 
   @Override
