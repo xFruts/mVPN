@@ -8,9 +8,11 @@ import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Component;
+import ru.maxow.mvpn.model.BroadcastRequestDto;
+import ru.maxow.mvpn.model.TargetAudience;
+import ru.maxow.mvpn.model.UserRole;
 import ru.maxow.mvpn.telegram.adapter.TelegramSenderService;
 import ru.maxow.mvpn.user.User;
-import ru.maxow.mvpn.user.UserRole;
 import ru.maxow.mvpn.user.UserService;
 
 /**
@@ -29,13 +31,13 @@ public class BroadcastListener {
   @KafkaListener(topics = "${app.kafka.topics.broadcast}", groupId = "${app.kafka.groups.broadcast}")
   public void handleBroadcast(BroadcastRequestDto broadcastRequestDto) {
     if (broadcastRequestDto == null
-        || broadcastRequestDto.message() == null
-        || broadcastRequestDto.message().isEmpty()) {
+        || broadcastRequestDto.getMessage() == null
+        || broadcastRequestDto.getMessage().isEmpty()) {
       log.warn("Received empty broadcast request");
       return;
     }
 
-    if (broadcastRequestDto.targetAudience() == null) {
+    if (broadcastRequestDto.getTargetAudience() == null) {
       log.warn("Received broadcast request with null target audience");
       return;
     }
@@ -48,7 +50,7 @@ public class BroadcastListener {
         try {
           senderService.sendMessage(
               user.getUserTelegramId().toString(),
-              broadcastRequestDto.message()
+              broadcastRequestDto.getMessage()
           );
           Thread.sleep(100); // delay for telegram API
         } catch (Exception e) {
@@ -61,20 +63,20 @@ public class BroadcastListener {
 
   private List<User> findTargetUsers(BroadcastRequestDto requestDto) {
     try {
-      TargetAudience target = requestDto.targetAudience();
+      TargetAudience target = requestDto.getTargetAudience();
       return switch (target) {
         case ALL -> userService.findAll();
         case REGULAR -> userService.getUsersByRole(UserRole.REGULAR);
         case VIP -> userService.getUsersByRole(UserRole.SPECIAL);
         case ADMIN -> userService.getUsersByRole(UserRole.ADMIN);
         case CUSTOM_LIST ->
-            (requestDto.customUserIds() != null && !requestDto.customUserIds().isEmpty())
-                ? userService.getUsersByTelegramIds(requestDto.customUserIds())
+            (requestDto.getCustomUserIds() != null && !requestDto.getCustomUserIds().isEmpty())
+                ? userService.getUsersByTelegramIds(requestDto.getCustomUserIds())
                 : new ArrayList<>();
       };
     } catch (Exception e) {
       log.error("Cannot find target audience for request {}: {}",
-          requestDto.targetAudience(), e.getMessage());
+          requestDto.getTargetAudience(), e.getMessage());
     }
     return new ArrayList<>();
   }

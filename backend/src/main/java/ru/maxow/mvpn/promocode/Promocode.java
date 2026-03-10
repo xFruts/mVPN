@@ -7,11 +7,14 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
+
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.experimental.FieldDefaults;
 import org.hibernate.annotations.ColumnDefault;
+import ru.maxow.mvpn.model.PromocodeStatus;
 
 /**
  * Entity representing a promotional code.
@@ -30,7 +33,7 @@ public class Promocode {
   String code;
 
   @Column(nullable = false)
-  LocalDateTime expirationDate;
+  OffsetDateTime expirationDate;
 
   @Column(nullable = false)
   @ColumnDefault("1")

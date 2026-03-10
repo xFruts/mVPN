@@ -5,9 +5,9 @@ import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import ru.maxow.mvpn.model.PaymentVerificationRequestDto;
+import ru.maxow.mvpn.model.PaymentVerificationResponseDto;
 import ru.maxow.mvpn.payment.paymentverification.PaymentVerificationService;
-import ru.maxow.mvpn.payment.paymentverification.dto.PaymentVerificationRequestDto;
-import ru.maxow.mvpn.payment.paymentverification.dto.PaymentVerificationResponseDto;
 import ru.maxow.mvpn.subscription.SubscriptionService;
 
 @Service
@@ -23,9 +23,9 @@ public class PaymentApprovalFacade {
       Long verificationId,
       PaymentVerificationRequestDto dto) {
     PaymentVerificationResponseDto paymentVerification =
-        paymentVerificationService.approve(verificationId, dto.adminComment());
+        paymentVerificationService.approve(verificationId, dto.getAdminComment());
     subscriptionService.extendSubscription(
-        paymentVerification.userId(), paymentVerification.billingMonth());
+        paymentVerification.getUserId(), paymentVerification.getBillingMonth());
     return paymentVerification;
   }
 
@@ -33,6 +33,6 @@ public class PaymentApprovalFacade {
   public PaymentVerificationResponseDto reject(
       Long verificationId,
       PaymentVerificationRequestDto dto) {
-    return paymentVerificationService.reject(verificationId, dto.adminComment());
+    return paymentVerificationService.reject(verificationId, dto.getAdminComment());
   }
 }

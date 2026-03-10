@@ -1,5 +1,8 @@
 package ru.maxow.mvpn.promocode;
 
+import ru.maxow.mvpn.model.CreatePromocodeRequestDto;
+import ru.maxow.mvpn.model.PromocodeResponseDto;
+
 import java.util.List;
 
 public interface PromocodeService {

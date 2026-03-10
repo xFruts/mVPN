@@ -5,9 +5,9 @@ import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import ru.maxow.mvpn.model.CreateUpdateRequestTariffPlanDto;
+import ru.maxow.mvpn.model.TariffPlanResponseDto;
 import ru.maxow.mvpn.server.ServerService;
-import ru.maxow.mvpn.tariff.dto.CreateUpdateRequestTariffPlanDto;
-import ru.maxow.mvpn.tariff.dto.TariffPlanResponseDto;
 import ru.maxow.mvpn.util.exception.NotFoundException;
 
 import java.util.List;
@@ -27,7 +27,7 @@ public class TariffServiceImpl implements TariffService {
     Tariff tariff = new Tariff();
     tariffMapper.updateFromDto(dto, tariff);
 
-    tariff.setServers(serverService.getServersById(dto.serverIds()));
+    tariff.setServers(serverService.getServersById(dto.getServerIds()));
     Tariff createdTariff = tariffPlanRepository.save(tariff);
     return tariffMapper.toResponseDto(createdTariff);
   }

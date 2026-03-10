@@ -1,47 +1,42 @@
 package ru.maxow.mvpn.payment.paymentverification;
 
-import jakarta.validation.Valid;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-import org.springframework.validation.annotation.Validated;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.RestController;
+import ru.maxow.mvpn.api.PaymentVerificationsApi;
+import ru.maxow.mvpn.model.CreateUpdatePaymentVerificationDto;
+import ru.maxow.mvpn.model.PaymentVerificationRequestDto;
+import ru.maxow.mvpn.model.PaymentVerificationResponseDto;
 import ru.maxow.mvpn.payment.PaymentApprovalFacade;
-import ru.maxow.mvpn.payment.paymentverification.dto.CreateUpdatePaymentVerificationDto;
-import ru.maxow.mvpn.payment.paymentverification.dto.PaymentVerificationRequestDto;
-import ru.maxow.mvpn.payment.paymentverification.dto.PaymentVerificationResponseDto;
 
 @Slf4j
-@Validated
 @RestController
-@RequestMapping("v1/payment-verifications")
 @RequiredArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
-public class PaymentVerificationController {
+public class PaymentVerificationController implements PaymentVerificationsApi {
 
   PaymentApprovalFacade approvalFacade;
   PaymentVerificationService paymentVerificationService;
 
-  @PostMapping
-  public ResponseEntity<PaymentVerificationResponseDto> create(
-      @Valid @RequestBody CreateUpdatePaymentVerificationDto dto) {
-    return new ResponseEntity<>(paymentVerificationService.create(dto), HttpStatus.CREATED);
+  @Override
+  public PaymentVerificationResponseDto v1PaymentVerificationsPost(
+      CreateUpdatePaymentVerificationDto createUpdatePaymentVerificationDto) {
+    return paymentVerificationService.create(createUpdatePaymentVerificationDto);
   }
 
-  @PostMapping("/{id}/approve")
-  public ResponseEntity<PaymentVerificationResponseDto> approve(
-      @PathVariable Long id,
-      @RequestBody @Validated PaymentVerificationRequestDto dto) {
-    return new ResponseEntity<>(approvalFacade.approve(id, dto), HttpStatus.OK);
+  @Override
+  public PaymentVerificationResponseDto v1PaymentVerificationsIdApprovePost(
+      Long id,
+      PaymentVerificationRequestDto paymentVerificationRequestDto) {
+    return approvalFacade.approve(id, paymentVerificationRequestDto);
   }
 
-  @PostMapping("/{id}/reject")
-  public ResponseEntity<PaymentVerificationResponseDto> reject(
-      @PathVariable Long id,
-      @RequestBody @Validated PaymentVerificationRequestDto dto) {
-    return new ResponseEntity<>(approvalFacade.reject(id, dto), HttpStatus.OK);
+  @Override
+  public PaymentVerificationResponseDto v1PaymentVerificationsIdRejectPost(
+      Long id,
+      PaymentVerificationRequestDto paymentVerificationRequestDto) {
+    return approvalFacade.reject(id, paymentVerificationRequestDto);
   }
 }

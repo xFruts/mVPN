@@ -1,46 +1,37 @@
 package ru.maxow.mvpn.payment.paymentsettings;
 
-import jakarta.validation.Valid;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-import org.springframework.validation.annotation.Validated;
-import org.springframework.web.bind.annotation.*;
-import ru.maxow.mvpn.payment.paymentsettings.dto.CreateUpdatePaymentSettingsDto;
-import ru.maxow.mvpn.payment.paymentsettings.dto.PaymentSettingsResponseDto;
+import org.springframework.web.bind.annotation.RestController;
+import ru.maxow.mvpn.api.PaymentSettingsApi;
+import ru.maxow.mvpn.model.CreateUpdatePaymentSettingsDto;
+import ru.maxow.mvpn.model.PaymentSettingsResponseDto;
 
 @Slf4j
-@Validated
 @RestController
-@RequestMapping("v1/payment-settings")
 @RequiredArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
-public class PaymentSettingsController {
+public class PaymentSettingsController implements PaymentSettingsApi {
 
   PaymentSettingsService paymentSettingsService;
 
-  @PostMapping
-  public ResponseEntity<PaymentSettingsResponseDto> createPaymentSettings(
-      @Valid @RequestBody CreateUpdatePaymentSettingsDto dto) {
-    PaymentSettingsResponseDto responseDto = paymentSettingsService.createPaymentSettings(dto);
-    return new ResponseEntity<>(responseDto, HttpStatus.CREATED);
+  @Override
+  public PaymentSettingsResponseDto v1PaymentSettingsPost(
+      CreateUpdatePaymentSettingsDto createUpdatePaymentSettingsDto) {
+    return paymentSettingsService.createPaymentSettings(createUpdatePaymentSettingsDto);
   }
 
-  @PutMapping("/{id}")
-  public ResponseEntity<PaymentSettingsResponseDto> updatePaymentSettings(
-      @PathVariable("id") Long id,
-      @Valid @RequestBody CreateUpdatePaymentSettingsDto dto) {
-    PaymentSettingsResponseDto responseDto = paymentSettingsService.updatePaymentSettings(id, dto);
-    return new ResponseEntity<>(responseDto, HttpStatus.OK);
+  @Override
+  public PaymentSettingsResponseDto v1PaymentSettingsIdPut(
+      Long id,
+      CreateUpdatePaymentSettingsDto createUpdatePaymentSettingsDto) {
+    return paymentSettingsService.updatePaymentSettings(id, createUpdatePaymentSettingsDto);
   }
 
-  @GetMapping("/{billingMonth}")
-  public ResponseEntity<PaymentSettingsResponseDto> getPaymentSettings(
-      @PathVariable String billingMonth) {
-    PaymentSettingsResponseDto responseDto = paymentSettingsService.getPaymentSettings(billingMonth);
-    return new ResponseEntity<>(responseDto, HttpStatus.OK);
+  @Override
+  public PaymentSettingsResponseDto v1PaymentSettingsBillingMonthGet(String billingMonth) {
+    return paymentSettingsService.getPaymentSettings(billingMonth);
   }
 }

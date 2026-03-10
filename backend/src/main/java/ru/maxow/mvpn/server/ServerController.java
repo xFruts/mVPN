@@ -1,60 +1,47 @@
 package ru.maxow.mvpn.server;
 
-import jakarta.validation.Valid;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-import org.springframework.validation.annotation.Validated;
-import org.springframework.web.bind.annotation.*;
-import ru.maxow.mvpn.server.dto.CreateUpdateServerRequestDto;
-import ru.maxow.mvpn.server.dto.ListServerDto;
-import ru.maxow.mvpn.server.dto.ServerResponseDto;
+import org.springframework.web.bind.annotation.RestController;
+import ru.maxow.mvpn.api.ServersApi;
+import ru.maxow.mvpn.model.CreateUpdateServerRequestDto;
+import ru.maxow.mvpn.model.PageListServerDto;
+import ru.maxow.mvpn.model.ServerResponseDto;
+import ru.maxow.mvpn.model.ServerStatus;
+
+import java.util.List;
 
 @Slf4j
-@Validated
 @RestController
-@RequestMapping("v1/servers")
 @RequiredArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
-public class ServerController {
+public class ServerController implements ServersApi {
   ServerService serverService;
 
-  @GetMapping
-  ResponseEntity<Page<ListServerDto>> getServers(Pageable pageable) {
-    return ResponseEntity.ok(serverService.getServers(pageable));
+  @Override
+  public PageListServerDto v1ServersGet(Integer page, Integer size, List<String> sort) {
+    return serverService.getServers(page, size, sort);
   }
 
-  @PostMapping
-  ResponseEntity<ServerResponseDto> createServer(
-      @Valid @RequestBody CreateUpdateServerRequestDto serverDto) {
-    ServerResponseDto createdServer = serverService.createServer(serverDto);
-    return ResponseEntity.status(HttpStatus.CREATED).body(createdServer);
+  @Override
+  public ServerResponseDto v1ServersPost(CreateUpdateServerRequestDto createUpdateServerRequestDto) {
+    return serverService.createServer(createUpdateServerRequestDto);
   }
 
-  @PutMapping("/{id}")
-  ResponseEntity<ServerResponseDto> updateServer(
-      @PathVariable Long id,
-      @Valid @RequestBody CreateUpdateServerRequestDto serverDto) {
-    ServerResponseDto updatedServer = serverService.updateServer(id, serverDto);
-    return ResponseEntity.ok(updatedServer);
+  @Override
+  public ServerResponseDto v1ServersIdPut(Long id, CreateUpdateServerRequestDto createUpdateServerRequestDto) {
+    return serverService.updateServer(id, createUpdateServerRequestDto);
   }
 
-  @PatchMapping("/{id}/status")
-  ResponseEntity<ServerResponseDto> updateServerStatus(
-      @PathVariable Long id,
-      @RequestParam ServerStatus status) {
-    ServerResponseDto updatedServer = serverService.updateServerStatus(id, status);
-    return ResponseEntity.ok(updatedServer);
+  @Override
+  public ServerResponseDto v1ServersIdStatusPatch(Long id, ServerStatus status) {
+    return serverService.updateServerStatus(id, status);
   }
 
-  @DeleteMapping("/{id}")
-  ResponseEntity<Void> deleteServer(@PathVariable Long id) {
+  @Override
+  public void v1ServersIdDelete(Long id) {
     serverService.deleteServer(id);
-    return ResponseEntity.noContent().build();
   }
 }

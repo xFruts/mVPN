@@ -3,47 +3,43 @@ package ru.maxow.mvpn.tariff;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
-import ru.maxow.mvpn.tariff.dto.CreateUpdateRequestTariffPlanDto;
-import ru.maxow.mvpn.tariff.dto.TariffPlanResponseDto;
+import org.springframework.web.bind.annotation.RestController;
+import ru.maxow.mvpn.api.TariffsApi;
+import ru.maxow.mvpn.model.CreateUpdateRequestTariffPlanDto;
+import ru.maxow.mvpn.model.TariffPlanResponseDto;
 
 import java.util.List;
 
 @RestController
-@RequestMapping("v1/tariffs")
 @RequiredArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
-public class TariffController {
+public class TariffController implements TariffsApi {
 
   TariffService tariffPlanService;
 
-  @GetMapping
-  ResponseEntity<List<TariffPlanResponseDto>> getAllTariffPlans() {
-    return ResponseEntity.ok(tariffPlanService.getAllTariffPlans());
+  @Override
+  public List<TariffPlanResponseDto> v1TariffsGet() {
+    return tariffPlanService.getAllTariffPlans();
   }
 
-  @GetMapping("/{id}")
-  ResponseEntity<TariffPlanResponseDto> getTariffPlanById(@PathVariable Long id) {
-    return ResponseEntity.ok(tariffPlanService.getTariffPlanById(id));
+  @Override
+  public TariffPlanResponseDto v1TariffsIdGet(Long id) {
+    return tariffPlanService.getTariffPlanById(id);
   }
 
-  @PostMapping
-  ResponseEntity<TariffPlanResponseDto> createTariffPlan(@RequestBody CreateUpdateRequestTariffPlanDto dto) {
-    return ResponseEntity.ok(tariffPlanService.createTariffPlan(dto));
+  @Override
+  public TariffPlanResponseDto v1TariffsPost(CreateUpdateRequestTariffPlanDto createUpdateRequestTariffPlanDto) {
+    return tariffPlanService.createTariffPlan(createUpdateRequestTariffPlanDto);
   }
 
-  @PutMapping("/{id}")
-  ResponseEntity<TariffPlanResponseDto> updateTariffPlan(
-      @PathVariable Long id, @RequestBody CreateUpdateRequestTariffPlanDto dto) {
-    return ResponseEntity.ok(tariffPlanService.updateTariffPlan(id, dto));
+  @Override
+  public TariffPlanResponseDto v1TariffsIdPut(Long id, CreateUpdateRequestTariffPlanDto createUpdateRequestTariffPlanDto) {
+    return tariffPlanService.updateTariffPlan(id, createUpdateRequestTariffPlanDto);
   }
 
-  @DeleteMapping("/{id}")
-  ResponseEntity<Void> deleteTariffPlan(@PathVariable Long id) {
+  @Override
+  public void v1TariffsIdDelete(Long id) {
     tariffPlanService.deleteTariffPlan(id);
-    return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
   }
 
 }

@@ -11,6 +11,7 @@ import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.experimental.FieldDefaults;
+import ru.maxow.mvpn.model.ServerStatus;
 import ru.maxow.mvpn.util.converter.AttributeEncryptor;
 
 @Entity

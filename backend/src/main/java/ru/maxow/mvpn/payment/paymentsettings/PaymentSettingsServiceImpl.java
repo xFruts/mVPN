@@ -5,8 +5,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-import ru.maxow.mvpn.payment.paymentsettings.dto.CreateUpdatePaymentSettingsDto;
-import ru.maxow.mvpn.payment.paymentsettings.dto.PaymentSettingsResponseDto;
+import ru.maxow.mvpn.model.CreateUpdatePaymentSettingsDto;
+import ru.maxow.mvpn.model.PaymentSettingsResponseDto;
 import ru.maxow.mvpn.util.exception.NotFoundException;
 
 @Service

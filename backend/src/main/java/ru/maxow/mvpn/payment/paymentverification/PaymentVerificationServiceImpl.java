@@ -5,8 +5,9 @@ import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-import ru.maxow.mvpn.payment.paymentverification.dto.CreateUpdatePaymentVerificationDto;
-import ru.maxow.mvpn.payment.paymentverification.dto.PaymentVerificationResponseDto;
+import ru.maxow.mvpn.model.CreateUpdatePaymentVerificationDto;
+import ru.maxow.mvpn.model.PaymentVerificationResponseDto;
+import ru.maxow.mvpn.model.VerificationStatus;
 import ru.maxow.mvpn.util.exception.NotFoundException;
 
 import java.time.Instant;

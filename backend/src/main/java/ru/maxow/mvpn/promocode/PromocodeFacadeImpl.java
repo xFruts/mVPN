@@ -6,14 +6,14 @@ import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import ru.maxow.mvpn.model.CreateUpdateSubscriptionDto;
+import ru.maxow.mvpn.model.SubscriptionStatus;
 import ru.maxow.mvpn.subscription.SubscriptionService;
-import ru.maxow.mvpn.subscription.dto.CreateUpdateSubscriptionDto;
 import ru.maxow.mvpn.user.UserRepository;
 import ru.maxow.mvpn.user.UserService;
 import ru.maxow.mvpn.util.exception.BadRequestException;
 import ru.maxow.mvpn.util.exception.NotFoundException;
-
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 
 @Slf4j
 @Service
@@ -41,9 +41,9 @@ public class PromocodeFacadeImpl implements PromocodeFacade {
 
     CreateUpdateSubscriptionDto dto = new CreateUpdateSubscriptionDto(
         userId,
-        LocalDateTime.now(),
-        LocalDateTime.now().plusMonths(1),
-        "ACTIVE"
+        OffsetDateTime.now(),
+        OffsetDateTime.now().plusMonths(1),
+        SubscriptionStatus.ACTIVE
     ); //TODO: Костыль. Убрать хардкод и сделать возможность создание разных промокодов
     subscriptionService.createSubscription(userId, dto);
     log.info("Promocode {} applied successfully for user {}", code, userId);
