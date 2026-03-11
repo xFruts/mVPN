@@ -13,9 +13,14 @@ import java.time.OffsetDateTime;
 public interface PaymentSettingsMapper {
   PaymentSettingsResponseDto toDto(PaymentSettings paymentSettings);
 
+  @Mapping(target = "id", ignore = true)
+  @Mapping(target = "createdBy", ignore = true)
+  @Mapping(target = "createdAt", ignore = true)
   PaymentSettings toEntity(CreateUpdatePaymentSettingsDto dto);
 
   @Mapping(target = "id", ignore = true)
+  @Mapping(target = "createdBy", ignore = true)
+  @Mapping(target = "createdAt", ignore = true)
   void updateEntityFromDto(CreateUpdatePaymentSettingsDto dto, @MappingTarget PaymentSettings entity);
 
   default OffsetDateTime toOffsetDateTime(Instant instant) {

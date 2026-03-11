@@ -14,6 +14,7 @@ import java.util.List;
 @Mapper(componentModel = "spring")
 public interface TariffMapper {
 
+  @Mapping(target = "id", ignore = true)
   @Mapping(target = "servers", ignore = true)
   void updateFromDto(CreateUpdateRequestTariffPlanDto dto, @MappingTarget Tariff tariff);
 

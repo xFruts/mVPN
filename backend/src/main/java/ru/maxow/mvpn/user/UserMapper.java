@@ -25,6 +25,11 @@ public abstract class UserMapper {
   @Mapping(source = "role", target = "role")
   public abstract UserResponseDto toUserResponseDto(User user);
 
+  @Mapping(target = "id", ignore = true)
+  @Mapping(target = "verificationCode", ignore = true)
+  @Mapping(target = "subscriptions", ignore = true)
+  @Mapping(target = "xuiId", ignore = true)
+  @Mapping(target = "xuiSubscription", ignore = true)
   public abstract User toUser(CreateUserRequestDto userRequestDto);
 
   public ListUserDto toListUserDto(User user) {

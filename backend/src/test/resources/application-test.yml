@@ -1,0 +1,42 @@
+spring:
+  datasource:
+    url: jdbc:h2:mem:testdb
+    driver-class-name: org.h2.Driver
+    username: sa
+    password:
+
+  jpa:
+    database-platform: org.hibernate.dialect.H2Dialect
+    hibernate:
+      ddl-auto: create-drop
+    show-sql: false
+    properties:
+      hibernate:
+        format_sql: true
+
+  h2:
+    console:
+      enabled: false
+
+  security:
+    oauth2:
+      client:
+        provider:
+          keycloak:
+            issuer-uri: http://localhost:8081/realms/test
+        registration:
+          keycloak:
+            client-id: test-client
+            client-secret: test-secret
+
+app:
+  keycloak:
+    client-id: test-client
+
+encryption:
+  key: 0123456789abcdef
+
+logging:
+  level:
+    root: WARN
+    org.springframework.test: INFO
