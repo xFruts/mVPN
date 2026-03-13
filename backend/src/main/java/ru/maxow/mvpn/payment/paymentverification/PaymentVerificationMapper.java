@@ -9,6 +9,7 @@ import ru.maxow.mvpn.user.User;
 @Mapper(componentModel = "spring")
 public interface PaymentVerificationMapper {
 
+  @Mapping(target = "userId", source = "user.id")
   PaymentVerificationResponseDto toDto(PaymentVerification paymentVerification);
 
   @Mapping(target = "id", ignore = true)

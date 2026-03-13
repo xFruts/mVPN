@@ -21,20 +21,20 @@ public class PaymentVerificationController implements PaymentVerificationsApi {
   PaymentVerificationService paymentVerificationService;
 
   @Override
-  public PaymentVerificationResponseDto v1PaymentVerificationsPost(
+  public PaymentVerificationResponseDto createPaymentVerification(
       CreateUpdatePaymentVerificationDto createUpdatePaymentVerificationDto) {
     return paymentVerificationService.create(createUpdatePaymentVerificationDto);
   }
 
   @Override
-  public PaymentVerificationResponseDto v1PaymentVerificationsIdApprovePost(
+  public PaymentVerificationResponseDto approvePaymentVerification(
       Long id,
       PaymentVerificationRequestDto paymentVerificationRequestDto) {
     return approvalFacade.approve(id, paymentVerificationRequestDto);
   }
 
   @Override
-  public PaymentVerificationResponseDto v1PaymentVerificationsIdRejectPost(
+  public PaymentVerificationResponseDto rejectPaymentVerification(
       Long id,
       PaymentVerificationRequestDto paymentVerificationRequestDto) {
     return approvalFacade.reject(id, paymentVerificationRequestDto);

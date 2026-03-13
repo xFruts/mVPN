@@ -21,36 +21,36 @@ public class UserController implements UsersApi {
   UserService userService;
 
   @Override
-  public PageListUserDto v1UsersGet(Integer page, Integer size, List<String> sort) {
+  public PageListUserDto getUsers(Integer page, Integer size, List<String> sort) {
     return userService.findAllAsPage(page, size, sort);
   }
 
   @Override
-  public UserResponseDto v1UsersPost(CreateUserRequestDto createUserRequestDto) {
+  public UserResponseDto createUser(CreateUserRequestDto createUserRequestDto) {
     UserResponseDto createdUser = userService.createUser(createUserRequestDto);
     log.info("User with ID: {} created: ", createdUser.getId());
     return createdUser;
   }
 
   @Override
-  public UserResponseDto v1UsersUserIdPut(Long userId, UpdateUserRequestDto updateUserRequestDto) {
+  public UserResponseDto updateUser(Long userId, UpdateUserRequestDto updateUserRequestDto) {
     UserResponseDto updatedUser = userService.updateUser(userId, updateUserRequestDto);
     log.info("User with ID: {} updated: ", updatedUser.getId());
     return updatedUser;
   }
 
   @Override
-  public void v1UsersUserIdDelete(Long userId) {
+  public void deleteUser(Long userId) {
     userService.deleteUserById(userId);
   }
 
   @Override
-  public UserResponseDto v1UsersUserIdRolePatch(Long userId, UpdateUserRoleRequest updateUserRoleRequest) {
+  public UserResponseDto updateUserRole(Long userId, UpdateUserRoleRequest updateUserRoleRequest) {
     return userService.updateUserRole(userId, String.valueOf(updateUserRoleRequest.getRole()));
   }
 
   @Override
-  public UUID v1UsersUserIdCodeGet(Long userId) {
+  public UUID getUserVerificationCode(Long userId) {
     return userService.getUserVerificationCode(userId);
   }
 }

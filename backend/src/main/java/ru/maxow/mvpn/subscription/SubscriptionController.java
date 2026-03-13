@@ -19,31 +19,31 @@ public class SubscriptionController implements SubscriptionsApi {
   SubscriptionService subscriptionService;
 
   @Override
-  public SubscriptionResponseDto v1SubscriptionsUserUserIdPost(
+  public SubscriptionResponseDto createSubscription(
       Long userId,
       CreateUpdateSubscriptionDto createUpdateSubscriptionDto) {
     return subscriptionService.createSubscription(userId, createUpdateSubscriptionDto);
   }
 
   @Override
-  public SubscriptionResponseDto v1SubscriptionsIdGet(Long id) {
+  public SubscriptionResponseDto getSubscriptionById(Long id) {
     return subscriptionService.findSubscriptionById(id);
   }
 
   @Override
-  public List<SubscriptionResponseDto> v1SubscriptionsUserUserIdGet(Long userId) {
+  public List<SubscriptionResponseDto> getSubscriptionsByUserId(Long userId) {
     return subscriptionService.findSubscriptionsByUserId(userId);
   }
 
   @Override
-  public SubscriptionResponseDto v1SubscriptionsIdPut(
+  public SubscriptionResponseDto updateSubscription(
       Long id,
       CreateUpdateSubscriptionDto createUpdateSubscriptionDto) {
     return subscriptionService.updateSubscription(id, createUpdateSubscriptionDto);
   }
 
   @Override
-  public void v1SubscriptionsIdDelete(Long id) {
+  public void deleteSubscription(Long id) {
     subscriptionService.deleteSubscription(id);
   }
 }
