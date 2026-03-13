@@ -3,6 +3,7 @@ package ru.maxow.mvpn.broadcast;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.support.SendResult;
@@ -18,7 +19,7 @@ public class BroadcastService {
 
   public BroadcastService(
       @Value("${app.kafka.topics.broadcast}") String broadcastTopicName,
-      KafkaTemplate<String, BroadcastRequestDto> kafkaTemplate
+      @Qualifier("broadcastKafkaTemplate") KafkaTemplate<String, BroadcastRequestDto> kafkaTemplate
   ) {
     this.broadcastTopicName = broadcastTopicName;
     this.kafkaTemplate = kafkaTemplate;
