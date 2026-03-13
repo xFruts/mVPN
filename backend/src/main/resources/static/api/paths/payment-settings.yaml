@@ -1,5 +1,6 @@
 PaymentSettingsCollection:
   post:
+    operationId: createPaymentSettings
     summary: Создать настройки платежа на месяц
     tags: [Payment Settings]
     requestBody:
@@ -20,6 +21,7 @@ PaymentSettingsCollection:
 
 PaymentSettingsSingleById:
   put:
+    operationId: updatePaymentSettings
     summary: Обновить настройки платежа
     tags: [Payment Settings]
     parameters:
@@ -49,6 +51,7 @@ PaymentSettingsSingleById:
 
 PaymentSettingsSingleByMonth:
   get:
+    operationId: getPaymentSettingsByBillingMonth
     summary: Получить настройки платежа по месяцу
     tags: [Payment Settings]
     parameters:

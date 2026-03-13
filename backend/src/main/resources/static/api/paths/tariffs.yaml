@@ -1,6 +1,7 @@
 # URL: /v1/tariffs
 TariffsCollection:
   get:
+    operationId: getTariffs
     summary: Получить все тарифные планы
     tags: [Tariffs]
     responses:
@@ -16,6 +17,7 @@ TariffsCollection:
         $ref: '../components/responses/error/InternalServerError.yaml'
 
   post:
+    operationId: createTariff
     summary: Создать новый тариф
     tags: [Tariffs]
     requestBody:
@@ -37,6 +39,7 @@ TariffsCollection:
 # URL: /v1/tariffs/{id}
 TariffSingle:
   get:
+    operationId: getTariffById
     summary: Получить тариф по ID
     tags: [Tariffs]
     parameters:
@@ -57,6 +60,7 @@ TariffSingle:
         $ref: '../components/responses/error/NotFound.yaml'
 
   put:
+    operationId: updateTariff
     summary: Обновить тариф
     tags: [Tariffs]
     parameters:
@@ -83,6 +87,7 @@ TariffSingle:
         $ref: '../components/responses/error/NotFound.yaml'
 
   delete:
+    operationId: deleteTariff
     summary: Удалить тариф
     tags: [Tariffs]
     parameters:

@@ -1,6 +1,7 @@
 # Группа для пути /v1/promocodes (без ID)
 PromocodesCollection:
   get:
+    operationId: getPromocodes
     summary: Получить список всех промокодов
     tags: [Promocodes]
     responses:
@@ -13,6 +14,7 @@ PromocodesCollection:
               items:
                 $ref: '../components/schemas/promocodes/PromocodeResponseDto.yaml'
   post:
+    operationId: createPromocode
     summary: Создать новый промокод
     tags: [Promocodes]
     requestBody:
@@ -34,6 +36,7 @@ PromocodesCollection:
 # Группа для пути /v1/promocodes/{id}
 PromocodeSingle:
   delete:
+    operationId: deletePromocode
     summary: Удалить промокод
     tags: [Promocodes]
     parameters:

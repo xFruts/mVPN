@@ -1,5 +1,6 @@
 ServersCollection:
   get:
+    operationId: getServers
     summary: Получить список серверов (с пагинацией)
     tags: [Servers]
     parameters:
@@ -31,6 +32,7 @@ ServersCollection:
               $ref: '../components/schemas/servers/PageListServerDto.yaml'
 
   post:
+    operationId: createServer
     summary: Добавить новый сервер
     tags: [Servers]
     requestBody:
@@ -51,6 +53,7 @@ ServersCollection:
 
 ServerSingle:
   put:
+    operationId: updateServer
     summary: Обновить данные сервера
     tags: [Servers]
     parameters:
@@ -77,6 +80,7 @@ ServerSingle:
         $ref: '../components/responses/error/NotFound.yaml'
 
   delete:
+    operationId: deleteServer
     summary: Удалить сервер
     tags: [Servers]
     parameters:
@@ -94,6 +98,7 @@ ServerSingle:
 
 ServerStatusUpdate:
   patch:
+    operationId: updateServerStatus
     summary: Изменить статус сервера
     description: Быстрое переключение статуса (ACTIVE/MAINTENANCE) через параметр запроса
     tags: [Servers]

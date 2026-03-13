@@ -18,8 +18,8 @@ spring:
       properties:
         spring:
           json:
-            trusted.packages: ru.maxow.mvpn.broadcast
-            value.default.type: ru.maxow.mvpn.broadcast.BroadcastRequestDto
+            trusted.packages: ru.maxow.mvpn.model
+            value.default.type: ru.maxow.mvpn.model.BroadcastRequestDto
     template:
       default-topic: ${KAFKA_DEFAULT_TOPIC:mVPN-topic}
     producer:
