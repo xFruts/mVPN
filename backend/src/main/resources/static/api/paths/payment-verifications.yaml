@@ -1,6 +1,7 @@
 # POST /v1/payment-verifications
 PaymentVerificationsCollection:
   post:
+    operationId: createPaymentVerification
     summary: Создать заявку на проверку платежа
     tags: [Payment Verifications]
     requestBody:
@@ -22,6 +23,7 @@ PaymentVerificationsCollection:
 # POST /v1/payment-verifications/{id}/approve
 PaymentVerificationsApprove:
   post:
+    operationId: approvePaymentVerification
     summary: Одобрить платеж
     tags: [Payment Verifications]
     parameters:
@@ -51,6 +53,7 @@ PaymentVerificationsApprove:
 # POST /v1/payment-verifications/{id}/reject
 PaymentVerificationsReject:
   post:
+    operationId: rejectPaymentVerification
     summary: Отклонить платеж
     tags: [Payment Verifications]
     parameters:

@@ -1,6 +1,7 @@
 # URL: /v1/users
 UsersCollection:
   get:
+    operationId: getUsers
     summary: Получить список пользователей (Пагинация)
     tags: [Users]
     parameters:
@@ -31,6 +32,7 @@ UsersCollection:
         $ref: '../components/responses/error/InternalServerError.yaml'
 
   post:
+    operationId: createUser
     summary: Создать нового пользователя
     tags: [Users]
     requestBody:
@@ -52,6 +54,7 @@ UsersCollection:
 # URL: /v1/users/{userId}
 UserSingle:
   put:
+    operationId: updateUser
     summary: Обновить данные пользователя
     tags: [Users]
     parameters:
@@ -78,6 +81,7 @@ UserSingle:
         $ref: '../components/responses/error/NotFound.yaml'
 
   delete:
+    operationId: deleteUser
     summary: Удалить пользователя
     tags: [Users]
     parameters:
@@ -96,6 +100,7 @@ UserSingle:
 # URL: /v1/users/{userId}/role
 UserRoleUpdate:
   patch:
+    operationId: updateUserRole
     summary: Изменить роль пользователя
     tags: [Users]
     parameters:
@@ -124,6 +129,7 @@ UserRoleUpdate:
 # URL: /v1/users/{userId}/code
 UserVerificationCode:
   get:
+    operationId: getUserVerificationCode
     summary: Получить код верификации пользователя
     tags: [Users]
     parameters:

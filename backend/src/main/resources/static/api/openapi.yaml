@@ -14,7 +14,7 @@ security:
   - bearerAuth: []
 
 paths:
-  /v1/broadrasts:
+  /v1/broadcasts:
     $ref: './paths/broadcasts.yaml'
   /v1/payment-settings:
     $ref: './paths/payment-settings.yaml#/PaymentSettingsCollection'

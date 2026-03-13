@@ -1,6 +1,7 @@
 # URL: /v1/subscriptions/user/{userId}
 SubscriptionsByUser:
   post:
+    operationId: createSubscription
     summary: Создать подписку для пользователя
     description: Внимание! userId передается и в пути, и в теле запроса.
     tags: [Subscriptions]
@@ -31,6 +32,7 @@ SubscriptionsByUser:
         $ref: '../components/responses/error/NotFound.yaml'
 
   get:
+    operationId: getSubscriptionsByUserId
     summary: Получить все подписки пользователя
     tags: [Subscriptions]
     parameters:
@@ -56,6 +58,7 @@ SubscriptionsByUser:
 # URL: /v1/subscriptions/{id}
 SubscriptionById:
   get:
+    operationId: getSubscriptionById
     summary: Получить подписку по ID
     tags: [Subscriptions]
     parameters:
@@ -76,6 +79,7 @@ SubscriptionById:
         $ref: '../components/responses/error/NotFound.yaml'
 
   put:
+    operationId: updateSubscription
     summary: Обновить подписку
     tags: [Subscriptions]
     parameters:
@@ -102,6 +106,7 @@ SubscriptionById:
         $ref: '../components/responses/error/NotFound.yaml'
 
   delete:
+    operationId: deleteSubscription
     summary: Удалить подписку
     tags: [Subscriptions]
     parameters:
