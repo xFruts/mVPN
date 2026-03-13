@@ -69,9 +69,6 @@ app:
       broadcast: ${KAFKA_BROADCAST_GROUP:broadcast-group}
   keycloak:
     client-id: mVPN
-logging:
-  level:
-    org.springframework.security: DEBUG
 
 management:
   endpoint:

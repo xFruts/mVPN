@@ -18,6 +18,3 @@ spring:
     properties:
       hibernate:
         format_sql: true
-
-encryption:
-  key: 12345678901234567890123456789012
