@@ -61,10 +61,10 @@ public class SecurityConfig {
             .requestMatchers("/actuator/health", "/actuator/info").permitAll()
 
             // API endpoints требуют роль VPN_ADMIN
-            .requestMatchers("/api/users/**", "/api/servers/**", "/api/tariffs/**").hasRole("VPN_ADMIN")
-            .requestMatchers("/api/subscriptions/**", "/api/promocodes/**").hasRole("VPN_ADMIN")
-            .requestMatchers("/api/broadcasts/**", "/api/payment-settings/**").hasRole("VPN_ADMIN")
-            .requestMatchers("/api/payment-verifications/**").hasRole("VPN_ADMIN")
+            .requestMatchers("/v1/api/users/**", "/v1/api/servers/**", "/v1/api/tariffs/**").hasRole("VPN_ADMIN")
+            .requestMatchers("/v1/api/subscriptions/**", "/v1/api/promocodes/**").hasRole("VPN_ADMIN")
+            .requestMatchers("/v1/api/broadcasts/**", "/v1/api/payment-settings/**").hasRole("VPN_ADMIN")
+            .requestMatchers("/v1/api/payment-verifications/**").hasRole("VPN_ADMIN")
 
             .anyRequest().authenticated()
         )
