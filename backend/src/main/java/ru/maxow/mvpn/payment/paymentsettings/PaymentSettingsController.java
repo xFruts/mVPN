@@ -18,20 +18,20 @@ public class PaymentSettingsController implements PaymentSettingsApi {
   PaymentSettingsService paymentSettingsService;
 
   @Override
-  public PaymentSettingsResponseDto v1PaymentSettingsPost(
+  public PaymentSettingsResponseDto createPaymentSettings(
       CreateUpdatePaymentSettingsDto createUpdatePaymentSettingsDto) {
     return paymentSettingsService.createPaymentSettings(createUpdatePaymentSettingsDto);
   }
 
   @Override
-  public PaymentSettingsResponseDto v1PaymentSettingsIdPut(
+  public PaymentSettingsResponseDto updatePaymentSettings(
       Long id,
       CreateUpdatePaymentSettingsDto createUpdatePaymentSettingsDto) {
     return paymentSettingsService.updatePaymentSettings(id, createUpdatePaymentSettingsDto);
   }
 
   @Override
-  public PaymentSettingsResponseDto v1PaymentSettingsBillingMonthGet(String billingMonth) {
+  public PaymentSettingsResponseDto getPaymentSettingsByBillingMonth(String billingMonth) {
     return paymentSettingsService.getPaymentSettings(billingMonth);
   }
 }

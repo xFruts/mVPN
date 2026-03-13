@@ -21,27 +21,27 @@ public class ServerController implements ServersApi {
   ServerService serverService;
 
   @Override
-  public PageListServerDto v1ServersGet(Integer page, Integer size, List<String> sort) {
+  public PageListServerDto getServers(Integer page, Integer size, List<String> sort) {
     return serverService.getServers(page, size, sort);
   }
 
   @Override
-  public ServerResponseDto v1ServersPost(CreateUpdateServerRequestDto createUpdateServerRequestDto) {
+  public ServerResponseDto createServer(CreateUpdateServerRequestDto createUpdateServerRequestDto) {
     return serverService.createServer(createUpdateServerRequestDto);
   }
 
   @Override
-  public ServerResponseDto v1ServersIdPut(Long id, CreateUpdateServerRequestDto createUpdateServerRequestDto) {
+  public ServerResponseDto updateServer(Long id, CreateUpdateServerRequestDto createUpdateServerRequestDto) {
     return serverService.updateServer(id, createUpdateServerRequestDto);
   }
 
   @Override
-  public ServerResponseDto v1ServersIdStatusPatch(Long id, ServerStatus status) {
+  public ServerResponseDto updateServerStatus(Long id, ServerStatus status) {
     return serverService.updateServerStatus(id, status);
   }
 
   @Override
-  public void v1ServersIdDelete(Long id) {
+  public void deleteServer(Long id) {
     serverService.deleteServer(id);
   }
 }

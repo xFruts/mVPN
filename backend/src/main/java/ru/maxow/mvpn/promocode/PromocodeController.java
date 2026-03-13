@@ -20,17 +20,17 @@ public class PromocodeController implements PromocodesApi {
   PromocodeService promocodeService;
 
   @Override
-  public List<PromocodeResponseDto> v1PromocodesGet() {
+  public List<PromocodeResponseDto> getPromocodes() {
     return promocodeService.getPromocodes();
   }
 
   @Override
-  public PromocodeResponseDto v1PromocodesPost(CreatePromocodeRequestDto createPromocodeRequestDto) {
+  public PromocodeResponseDto createPromocode(CreatePromocodeRequestDto createPromocodeRequestDto) {
     return promocodeService.createPromocode(createPromocodeRequestDto);
   }
 
   @Override
-  public void v1PromocodesIdDelete(Long id) {
+  public void deletePromocode(Long id) {
     promocodeService.deletePromocode(id);
   }
 }
