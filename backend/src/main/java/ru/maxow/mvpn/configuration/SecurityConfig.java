@@ -29,6 +29,7 @@ public class SecurityConfig {
   private final String clientId;
   private final ClientRegistrationRepository clientRegistrationRepository;
 
+
   public SecurityConfig(
       @Value("${spring.security.oauth2.client.provider.keycloak.issuer-uri}") String issuerUri,
       ClientRegistrationRepository clientRegistrationRepository,
@@ -41,6 +42,11 @@ public class SecurityConfig {
 
   @Bean
   public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+    OidcClientInitiatedLogoutSuccessHandler logoutSuccessHandler =
+        new OidcClientInitiatedLogoutSuccessHandler(clientRegistrationRepository);
+
+    logoutSuccessHandler.setPostLogoutRedirectUri("{baseUrl}/");
+
     http
         .cors(Customizer.withDefaults())
         .csrf(AbstractHttpConfigurer::disable)
@@ -80,9 +86,8 @@ public class SecurityConfig {
                 .jwtAuthenticationConverter(jwtAuthenticationConverter())
             )
         )
-
         .logout(logout -> logout
-            .logoutSuccessHandler(oidcLogoutSuccessHandler())
+            .logoutSuccessHandler(logoutSuccessHandler)
         );
 
     return http.build();
