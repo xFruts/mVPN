@@ -11,5 +11,5 @@ properties:
     example: 15
   location:
     type: string
-    description: Название локации (страна/город)
-    example: "Germany - Frankfurt"
+    description: Первые две буквы страны, в котором расположен сервер
+    example: "GE"

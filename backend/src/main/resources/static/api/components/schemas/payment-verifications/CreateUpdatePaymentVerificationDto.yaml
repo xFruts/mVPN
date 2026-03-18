@@ -13,7 +13,7 @@ properties:
   userId:
     type: integer
     format: int64
-    description: ID пользователя (mID)
+    description: ID пользователя
   payerFullName:
     type: string
     maxLength: 255
@@ -23,7 +23,7 @@ properties:
     format: double
     minimum: 0.01
     example: 1500.00
-    description: Сумма оплаты. Внимание! В Java коде обязательно использовать BigDecimal.
+    description: Сумма оплаты.
   userComment:
     type: string
     maxLength: 1000
@@ -31,3 +31,4 @@ properties:
   adminComment:
     type: string
     maxLength: 1000
+    example: "Чек получен"

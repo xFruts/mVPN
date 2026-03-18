@@ -28,8 +28,10 @@ UsersCollection:
           application/json:
             schema:
               $ref: '../components/schemas/users/PageListUserDto.yaml'
-      '500':
-        $ref: '../components/responses/error/InternalServerError.yaml'
+      401:
+        $ref: '../components/responses/error/Unauthorized.yaml'
+      403:
+        $ref: '../components/responses/error/Forbidden.yaml'
 
   post:
     operationId: createUser
@@ -48,6 +50,10 @@ UsersCollection:
           application/json:
             schema:
               $ref: '../components/schemas/users/UserResponseDto.yaml'
+      401:
+        $ref: '../components/responses/error/Unauthorized.yaml'
+      403:
+        $ref: '../components/responses/error/Forbidden.yaml'
       '400':
         $ref: '../components/responses/error/BadRequest.yaml'
 
@@ -77,6 +83,10 @@ UserSingle:
           application/json:
             schema:
               $ref: '../components/schemas/users/UserResponseDto.yaml'
+      401:
+        $ref: '../components/responses/error/Unauthorized.yaml'
+      403:
+        $ref: '../components/responses/error/Forbidden.yaml'
       '404':
         $ref: '../components/responses/error/NotFound.yaml'
 
@@ -94,6 +104,10 @@ UserSingle:
     responses:
       '204':
         description: Пользователь удален
+      401:
+        $ref: '../components/responses/error/Unauthorized.yaml'
+      403:
+        $ref: '../components/responses/error/Forbidden.yaml'
       '404':
         $ref: '../components/responses/error/NotFound.yaml'
 
@@ -123,6 +137,10 @@ UserRoleUpdate:
           application/json:
             schema:
               $ref: '../components/schemas/users/UserResponseDto.yaml'
+      401:
+        $ref: '../components/responses/error/Unauthorized.yaml'
+      403:
+        $ref: '../components/responses/error/Forbidden.yaml'
       '404':
         $ref: '../components/responses/error/NotFound.yaml'
 
@@ -148,5 +166,9 @@ UserVerificationCode:
               type: string
               format: uuid
               example: "550e8400-e29b-41d4-a716-446655440000"
+      401:
+        $ref: '../components/responses/error/Unauthorized.yaml'
+      403:
+        $ref: '../components/responses/error/Forbidden.yaml'
       '404':
         $ref: '../components/responses/error/NotFound.yaml'

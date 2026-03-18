@@ -2,13 +2,13 @@ type: object
 properties:
   fullName:
     type: string
+    example: "Иванов Иван"
   userTelegramId:
     type: integer
     format: int64
   role:
     $ref: './UserRole.yaml'
   subscriptionStatus:
-    # Выходим из users (..), заходим в subscriptions
     $ref: '../subscriptions/SubscriptionStatus.yaml'
   subscriptionEndDate:
     type: string

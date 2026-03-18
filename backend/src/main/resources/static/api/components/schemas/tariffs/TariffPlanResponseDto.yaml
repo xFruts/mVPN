@@ -27,5 +27,4 @@ properties:
     type: array
     description: Список доступных локаций на этом тарифе
     items:
-      # Ссылка на новый файл ServerLocation.yaml
       $ref: './ServerLocation.yaml'

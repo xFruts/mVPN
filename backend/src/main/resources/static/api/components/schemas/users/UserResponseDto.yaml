@@ -9,6 +9,7 @@ properties:
     format: int64
   fullName:
     type: string
+    example: "Иванов Иван"
   userTelegramId:
     type: integer
     format: int64
