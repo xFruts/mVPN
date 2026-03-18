@@ -18,6 +18,10 @@ PaymentSettingsCollection:
               $ref: '../components/schemas/payment-settings/PaymentSettingsResponseDto.yaml'
       '400':
         $ref: '../components/responses/error/BadRequest.yaml'
+      401:
+        $ref: '../components/responses/error/Unauthorized.yaml'
+      403:
+        $ref: '../components/responses/error/Forbidden.yaml'
 
 PaymentSettingsSingleById:
   put:
@@ -46,6 +50,10 @@ PaymentSettingsSingleById:
               $ref: '../components/schemas/payment-settings/PaymentSettingsResponseDto.yaml'
       '400':
         $ref: '../components/responses/error/BadRequest.yaml'
+      401:
+        $ref: '../components/responses/error/Unauthorized.yaml'
+      403:
+        $ref: '../components/responses/error/Forbidden.yaml'
       '404':
         $ref: '../components/responses/error/NotFound.yaml'
 
@@ -71,5 +79,9 @@ PaymentSettingsSingleByMonth:
               $ref: '../components/schemas/payment-settings/PaymentSettingsResponseDto.yaml'
       '400':
         $ref: '../components/responses/error/BadRequest.yaml'
+      401:
+        $ref: '../components/responses/error/Unauthorized.yaml'
+      403:
+        $ref: '../components/responses/error/Forbidden.yaml'
       '404':
         $ref: '../components/responses/error/NotFound.yaml'

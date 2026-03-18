@@ -13,8 +13,10 @@ TariffsCollection:
               type: array
               items:
                 $ref: '../components/schemas/tariffs/TariffPlanResponseDto.yaml'
-      '500':
-        $ref: '../components/responses/error/InternalServerError.yaml'
+      401:
+        $ref: '../components/responses/error/Unauthorized.yaml'
+      403:
+        $ref: '../components/responses/error/Forbidden.yaml'
 
   post:
     operationId: createTariff
@@ -35,6 +37,10 @@ TariffsCollection:
               $ref: '../components/schemas/tariffs/TariffPlanResponseDto.yaml'
       '400':
         $ref: '../components/responses/error/BadRequest.yaml'
+      401:
+        $ref: '../components/responses/error/Unauthorized.yaml'
+      403:
+        $ref: '../components/responses/error/Forbidden.yaml'
 
 # URL: /v1/tariffs/{id}
 TariffSingle:
@@ -58,6 +64,10 @@ TariffSingle:
               $ref: '../components/schemas/tariffs/TariffPlanResponseDto.yaml'
       '404':
         $ref: '../components/responses/error/NotFound.yaml'
+      401:
+        $ref: '../components/responses/error/Unauthorized.yaml'
+      403:
+        $ref: '../components/responses/error/Forbidden.yaml'
 
   put:
     operationId: updateTariff
@@ -83,6 +93,10 @@ TariffSingle:
           application/json:
             schema:
               $ref: '../components/schemas/tariffs/TariffPlanResponseDto.yaml'
+      401:
+        $ref: '../components/responses/error/Unauthorized.yaml'
+      403:
+        $ref: '../components/responses/error/Forbidden.yaml'
       '404':
         $ref: '../components/responses/error/NotFound.yaml'
 
@@ -100,6 +114,10 @@ TariffSingle:
     responses:
       '204':
         description: Тариф удален (нет тела ответа)
+      401:
+        $ref: '../components/responses/error/Unauthorized.yaml'
+      403:
+        $ref: '../components/responses/error/Forbidden.yaml'
       '404':
         $ref: '../components/responses/error/NotFound.yaml'
       '409': # Conflict - если тариф используется пользователями

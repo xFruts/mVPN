@@ -5,8 +5,11 @@ properties:
     format: int64
   name:
     type: string
+    example: "Finland"
   location:
     type: string
+    description: Первые две буквы локации сервера КАПСОМ
+    example: "FI"
   ip:
     type: string
     format: ipv4
@@ -19,10 +22,14 @@ properties:
   usage:
     type: integer
     description: Текущее количество активных юзеров
+    example: 4
   maxUsers:
     type: integer
+    example: 100
   maxTraffic:
     type: integer
+    description: Максимальный трафик на пользователя в гигабайтах
+    example: 300
   ping:
     type: string
     example: "25ms"
@@ -30,3 +37,4 @@ properties:
     type: number
     format: double
     description: Время аптайма в процентах
+    example: 80.00

@@ -30,6 +30,10 @@ ServersCollection:
           application/json:
             schema:
               $ref: '../components/schemas/servers/PageListServerDto.yaml'
+      401:
+        $ref: '../components/responses/error/Unauthorized.yaml'
+      403:
+        $ref: '../components/responses/error/Forbidden.yaml'
 
   post:
     operationId: createServer
@@ -50,6 +54,10 @@ ServersCollection:
               $ref: '../components/schemas/servers/ServerResponseDto.yaml'
       '400':
         $ref: '../components/responses/error/BadRequest.yaml'
+      401:
+        $ref: '../components/responses/error/Unauthorized.yaml'
+      403:
+        $ref: '../components/responses/error/Forbidden.yaml'
 
 ServerSingle:
   put:
@@ -76,6 +84,10 @@ ServerSingle:
           application/json:
             schema:
               $ref: '../components/schemas/servers/ServerResponseDto.yaml'
+      401:
+        $ref: '../components/responses/error/Unauthorized.yaml'
+      403:
+        $ref: '../components/responses/error/Forbidden.yaml'
       '404':
         $ref: '../components/responses/error/NotFound.yaml'
 
@@ -93,6 +105,10 @@ ServerSingle:
     responses:
       '204':
         description: Сервер удален
+      401:
+        $ref: '../components/responses/error/Unauthorized.yaml'
+      403:
+        $ref: '../components/responses/error/Forbidden.yaml'
       '404':
         $ref: '../components/responses/error/NotFound.yaml'
 
@@ -121,3 +137,7 @@ ServerStatusUpdate:
           application/json:
             schema:
               $ref: '../components/schemas/servers/ServerResponseDto.yaml'
+      401:
+        $ref: '../components/responses/error/Unauthorized.yaml'
+      403:
+        $ref: '../components/responses/error/Forbidden.yaml'

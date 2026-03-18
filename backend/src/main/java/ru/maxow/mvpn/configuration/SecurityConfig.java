@@ -33,20 +33,15 @@ public class SecurityConfig {
   public SecurityConfig(
       @Value("${spring.security.oauth2.client.provider.keycloak.issuer-uri}") String issuerUri,
       ClientRegistrationRepository clientRegistrationRepository,
-      @Value("${app.keycloak.client-id}") String clientId
+      @Value("${app.keycloak.client-id}") String keycloakClientId
   ) {
     this.issuerUri = issuerUri;
     this.clientRegistrationRepository = clientRegistrationRepository;
-    this.clientId = clientId;
+    this.clientId = keycloakClientId;
   }
 
   @Bean
   public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-    OidcClientInitiatedLogoutSuccessHandler logoutSuccessHandler =
-        new OidcClientInitiatedLogoutSuccessHandler(clientRegistrationRepository);
-
-    logoutSuccessHandler.setPostLogoutRedirectUri("{baseUrl}/");
-
     http
         .cors(Customizer.withDefaults())
         .csrf(AbstractHttpConfigurer::disable)
@@ -67,10 +62,10 @@ public class SecurityConfig {
             .requestMatchers("/actuator/health", "/actuator/info").permitAll()
 
             // API endpoints требуют роль VPN_ADMIN
-            .requestMatchers("/v1/api/users/**", "/v1/api/servers/**", "/v1/api/tariffs/**").hasRole("VPN_ADMIN")
-            .requestMatchers("/v1/api/subscriptions/**", "/v1/api/promocodes/**").hasRole("VPN_ADMIN")
-            .requestMatchers("/v1/api/broadcasts/**", "/v1/api/payment-settings/**").hasRole("VPN_ADMIN")
-            .requestMatchers("/v1/api/payment-verifications/**").hasRole("VPN_ADMIN")
+            .requestMatchers("/v1/users/**", "/v1/servers/**", "/v1/tariffs/**").hasRole("VPN_ADMIN")
+            .requestMatchers("/v1/subscriptions/**", "/v1/promocodes/**").hasRole("VPN_ADMIN")
+            .requestMatchers("/v1/broadcasts/**", "/v1/payment-settings/**").hasRole("VPN_ADMIN")
+            .requestMatchers("/v1/payment-verifications/**").hasRole("VPN_ADMIN")
 
             .anyRequest().authenticated()
         )
@@ -87,7 +82,7 @@ public class SecurityConfig {
             )
         )
         .logout(logout -> logout
-            .logoutSuccessHandler(logoutSuccessHandler)
+            .logoutSuccessHandler(oidcLogoutSuccessHandler())
         );
 
     return http.build();
@@ -138,7 +133,7 @@ public class SecurityConfig {
   private OidcClientInitiatedLogoutSuccessHandler oidcLogoutSuccessHandler() {
     OidcClientInitiatedLogoutSuccessHandler successHandler =
         new OidcClientInitiatedLogoutSuccessHandler(this.clientRegistrationRepository);
-    successHandler.setPostLogoutRedirectUri("/");
+    successHandler.setPostLogoutRedirectUri("{baseUrl}/");
     return successHandler;
   }
 }

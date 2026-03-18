@@ -8,7 +8,7 @@ properties:
   name:
     type: string
     description: Название тарифа
-    example: "Premium 4K"
+    example: "Premium 500GB"
   maxDevices:
     type: integer
     format: int32
@@ -20,7 +20,7 @@ properties:
     format: int32
     minimum: 1
     description: Лимит трафика в ГБ
-    example: 100
+    example: 500
   serverIds:
     type: array
     description: Список ID серверов, доступных на этом тарифе

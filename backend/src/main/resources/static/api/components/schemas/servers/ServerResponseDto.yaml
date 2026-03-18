@@ -5,13 +5,19 @@ allOf:
     properties:
       login:
         type: string
+        example: "root"
       password:
         type: string
+        example: "Pass1234"
       xuiLogin:
         type: string
+        example: "FNeiwpncw"
       xuiPassword:
         type: string
+        example: "VOSncwef"
       port:
         type: integer
+        example: 25334
       webBasePath:
         type: string
+        example: "/Fcenwoiwfwcn"

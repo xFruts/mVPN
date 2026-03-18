@@ -13,6 +13,10 @@ PromocodesCollection:
               type: array
               items:
                 $ref: '../components/schemas/promocodes/PromocodeResponseDto.yaml'
+      401:
+        $ref: '../components/responses/error/Unauthorized.yaml'
+      403:
+        $ref: '../components/responses/error/Forbidden.yaml'
   post:
     operationId: createPromocode
     summary: Создать новый промокод
@@ -32,6 +36,10 @@ PromocodesCollection:
               $ref: '../components/schemas/promocodes/PromocodeResponseDto.yaml'
       '400':
         $ref: '../components/responses/error/BadRequest.yaml'
+      401:
+        $ref: '../components/responses/error/Unauthorized.yaml'
+      403:
+        $ref: '../components/responses/error/Forbidden.yaml'
 
 # Группа для пути /v1/promocodes/{id}
 PromocodeSingle:
@@ -49,5 +57,9 @@ PromocodeSingle:
     responses:
       '204':
         description: Промокод удален
+      401:
+        $ref: '../components/responses/error/Unauthorized.yaml'
+      403:
+        $ref: '../components/responses/error/Forbidden.yaml'
       '404':
         $ref: '../components/responses/error/NotFound.yaml'

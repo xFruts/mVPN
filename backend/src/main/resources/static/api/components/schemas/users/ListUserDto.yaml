@@ -5,9 +5,10 @@ properties:
     format: int64
   fullName:
     type: string
+    example: "Иванов Иван"
   role:
     type: string
-    example: "ADMIN"
+    example: "REGULAR"
   subscriptionStatus:
     $ref: '../subscriptions/SubscriptionStatus.yaml'
   endDate:

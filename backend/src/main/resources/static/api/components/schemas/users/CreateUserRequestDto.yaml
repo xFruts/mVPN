@@ -6,7 +6,7 @@ properties:
   fullName:
     type: string
     minLength: 1
-    example: "Alexey Petrov"
+    example: "Иванов Иван"
   userTelegramId:
     type: integer
     format: int64

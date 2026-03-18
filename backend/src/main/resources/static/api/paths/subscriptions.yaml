@@ -28,6 +28,10 @@ SubscriptionsByUser:
               $ref: '../components/schemas/subscriptions/SubscriptionResponseDto.yaml'
       '400':
         $ref: '../components/responses/error/BadRequest.yaml'
+      401:
+        $ref: '../components/responses/error/Unauthorized.yaml'
+      403:
+        $ref: '../components/responses/error/Forbidden.yaml'
       '404':
         $ref: '../components/responses/error/NotFound.yaml'
 
@@ -51,6 +55,10 @@ SubscriptionsByUser:
               type: array
               items:
                 $ref: '../components/schemas/subscriptions/SubscriptionResponseDto.yaml'
+      401:
+        $ref: '../components/responses/error/Unauthorized.yaml'
+      403:
+        $ref: '../components/responses/error/Forbidden.yaml'
       '404':
         $ref: '../components/responses/error/NotFound.yaml'
 
@@ -75,6 +83,10 @@ SubscriptionById:
           application/json:
             schema:
               $ref: '../components/schemas/subscriptions/SubscriptionResponseDto.yaml'
+      401:
+        $ref: '../components/responses/error/Unauthorized.yaml'
+      403:
+        $ref: '../components/responses/error/Forbidden.yaml'
       '404':
         $ref: '../components/responses/error/NotFound.yaml'
 
@@ -102,6 +114,10 @@ SubscriptionById:
           application/json:
             schema:
               $ref: '../components/schemas/subscriptions/SubscriptionResponseDto.yaml'
+      401:
+        $ref: '../components/responses/error/Unauthorized.yaml'
+      403:
+        $ref: '../components/responses/error/Forbidden.yaml'
       '404':
         $ref: '../components/responses/error/NotFound.yaml'
 
@@ -119,5 +135,9 @@ SubscriptionById:
     responses:
       '204':
         description: Подписка удалена
+      401:
+        $ref: '../components/responses/error/Unauthorized.yaml'
+      403:
+        $ref: '../components/responses/error/Forbidden.yaml'
       '404':
         $ref: '../components/responses/error/NotFound.yaml'

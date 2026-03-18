@@ -6,10 +6,6 @@ info:
     name: Maxow Support
     email: maxowinc@gmail.com
 
-servers:
-  - url: /api
-    description: Локальный сервер
-
 security:
   - bearerAuth: []
 

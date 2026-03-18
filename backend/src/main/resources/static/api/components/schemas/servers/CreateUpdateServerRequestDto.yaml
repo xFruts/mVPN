@@ -6,16 +6,23 @@ required:
   - status
   - maxUsers
   - maxTraffic
+  - login
+  - password
+  - xuiLogin
+  - xuiPassword
+  - port
+  - webBasePath
 properties:
   name:
     type: string
     example: "Germany-VPN-01"
   location:
     type: string
-    example: "Frankfurt"
+    description: Первые две буквы локации сервера КАПСОМ
+    example: "GE"
   ip:
     type: string
-    format: ipv4  # Swagger умеет валидировать IP!
+    format: ipv4
     description: Публичный IPv4 адрес сервера
     example: "192.168.1.10"
   status:
@@ -28,21 +35,25 @@ properties:
   maxTraffic:
     type: integer
     format: int32
-    description: Лимит трафика в ГБ
-    example: 5000
+    description: Лимит трафика на пользователя в ГБ
+    example: 500
   login:
     type: string
     description: SSH логин
+    example: "root"
   password:
     type: string
-    format: password # Скрывает символы в UI
+    format: password
     description: SSH пароль
+    example: "Pass1234"
   xuiLogin:
     type: string
     description: Логин от 3x-ui панели
+    example: "DSVOSVNceor"
   xuiPassword:
     type: string
     format: password
+    example: "GNWERcwm;"
   port:
     type: integer
     format: int32
@@ -51,4 +62,5 @@ properties:
     example: 2053
   webBasePath:
     type: string
-    example: "/xui"
+    description: Путь к вашей админ панели x-ui
+    example: "/Kq8wcGUtqP5"

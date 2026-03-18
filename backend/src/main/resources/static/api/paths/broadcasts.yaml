@@ -12,3 +12,7 @@ post:
   responses:
     202:
       description: Рассылка принята
+    401:
+      $ref: '../components/responses/error/Unauthorized.yaml'
+    403:
+      $ref: '../components/responses/error/Forbidden.yaml'
