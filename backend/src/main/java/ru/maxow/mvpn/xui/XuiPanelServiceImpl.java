@@ -8,6 +8,7 @@ import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.util.Pair;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -18,6 +19,8 @@ import org.springframework.util.StringUtils;
 import org.springframework.web.client.RestClient;
 import ru.maxow.mvpn.server.Server;
 import ru.maxow.mvpn.user.User;
+import ru.maxow.mvpn.util.exception.NotFoundException;
+import ru.maxow.mvpn.util.exception.XuiUnavailableException;
 
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
@@ -35,38 +38,51 @@ public class XuiPanelServiceImpl implements XuiPanelService {
 
   @Override
   public String getVlessConfig(Server server, User user) {
-    String baseUrl = String.format("http://%s:%d", server.getIp(), server.getPort());
+    String baseUrl = String.format("https://%s:%d", server.getIp(), server.getPort());
     if (StringUtils.hasText(server.getWebBasePath())) {
       baseUrl += "/" + server.getWebBasePath();
     }
-    log.info("baseUrl: {}", baseUrl);
     RestClient restClient = restClientBuilder.baseUrl(baseUrl).build();
 
     try {
-      String sessionCookie = login(restClient, server.getXuiLogin(), server.getPassword());
+      String sessionCookie = login(restClient, server.getXuiLogin(), server.getXuiPassword());
       XuiInboundsResponse inbounds = getInbounds(restClient, sessionCookie);
       return findVlessConfigInInbounds(inbounds, user.getFullName(), server.getIp());
-    } catch (RuntimeException e) {
-      if (e.getMessage() != null &&
-          e.getMessage().contains("VLESS config for user " + user.getFullName() + " not found")) {
-        log.warn("Config for user {} not found on server {}. Creating a new one.",
-            user.getFullName(), server.getName());
-        createClient(server, user);
-        return getVlessConfig(server, user);
-      }
+    } catch (NotFoundException e) {
+      log.warn("Config for user {} not found on server {}. Creating client and retrying once.",
+          user.getFullName(), server.getName());
+    } catch (XuiUnavailableException e) {
       throw e;
+    } catch (Exception e) {
+      throw new XuiUnavailableException(
+          "Unexpected error while getting config from XUI server: " + server.getName(), e);
+    }
+    try {
+      createClient(server, user);
+
+      String retryCookie = login(restClient, server.getXuiLogin(), server.getXuiPassword());
+      XuiInboundsResponse retryInbounds = getInbounds(restClient, retryCookie);
+
+      return findVlessConfigInInbounds(retryInbounds, user.getFullName(), server.getIp());
+    } catch (NotFoundException e) {
+      throw new NotFoundException(String.format("Config for user %s not found on server with id %d", user.getFullName(), server.getId()));
+    } catch (XuiUnavailableException e) {
+      throw e;
+    } catch (Exception e) {
+      throw new XuiUnavailableException(
+          "Unexpected error while creating/retrying config on XUI server: " + server.getName(), e);
     }
   }
 
   @Override
   public void createClient(Server server, User user) {
-    String baseUrl = String.format("http://%s:%d", server.getIp(), server.getPort());
+    String baseUrl = String.format("https://%s:%d", server.getIp(), server.getPort());
     if (StringUtils.hasText(server.getWebBasePath())) {
       baseUrl += "/" + server.getWebBasePath();
     }
     RestClient restClient = restClientBuilder.baseUrl(baseUrl).build();
 
-    String sessionCookie = login(restClient, server.getXuiLogin(), server.getPassword());
+    String sessionCookie = login(restClient, server.getXuiLogin(), server.getXuiPassword());
     XuiInboundsResponse inbounds = getInbounds(restClient, sessionCookie);
 
     Optional<XuiInboundsResponse.Inbound> vlessInboundOpt = inbounds.getObj().stream()
@@ -74,7 +90,7 @@ public class XuiPanelServiceImpl implements XuiPanelService {
         .findFirst();
 
     if (vlessInboundOpt.isEmpty()) {
-      throw new RuntimeException("No VLESS inbound found on server " + server.getName());
+      throw new XuiUnavailableException("No VLESS inbound found on server: " + server.getName());
     }
 
     addClientToInbound(restClient, sessionCookie, vlessInboundOpt.get(), user);
@@ -94,7 +110,7 @@ public class XuiPanelServiceImpl implements XuiPanelService {
 
     String cookie = response.getHeaders().getFirst(HttpHeaders.SET_COOKIE);
     if (cookie == null) {
-      throw new RuntimeException("Login failed: No session cookie");
+      throw new XuiUnavailableException("Login failed: No session cookie");
     }
     return cookie;
   }
@@ -149,7 +165,8 @@ public class XuiPanelServiceImpl implements XuiPanelService {
       log.info("Successfully added client {} to inbound {} on server {}. Response: {}",
           user.getFullName(), inbound.getId(), "serverName", response);
     } catch (JsonProcessingException e) {
-      throw new RuntimeException("Failed to prepare new client settings", e);
+      log.error("Failed to prepare new client settings", e);
+      throw new XuiUnavailableException("Failed to prepare new client settings");
     }
   }
 
@@ -158,16 +175,18 @@ public class XuiPanelServiceImpl implements XuiPanelService {
     if (inboundsResponse == null
         || !inboundsResponse.isSuccess()
         || inboundsResponse.getObj() == null) {
-      throw new RuntimeException("Failed to get inbounds or inbounds list is empty");
+      throw new XuiUnavailableException("Failed to get inbounds or inbounds list is empty");
     }
 
     return inboundsResponse.getObj().stream()
         .filter(inbound -> "vless".equalsIgnoreCase(inbound.getProtocol()))
-        .flatMap(inbound -> findClientInInbound(inbound, userEmail).stream())
-        .map(client -> generateVlessLink(client, serverIp, inboundsResponse.getObj().getFirst()))
+        .flatMap(inbound -> findClientInInbound(inbound, userEmail)
+            .stream()
+            .map(client -> Pair.of(inbound, client)))
+        .map(pair -> generateVlessLink(pair.getSecond(), serverIp, pair.getFirst()))
         .filter(java.util.Objects::nonNull)
         .findFirst()
-        .orElseThrow(() -> new RuntimeException("VLESS config for user " + userEmail + " not found"));
+        .orElseThrow(() -> new NotFoundException("VLESS config for user " + userEmail));
   }
 
   private Optional<XuiClient> findClientInInbound(
@@ -184,7 +203,7 @@ public class XuiPanelServiceImpl implements XuiPanelService {
         }
       }
     } catch (JsonProcessingException e) {
-      log.error("Error parsing inbound settings", e);
+      throw new XuiUnavailableException("Failed to parse inbound settings", e);
     }
     return Optional.empty();
   }
@@ -277,6 +296,8 @@ public class XuiPanelServiceImpl implements XuiPanelService {
                     grpcSettings.get("serviceName").asText(), StandardCharsets.UTF_8));
           }
           break;
+        default:
+          break;
       }
 
       if (flow != null && !flow.isEmpty()) {
@@ -287,15 +308,12 @@ public class XuiPanelServiceImpl implements XuiPanelService {
           ? inbound.getRemark() : inbound.getTag();
       String finalRemark = URLEncoder.encode(remark, StandardCharsets.UTF_8);
 
-      String finalLink = String.format("vless://%s@%s:%d?%s#%s",
+      return String.format("vless://%s@%s:%d?%s#%s",
           uuid, address, inbound.getPort(), queryParams, finalRemark);
-
-      log.info("Generated VLESS link: {}", finalLink);
-      return finalLink;
 
     } catch (Exception e) {
       log.error("Unexpected error generating VLESS link for inbound ID: {}", inbound.getId(), e);
-      throw new RuntimeException("Unexpected error", e);
+      throw new XuiUnavailableException("Failed to generate VLESS link due to unexpected error");
     }
   }
 }

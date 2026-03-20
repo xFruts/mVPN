@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<FindBugsFilter>
+  <!-- Generated OpenAPI code is out of scope for business-quality gate -->
+  <Match>
+    <Class name="~ru\.maxow\.mvpn\.model\..*"/>
+  </Match>
+  <Match>
+    <Class name="~ru\.maxow\.mvpn\.api\..*"/>
+  </Match>
+
+  <!-- Spring KafkaTemplate is framework-managed bean; defensive copy is impossible -->
+  <Match>
+    <Class name="ru.maxow.mvpn.broadcast.BroadcastService"/>
+    <Bug pattern="EI_EXPOSE_REP2"/>
+  </Match>
+</FindBugsFilter>
+

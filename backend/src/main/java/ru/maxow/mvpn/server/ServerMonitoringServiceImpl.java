@@ -12,6 +12,7 @@ import org.springframework.transaction.annotation.Transactional;
 import ru.maxow.mvpn.model.ServerStatus;
 
 import java.io.ByteArrayOutputStream;
+import java.nio.charset.StandardCharsets;
 import java.net.InetAddress;
 import java.util.List;
 
@@ -98,7 +99,7 @@ public class ServerMonitoringServiceImpl implements ServerMonitoringService {
         Thread.sleep(100);
       }
 
-      String response = responseStream.toString();
+      String response = responseStream.toString(StandardCharsets.UTF_8);
       parseUptimeResponse(server, response);
     } catch (Exception e) {
       log.error("SSH error for server {}: {}", server.getName(), e.getMessage());

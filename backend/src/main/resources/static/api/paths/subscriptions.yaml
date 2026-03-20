@@ -3,7 +3,6 @@ SubscriptionsByUser:
   post:
     operationId: createSubscription
     summary: Создать подписку для пользователя
-    description: Внимание! userId передается и в пути, и в теле запроса.
     tags: [Subscriptions]
     parameters:
       - name: userId

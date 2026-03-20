@@ -1,0 +1,5 @@
+description: Внешний сервис временно недоступен
+content:
+  application/json:
+    schema:
+      $ref: '../../schemas/error/ErrorResponse.yaml'

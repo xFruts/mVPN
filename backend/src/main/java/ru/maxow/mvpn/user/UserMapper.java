@@ -8,6 +8,7 @@ import lombok.RequiredArgsConstructor;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.Named;
+import org.springframework.beans.factory.annotation.Autowired;
 import ru.maxow.mvpn.model.CreateUserRequestDto;
 import ru.maxow.mvpn.model.ListUserDto;
 import ru.maxow.mvpn.model.SubscriptionResponseDto;
@@ -15,11 +16,8 @@ import ru.maxow.mvpn.model.UserResponseDto;
 import ru.maxow.mvpn.subscription.Subscription;
 import ru.maxow.mvpn.subscription.SubscriptionMapper;
 
-@Mapper(componentModel = "spring")
-@RequiredArgsConstructor
+@Mapper(componentModel = "spring", uses = SubscriptionMapper.class)
 public abstract class UserMapper {
-
-  SubscriptionMapper subscriptionMapper;
 
   @Mapping(source = "user", target = "subscription", qualifiedByName = "userToSubscriptionDto")
   @Mapping(source = "role", target = "role")
@@ -57,8 +55,13 @@ public abstract class UserMapper {
     if (user == null || user.getId() == null) {
       return null;
     }
-    Optional<Subscription> subscriptionOptional = user.getSubscriptions().stream()
-        .max(Comparator.comparing(Subscription::getStartDate));
-    return subscriptionOptional.map(subscriptionMapper::toSubscriptionResponseDto).orElse(null);
+
+    return user.getSubscriptions().stream()
+        .max(Comparator.comparing(Subscription::getStartDate))
+        .map(this::toSubscriptionResponseDto)
+        .orElse(null);
   }
+
+  @Mapping(target = "userId", source = "user.id")
+  protected abstract SubscriptionResponseDto toSubscriptionResponseDto(Subscription subscription);
 }

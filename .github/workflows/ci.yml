@@ -35,6 +35,10 @@ jobs:
           java-version: '21'
           cache: maven
 
+      - name: Ensure Maven wrapper is executable (if present)
+        run: |
+          if [ -f "./mvnw" ]; then chmod +x ./mvnw; fi
+
       - name: Maven verify (baseline gate)
         run: ./mvnw -B -ntp -DskipITs=true -DskipSecurityScan=true verify
 
@@ -68,6 +72,10 @@ jobs:
           distribution: temurin
           java-version: '21'
           cache: maven
+
+      - name: Ensure Maven wrapper is executable (if present)
+        run: |
+          if [ -f "./mvnw" ]; then chmod +x ./mvnw; fi
 
       - name: Maven verify (strict CI profile preview)
         run: ./mvnw -B -ntp -Pci -DskipITs=true -DskipSecurityScan=true verify

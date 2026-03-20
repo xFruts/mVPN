@@ -1,0 +1,31 @@
+ConfigByVerificationCode:
+  get:
+    operationId: getConfigByVerificationCode
+    summary: Получить конфигурацию по коду верификации
+    tags: [Config]
+    parameters:
+      - name: verificationCode
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+          example: "123e4567-e89b-12d3-a456-426614174000"
+    responses:
+      200:
+        description: Конфигурация успешно получена
+        content:
+          text/plain:
+            schema:
+              type: string
+              example: "fcarpouhfgnoa9e87fhgzqsjweo987dzwghenfmr9jcx8qej0aOFASWZ687RFYXHWYTAWJ8SXQ8"
+      '400':
+        $ref: '../components/responses/error/BadRequest.yaml'
+      401:
+        $ref: '../components/responses/error/Unauthorized.yaml'
+      403:
+        $ref: '../components/responses/error/Forbidden.yaml'
+      404:
+        $ref: '../components/responses/error/NotFound.yaml'
+      503:
+        $ref: '../components/responses/error/ServiceTemporarilyUnavailable.yaml'

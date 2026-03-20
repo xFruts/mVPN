@@ -18,3 +18,5 @@ spring:
     properties:
       hibernate:
         format_sql: true
+encryption:
+  key: DevKey12345DevKey12345DevKey1234

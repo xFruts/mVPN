@@ -20,4 +20,4 @@ allOf:
         example: 25334
       webBasePath:
         type: string
-        example: "/Fcenwoiwfwcn"
+        example: "Fcenwoiwfwcn"

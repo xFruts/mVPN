@@ -26,6 +26,7 @@ public class GlobalExceptionHandler {
   private static final String MSG_RESOURCE_NOT_FOUND = "Resource not found";
   private static final String MSG_INVALID_REQUEST = "Invalid request parameters";
   private static final String MSG_METHOD_NOT_ALLOWED = "Method not allowed";
+  private static final String MSG_XUI_UNAVAILABLE = "XUI service is temporarily unavailable";
   private static final String MSG_UNEXPECTED = "An unexpected error occurred";
 
   @ResponseStatus(HttpStatus.NOT_FOUND)
@@ -119,6 +120,19 @@ public class GlobalExceptionHandler {
         "VALIDATION_FAILED",
         getOrGenerateCorrelationId(),
         fieldErrors
+    );
+  }
+
+  @ResponseStatus(HttpStatus.SERVICE_UNAVAILABLE)
+  @ExceptionHandler(XuiUnavailableException.class)
+  public ErrorResponse handleXuiUnavailableException(XuiUnavailableException ex, WebRequest request) {
+    String correlationId = getOrGenerateCorrelationId();
+    log.error("XUI unavailable [correlationId={}]: path={}", correlationId, extractPath(request), ex);
+    return new ErrorResponse(
+        MSG_XUI_UNAVAILABLE,
+        System.currentTimeMillis(),
+        "XUI_UNAVAILABLE",
+        correlationId
     );
   }
 
