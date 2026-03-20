@@ -34,7 +34,7 @@ app:
     client-id: test-client
 
 encryption:
-  key: 0123456789abcdef
+  key: MySecureKey12345MySecureKey12345
 
 logging:
   level:

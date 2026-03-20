@@ -4,4 +4,3 @@ properties:
     type: string
     maxLength: 1000
     example: "Сумма не сходится с чеком, отклонено."
-    required: true

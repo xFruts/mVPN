@@ -61,7 +61,9 @@ public class SecurityConfig {
             // Actuator endpoints
             .requestMatchers("/actuator/health", "/actuator/info").permitAll()
 
-            // API endpoints требуют роль VPN_ADMIN
+            .requestMatchers("/v1/config/**").permitAll()
+
+            // API endpoints требующие роль VPN_ADMIN
             .requestMatchers("/v1/users/**", "/v1/servers/**", "/v1/tariffs/**").hasRole("VPN_ADMIN")
             .requestMatchers("/v1/subscriptions/**", "/v1/promocodes/**").hasRole("VPN_ADMIN")
             .requestMatchers("/v1/broadcasts/**", "/v1/payment-settings/**").hasRole("VPN_ADMIN")
@@ -93,7 +95,7 @@ public class SecurityConfig {
     CorsConfiguration configuration = new CorsConfiguration();
 
     configuration.setAllowedOrigins(List.of(
-        "http://localhost:3000",
+        "http://localhost:5173",
         "https://vpn.maxow.ru"
     ));
 
@@ -116,7 +118,8 @@ public class SecurityConfig {
   @Bean
   public JwtAuthenticationConverter jwtAuthenticationConverter() {
     JwtAuthenticationConverter converter = new JwtAuthenticationConverter();
-    converter.setJwtGrantedAuthoritiesConverter(new KeycloakRoleConverter());
+    converter.setPrincipalClaimName("preferred_username");
+    converter.setJwtGrantedAuthoritiesConverter(new KeycloakRoleConverter(clientId));
     return converter;
   }
 

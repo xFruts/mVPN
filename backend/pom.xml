@@ -47,7 +47,7 @@
 
         <maven.enforcer.plugin.version>3.5.0</maven.enforcer.plugin.version>
         <maven.failsafe.plugin.version>3.5.4</maven.failsafe.plugin.version>
-        <jacoco.plugin.version>0.8.12</jacoco.plugin.version>
+        <jacoco.plugin.version>0.8.14</jacoco.plugin.version>
         <checkstyle.plugin.version>3.6.0</checkstyle.plugin.version>
         <spotbugs.plugin.version>4.9.8.1</spotbugs.plugin.version>
         <dependency-check.plugin.version>12.1.8</dependency-check.plugin.version>
@@ -448,6 +448,16 @@
                         <goals>
                             <goal>prepare-agent</goal>
                         </goals>
+                        <configuration>
+                            <excludes>
+                                <exclude>org/jcp/**</exclude>
+                                <exclude>com/sun/**</exclude>
+                                <exclude>sun/**</exclude>
+                                <exclude>jdk/**</exclude>
+                                <exclude>java/**</exclude>
+                                <exclude>javax/**</exclude>
+                            </excludes>
+                        </configuration>
                     </execution>
                     <execution>
                         <id>jacoco-report</id>
@@ -466,6 +476,14 @@
                             <rules>
                                 <rule>
                                     <element>BUNDLE</element>
+                                    <excludes>
+                                        <exclude>org/jcp/**</exclude>
+                                        <exclude>com/sun/**</exclude>
+                                        <exclude>sun/**</exclude>
+                                        <exclude>jdk/**</exclude>
+                                        <exclude>java/**</exclude>
+                                        <exclude>javax/**</exclude>
+                                    </excludes>
                                     <limits>
                                         <limit>
                                             <counter>LINE</counter>
@@ -552,6 +570,9 @@
                         <groupId>com.github.spotbugs</groupId>
                         <artifactId>spotbugs-maven-plugin</artifactId>
                         <version>${spotbugs.plugin.version}</version>
+                        <configuration>
+                            <excludeFilterFile>${project.basedir}/spotbugs-exclude.xml</excludeFilterFile>
+                        </configuration>
                         <executions>
                             <execution>
                                 <id>spotbugs-verify</id>

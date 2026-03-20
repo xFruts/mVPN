@@ -40,7 +40,6 @@ public class PromocodeFacadeImpl implements PromocodeFacade {
     promocodeService.usePromocode(code);
 
     CreateUpdateSubscriptionDto dto = new CreateUpdateSubscriptionDto(
-        userId,
         OffsetDateTime.now(),
         OffsetDateTime.now().plusMonths(1),
         SubscriptionStatus.ACTIVE

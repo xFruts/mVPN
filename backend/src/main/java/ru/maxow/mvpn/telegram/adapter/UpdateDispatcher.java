@@ -19,7 +19,7 @@ public class UpdateDispatcher {
    * @param handlers the list of command handlers
    */
   public UpdateDispatcher(List<CommandHandler> handlers) {
-    this.handlers = handlers;
+    this.handlers = List.copyOf(handlers);
   }
 
   /**

@@ -38,9 +38,16 @@ public class SubscriptionServiceImpl implements SubscriptionService {
 
     Subscription subscription = new Subscription();
     subscription.setUser(user);
-    subscription.setStartDate(OffsetDateTime.now());
-    subscription.setEndDate(OffsetDateTime.now().plusMonths(1));
-    subscription.setStatus(SubscriptionStatus.ACTIVE);
+
+    subscription.setStartDate(dto.getStartDate());
+
+    if (dto.getEndDate().isBefore(dto.getStartDate())) {
+      throw new IllegalArgumentException("End date cannot be before start date");
+    }
+
+    subscription.setEndDate(dto.getEndDate());
+
+    subscription.setStatus(dto.getStatus());
 
     Subscription savedSubscription = subscriptionRepository.save(subscription);
     log.info("subscription created for user with id: {}", userId);

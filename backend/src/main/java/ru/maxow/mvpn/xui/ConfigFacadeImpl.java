@@ -11,6 +11,7 @@ import ru.maxow.mvpn.user.User;
 import ru.maxow.mvpn.user.UserRepository;
 import ru.maxow.mvpn.util.exception.NotFoundException;
 
+import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import java.util.List;
 import java.util.UUID;
@@ -48,6 +49,6 @@ public class ConfigFacadeImpl implements ConfigFacade {
     }
 
     String combinedConfigs = String.join("\n", configs);
-    return Base64.getEncoder().encodeToString(combinedConfigs.getBytes());
+    return Base64.getEncoder().encodeToString(combinedConfigs.getBytes(StandardCharsets.UTF_8));
   }
 }

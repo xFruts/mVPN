@@ -63,4 +63,4 @@ properties:
   webBasePath:
     type: string
     description: Путь к вашей админ панели x-ui
-    example: "/Kq8wcGUtqP5"
+    example: "Kq8wcGUtqP5"

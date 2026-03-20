@@ -4,6 +4,7 @@ import com.jcraft.jsch.HostKey;
 import com.jcraft.jsch.HostKeyRepository;
 import com.jcraft.jsch.JSchException;
 import com.jcraft.jsch.UserInfo;
+import java.nio.charset.StandardCharsets;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
@@ -57,7 +58,7 @@ public class ServerHostKeyRepository implements HostKeyRepository {
       return;
     }
     String hostKey = server.getHostKey();
-    if (hostKey == null || hostKey.isEmpty()) {
+    if (hostKey != null && !hostKey.isEmpty()) {
       try {
         HostKey savedHostKey = new HostKey(host, key);
         if (hostKey.equals(savedHostKey.getKey())) {
@@ -80,7 +81,7 @@ public class ServerHostKeyRepository implements HostKeyRepository {
       return new HostKey[0];
     }
     try {
-      HostKey key = new HostKey(host, HostKey.GUESS, hostKeyString.getBytes());
+      HostKey key = new HostKey(host, HostKey.GUESS, hostKeyString.getBytes(StandardCharsets.UTF_8));
       return new HostKey[]{key};
     } catch (JSchException e) {
       return new HostKey[0];

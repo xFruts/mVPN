@@ -14,7 +14,7 @@ import org.springframework.stereotype.Component;
 
 @Component
 @Converter
-public class AttributeEncryptor implements AttributeConverter<String, String> {
+public final class AttributeEncryptor implements AttributeConverter<String, String> {
 
   private static final String ALGORITHM = "AES/GCM/NoPadding";
   private static final int GCM_IV_LENGTH = 12;
@@ -47,7 +47,7 @@ public class AttributeEncryptor implements AttributeConverter<String, String> {
       GCMParameterSpec parameterSpec = new GCMParameterSpec(GCM_TAG_LENGTH, iv);
       cipher.init(Cipher.ENCRYPT_MODE, key, parameterSpec);
 
-      byte[] encrypted = cipher.doFinal(attribute.getBytes());
+      byte[] encrypted = cipher.doFinal(attribute.getBytes(StandardCharsets.UTF_8));
       byte[] encryptedWithIv = new byte[iv.length + encrypted.length];
       System.arraycopy(iv, 0, encryptedWithIv, 0, iv.length);
       System.arraycopy(encrypted, 0, encryptedWithIv, iv.length, encrypted.length);
@@ -76,7 +76,7 @@ public class AttributeEncryptor implements AttributeConverter<String, String> {
       byte[] encrypted = new byte[decoded.length - GCM_IV_LENGTH];
       System.arraycopy(decoded, GCM_IV_LENGTH, encrypted, 0, encrypted.length);
 
-      return new String(cipher.doFinal(encrypted));
+      return new String(cipher.doFinal(encrypted), StandardCharsets.UTF_8);
     } catch (Exception e) {
       throw new IllegalStateException("Could not decrypt dbData", e);
     }

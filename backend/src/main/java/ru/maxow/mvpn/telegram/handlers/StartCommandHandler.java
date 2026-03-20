@@ -27,10 +27,11 @@ public class StartCommandHandler implements CommandHandler {
         ? update.getMessage().getFrom().getFirstName()
         : null;
 
-    String text = String.format("""
-            👋Привет %s! Я бот, который поможет получить доступ к VPN.
-            ℹ️Подробнее обо мне и как подключить VPN в /help
-            """, firstName != null ? ", " + firstName : " друг");
+    String text = String.format(
+        "👋Привет %s! Я бот, который поможет получить доступ к VPN.%n"
+            + "ℹ️Подробнее обо мне и как подключить VPN в /help%n",
+        firstName != null ? ", " + firstName : " друг"
+    );
     return List.of(
         SendMessage.builder()
             .chatId(chatId.toString())
