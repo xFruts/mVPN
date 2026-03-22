@@ -11,7 +11,6 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -110,6 +109,7 @@ class ServerHostKeyRepositoryTest {
 
     repository.remove("vpn-host", "ssh-rsa", new byte[]{1, 2, 3});
 
+    assertThat(server.getHostKey()).isEmpty();
     verify(serverRepository, never()).save(server);
   }
 

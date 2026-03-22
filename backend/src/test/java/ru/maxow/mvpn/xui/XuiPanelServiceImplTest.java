@@ -17,6 +17,7 @@ import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestClient;
 import ru.maxow.mvpn.server.Server;
 import ru.maxow.mvpn.user.User;
+import ru.maxow.mvpn.util.exception.NotFoundException;
 import ru.maxow.mvpn.util.exception.XuiUnavailableException;
 
 import java.util.List;
@@ -27,6 +28,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -133,6 +135,86 @@ class XuiPanelServiceImplTest {
         .hasMessageContaining("No session cookie");
   }
 
+  @Test
+  @DisplayName("Должен бросить NotFoundException после retry, если конфиг так и не найден")
+  void shouldThrowNotFoundAfterRetryWhenConfigStillMissing() {
+    Server server = testServer();
+    User user = testUser("no-user");
+
+    XuiInboundsResponse withoutTarget = inboundsResponse(List.of(
+        inbound(1, 443, "first", "other-user")
+    ));
+
+    mockLoginSuccess(3);
+    mockAddClientSuccess();
+    mockInboundsSequence(withoutTarget, withoutTarget, withoutTarget);
+
+    assertThatThrownBy(() -> service.getVlessConfig(server, user))
+        .isInstanceOf(NotFoundException.class)
+        .hasMessageContaining("Config for user");
+  }
+
+  @Test
+  @DisplayName("Должен бросить NotFoundException, если клиент найден, но отключен")
+  void shouldThrowNotFoundWhenClientDisabled() {
+    Server server = testServer();
+    User user = testUser("disabled");
+
+    XuiInboundsResponse response = inboundsResponse(List.of(
+        disabledInbound()
+    ));
+
+    mockLoginSuccess(1);
+    mockInboundsSequence(response);
+
+    assertThatThrownBy(() -> service.getVlessConfig(server, user))
+        .isInstanceOf(NotFoundException.class)
+        .hasMessageContaining("Config for user");
+  }
+
+  @Test
+  @DisplayName("Должен бросить XuiUnavailableException при невалидном ответе inbounds")
+  void shouldThrowXuiUnavailableWhenInboundsResponseInvalid() {
+    Server server = testServer();
+    User user = testUser("ivanov");
+
+    XuiInboundsResponse invalid = new XuiInboundsResponse();
+    invalid.setSuccess(false);
+    invalid.setObj(null);
+
+    mockLoginSuccess(1);
+    mockInboundsSequence(invalid);
+
+    assertThatThrownBy(() -> service.getVlessConfig(server, user))
+        .isInstanceOf(XuiUnavailableException.class)
+        .hasMessageContaining("Failed to get inbounds");
+  }
+
+  @Test
+  @DisplayName("Должен формировать ссылку с TLS и WS параметрами")
+  void shouldGenerateTlsWsLinkWithExpectedParams() {
+    Server server = testServer();
+    User user = testUser("ws-user");
+
+    XuiInboundsResponse response = inboundsResponse(List.of(
+        tlsWsInbound()
+    ));
+
+    mockLoginSuccess(1);
+    mockInboundsSequence(response);
+
+    String config = service.getVlessConfig(server, user);
+
+    assertThat(config).contains("vless://uuid-ws-user@1.2.3.4:8443?");
+    assertThat(config).contains("type=ws");
+    assertThat(config).contains("security=tls");
+    assertThat(config).contains("fp=chrome");
+    assertThat(config).contains("sni=site.example");
+    assertThat(config).contains("path=%2Fws");
+    assertThat(config).contains("host=edge.example");
+    assertThat(config).contains("flow=xtls-rprx-vision");
+  }
+
   private void configureLoginChain() {
     RestClient.RequestBodyUriSpec postUriSpec = mock(RestClient.RequestBodyUriSpec.class);
     loginBodySpec = mock(RestClient.RequestBodySpec.class);
@@ -146,14 +228,14 @@ class XuiPanelServiceImplTest {
   }
 
   private void configureInboundsChain() {
-    RestClient.RequestHeadersUriSpec getUriSpec = mock(RestClient.RequestHeadersUriSpec.class);
-    RestClient.RequestHeadersSpec getHeadersSpec = mock(RestClient.RequestHeadersSpec.class);
+    RestClient.RequestHeadersUriSpec<?> getUriSpec = mock(RestClient.RequestHeadersUriSpec.class);
+    RestClient.RequestHeadersSpec<?> getHeadersSpec = mock(RestClient.RequestHeadersSpec.class);
     inboundsResponseSpec = mock(RestClient.ResponseSpec.class);
 
-    when(restClient.get()).thenReturn(getUriSpec);
-    when(getUriSpec.uri("/panel/api/inbounds/list")).thenReturn(getHeadersSpec);
-    when(getHeadersSpec.header(eq(HttpHeaders.COOKIE), any(String[].class))).thenReturn(getHeadersSpec);
-    when(getHeadersSpec.retrieve()).thenReturn(inboundsResponseSpec);
+    doReturn(getUriSpec).when(restClient).get();
+    doReturn(getHeadersSpec).when(getUriSpec).uri("/panel/api/inbounds/list");
+    doReturn(getHeadersSpec).when(getHeadersSpec).header(eq(HttpHeaders.COOKIE), any(String[].class));
+    doReturn(inboundsResponseSpec).when(getHeadersSpec).retrieve();
   }
 
   private void configureAddClientChain() {
@@ -241,6 +323,38 @@ class XuiPanelServiceImplTest {
         """.formatted(email, email));
     inbound.setStreamSettings("""
         {"network":"grpc","security":"reality","realitySettings":{"settings":{"publicKey":"pk","fingerprint":"chrome","spiderX":"/"},"serverNames":["sni.example"],"shortIds":["ab12"]},"grpcSettings":{"serviceName":"svc"}}
+        """);
+    return inbound;
+  }
+
+  private XuiInboundsResponse.Inbound disabledInbound() {
+    XuiInboundsResponse.Inbound inbound = new XuiInboundsResponse.Inbound();
+    inbound.setId(1);
+    inbound.setPort(443);
+    inbound.setProtocol("vless");
+    inbound.setTag("tag-1");
+    inbound.setRemark("disabled-inbound");
+    inbound.setSettings("""
+        {"clients":[{"id":"uuid-disabled","email":"disabled","enable":false,"flow":"xtls-rprx-vision"}]}
+        """);
+    inbound.setStreamSettings("""
+        {"network":"grpc","security":"reality","realitySettings":{"settings":{"publicKey":"pk","fingerprint":"chrome","spiderX":"/"},"serverNames":["sni.example"],"shortIds":["ab12"]},"grpcSettings":{"serviceName":"svc"}}
+        """);
+    return inbound;
+  }
+
+  private XuiInboundsResponse.Inbound tlsWsInbound() {
+    XuiInboundsResponse.Inbound inbound = new XuiInboundsResponse.Inbound();
+    inbound.setId(3);
+    inbound.setPort(8443);
+    inbound.setProtocol("vless");
+    inbound.setTag("tag-3");
+    inbound.setRemark("ws-remark");
+    inbound.setSettings("""
+        {"clients":[{"id":"uuid-ws-user","email":"ws-user","enable":true,"flow":"xtls-rprx-vision"}]}
+        """);
+    inbound.setStreamSettings("""
+        {"network":"ws","security":"tls","tlsSettings":{"fingerprint":"chrome","serverName":"site.example"},"wsSettings":{"path":"/ws","headers":{"Host":"edge.example"}}}
         """);
     return inbound;
   }

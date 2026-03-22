@@ -377,6 +377,39 @@ class SubscriptionServiceImplTest {
 
       verify(subscriptionRepository, never()).save(any());
     }
+
+    @Test
+    @DisplayName("Должен переводить подписку в ACTIVE при продлении из CANCELED")
+    void shouldSwitchStatusToActiveWhenExtendingCanceledSubscription() {
+      Long subscriptionId = 1L;
+      String billingMonth = YearMonth.now().toString();
+      testSubscription.setStatus(SubscriptionStatus.CANCELED);
+
+      when(subscriptionRepository.findById(subscriptionId)).thenReturn(Optional.of(testSubscription));
+      when(subscriptionRepository.save(any(Subscription.class))).thenReturn(testSubscription);
+
+      subscriptionService.extendSubscription(subscriptionId, billingMonth);
+
+      assertThat(testSubscription.getStatus()).isEqualTo(SubscriptionStatus.ACTIVE);
+      verify(subscriptionRepository).save(testSubscription);
+    }
+
+    @Test
+    @DisplayName("Должен корректно продлять дату окончания на границе месяца")
+    void shouldExtendEndDateOnMonthBoundary() {
+      Long subscriptionId = 1L;
+      String billingMonth = YearMonth.now().toString();
+      OffsetDateTime boundaryDate = OffsetDateTime.parse("2026-01-31T00:00:00Z");
+      testSubscription.setEndDate(boundaryDate);
+
+      when(subscriptionRepository.findById(subscriptionId)).thenReturn(Optional.of(testSubscription));
+      when(subscriptionRepository.save(any(Subscription.class))).thenReturn(testSubscription);
+
+      subscriptionService.extendSubscription(subscriptionId, billingMonth);
+
+      assertThat(testSubscription.getEndDate()).isEqualTo(boundaryDate.plusMonths(1));
+      verify(subscriptionRepository).save(testSubscription);
+    }
   }
 }
 

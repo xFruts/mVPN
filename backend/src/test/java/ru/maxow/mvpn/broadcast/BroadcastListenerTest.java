@@ -9,11 +9,15 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import ru.maxow.mvpn.model.BroadcastRequestDto;
 import ru.maxow.mvpn.model.TargetAudience;
+import ru.maxow.mvpn.model.UserRole;
 import ru.maxow.mvpn.telegram.adapter.TelegramSenderService;
 import ru.maxow.mvpn.user.User;
 import ru.maxow.mvpn.user.UserService;
 
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -63,6 +67,100 @@ class BroadcastListenerTest {
 
     verify(userService, never()).findAll();
     verify(senderService, never()).sendMessage(org.mockito.ArgumentMatchers.anyString(), org.mockito.ArgumentMatchers.anyString());
+  }
+
+  @Test
+  @DisplayName("Given REGULAR audience When handleBroadcast Then query regular users")
+  void givenRegularAudienceWhenHandleBroadcastThenQueryRegularUsers() {
+    BroadcastRequestDto dto = new BroadcastRequestDto();
+    dto.setMessage("Hello regulars");
+    dto.setTargetAudience(TargetAudience.REGULAR);
+
+    User user = new User();
+    user.setId(10L);
+    user.setUserTelegramId(1010L);
+    when(userService.getUsersByRole(UserRole.REGULAR)).thenReturn(List.of(user));
+
+    listener.handleBroadcast(dto);
+
+    verify(userService).getUsersByRole(UserRole.REGULAR);
+    verify(senderService).sendMessage("1010", "Hello regulars");
+  }
+
+  @Test
+  @DisplayName("Given VIP audience When handleBroadcast Then query special users")
+  void givenVipAudienceWhenHandleBroadcastThenQuerySpecialUsers() {
+    BroadcastRequestDto dto = new BroadcastRequestDto();
+    dto.setMessage("Hello vip");
+    dto.setTargetAudience(TargetAudience.VIP);
+
+    User user = new User();
+    user.setId(11L);
+    user.setUserTelegramId(1111L);
+    when(userService.getUsersByRole(UserRole.SPECIAL)).thenReturn(List.of(user));
+
+    listener.handleBroadcast(dto);
+
+    verify(userService).getUsersByRole(UserRole.SPECIAL);
+    verify(senderService).sendMessage("1111", "Hello vip");
+  }
+
+  @Test
+  @DisplayName("Given CUSTOM_LIST with ids When handleBroadcast Then query only selected telegram ids")
+  void givenCustomListWhenHandleBroadcastThenQueryByTelegramIds() {
+    BroadcastRequestDto dto = new BroadcastRequestDto();
+    dto.setMessage("Custom");
+    dto.setTargetAudience(TargetAudience.CUSTOM_LIST);
+    dto.setCustomUserIds(List.of(555L, 777L));
+
+    User user = new User();
+    user.setId(12L);
+    user.setUserTelegramId(555L);
+    when(userService.getUsersByTelegramIds(List.of(555L, 777L))).thenReturn(List.of(user));
+
+    listener.handleBroadcast(dto);
+
+    verify(userService).getUsersByTelegramIds(List.of(555L, 777L));
+    verify(senderService).sendMessage("555", "Custom");
+  }
+
+  @Test
+  @DisplayName("Given CUSTOM_LIST without ids When handleBroadcast Then do not query users and do not send")
+  void givenEmptyCustomListWhenHandleBroadcastThenNoSend() {
+    BroadcastRequestDto dto = new BroadcastRequestDto();
+    dto.setMessage("Custom");
+    dto.setTargetAudience(TargetAudience.CUSTOM_LIST);
+    dto.setCustomUserIds(List.of());
+
+    listener.handleBroadcast(dto);
+
+    verify(userService, never()).getUsersByTelegramIds(List.of());
+    verify(senderService, never()).sendMessage(anyString(), anyString());
+  }
+
+  @Test
+  @DisplayName("Given send failure for one user When handleBroadcast Then continue for remaining users")
+  void givenSingleSendFailureWhenHandleBroadcastThenContinueSending() {
+    BroadcastRequestDto dto = new BroadcastRequestDto();
+    dto.setMessage("Maintenance");
+    dto.setTargetAudience(TargetAudience.ALL);
+
+    User first = new User();
+    first.setId(1L);
+    first.setUserTelegramId(111L);
+
+    User second = new User();
+    second.setId(2L);
+    second.setUserTelegramId(222L);
+
+    when(userService.findAll()).thenReturn(List.of(first, second));
+    doThrow(new RuntimeException("telegram down"))
+        .when(senderService).sendMessage("111", "Maintenance");
+
+    listener.handleBroadcast(dto);
+
+    verify(senderService, times(1)).sendMessage("111", "Maintenance");
+    verify(senderService, times(1)).sendMessage("222", "Maintenance");
   }
 }
 
