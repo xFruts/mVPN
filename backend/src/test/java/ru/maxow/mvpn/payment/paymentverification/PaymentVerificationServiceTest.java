@@ -127,6 +127,23 @@ class PaymentVerificationServiceTest {
     }
 
     @Test
+    @DisplayName("Не должен перезаписывать adminComment, если комментарий null")
+    void shouldNotOverrideAdminCommentWhenNull() {
+      verification.setAdminComment("keep-comment");
+
+      when(repository.findById(1L)).thenReturn(Optional.of(verification));
+      when(repository.save(verification)).thenReturn(verification);
+      when(mapper.toDto(verification)).thenReturn(new PaymentVerificationResponseDto());
+
+      paymentVerificationService.approve(1L, null);
+
+      assertThat(verification.getAdminComment()).isEqualTo("keep-comment");
+      assertThat(verification.getStatus()).isEqualTo(VerificationStatus.APPROVED);
+      assertThat(verification.getVerifiedAt()).isNotNull();
+      verify(repository).save(verification);
+    }
+
+    @Test
     @DisplayName("Должен бросить NotFoundException при approve отсутствующей заявки")
     void shouldThrowNotFoundWhenApproveMissing() {
       when(repository.findById(404L)).thenReturn(Optional.empty());
@@ -170,6 +187,40 @@ class PaymentVerificationServiceTest {
       verify(repository).findById(1L);
       verify(repository).save(verification);
       verify(mapper).toDto(verification);
+    }
+
+    @Test
+    @DisplayName("Не должен перезаписывать adminComment при reject, если причина blank")
+    void shouldNotOverrideAdminCommentWhenRejectReasonBlank() {
+      verification.setAdminComment("keep-comment");
+
+      when(repository.findById(1L)).thenReturn(Optional.of(verification));
+      when(repository.save(verification)).thenReturn(verification);
+      when(mapper.toDto(verification)).thenReturn(new PaymentVerificationResponseDto());
+
+      paymentVerificationService.reject(1L, "   ");
+
+      assertThat(verification.getAdminComment()).isEqualTo("keep-comment");
+      assertThat(verification.getStatus()).isEqualTo(VerificationStatus.REJECTED);
+      assertThat(verification.getVerifiedAt()).isNotNull();
+      verify(repository).save(verification);
+    }
+
+    @Test
+    @DisplayName("Не должен перезаписывать adminComment при reject, если причина null")
+    void shouldNotOverrideAdminCommentWhenRejectReasonNull() {
+      verification.setAdminComment("keep-comment");
+
+      when(repository.findById(1L)).thenReturn(Optional.of(verification));
+      when(repository.save(verification)).thenReturn(verification);
+      when(mapper.toDto(verification)).thenReturn(new PaymentVerificationResponseDto());
+
+      paymentVerificationService.reject(1L, null);
+
+      assertThat(verification.getAdminComment()).isEqualTo("keep-comment");
+      assertThat(verification.getStatus()).isEqualTo(VerificationStatus.REJECTED);
+      assertThat(verification.getVerifiedAt()).isNotNull();
+      verify(repository).save(verification);
     }
 
     @Test
