@@ -29,8 +29,8 @@ public class PaymentVerification {
   @GeneratedValue(strategy = GenerationType.IDENTITY)
   Long id;
 
-  @Column(name = "billing_month", nullable = false, length = 7)
-  String billingMonth; // 2026-01
+  @Column(name = "billing_date", nullable = false, length = 10)
+  String billingDate; // 2026-01
 
   @ManyToOne(fetch = FetchType.LAZY, optional = false)
   @JoinColumn(name = "user_id", nullable = false)
@@ -40,7 +40,10 @@ public class PaymentVerification {
   String payerFullName;
 
   @Column(name = "paid_amount", nullable = false, precision = 19, scale = 2)
-  BigDecimal paidAmount; // RUB
+  BigDecimal paidAmount;
+
+  @Column(name = "currency", nullable = false, length = 3)
+  String currency; // RUB
 
   @Enumerated(EnumType.STRING)
   @Column(name = "status", nullable = false, length = 50)

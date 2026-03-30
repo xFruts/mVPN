@@ -21,6 +21,13 @@ properties:
     minimum: 1
     description: Лимит трафика в ГБ
     example: 500
+  durationOfDays:
+    type: integer
+    format: int32
+    minimum: 1
+    description: Длительность тарифа в днях
+    example: 30
+
   serverIds:
     type: array
     description: Список ID серверов, доступных на этом тарифе

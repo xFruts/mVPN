@@ -14,8 +14,5 @@ public interface SubscriptionMapper {
 
   @Mapping(target = "id", ignore = true)
   @Mapping(target = "user", ignore = true)
-  @Mapping(target = "startDate", ignore = true)
-  @Mapping(target = "endDate", ignore = true)
-  @Mapping(target = "status", ignore = true)
   void updateSubscriptionFromDto(CreateUpdateSubscriptionDto dto, @MappingTarget Subscription entity);
 }

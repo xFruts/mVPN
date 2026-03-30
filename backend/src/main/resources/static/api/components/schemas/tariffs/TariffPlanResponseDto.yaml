@@ -13,16 +13,21 @@ properties:
     example: 1
   name:
     type: string
-    example: "Premium 4K"
+    example: "Premium 500GB"
   maxDevices:
     type: integer
     format: int32
-    example: 5
+    example: 10
   trafficLimitGb:
     type: integer
     format: int32
     description: Лимит трафика (ГБ)
-    example: 100
+    example: 500
+  durationOfDays:
+    type: integer
+    format: int32
+    description: Длительность тарифа (дни)
+    example: 30
   serverLocation:
     type: array
     description: Список доступных локаций на этом тарифе

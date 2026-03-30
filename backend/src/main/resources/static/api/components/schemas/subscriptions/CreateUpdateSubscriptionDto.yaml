@@ -3,6 +3,7 @@ required:
   - startDate
   - endDate
   - status
+  - tariff_id
 properties:
   startDate:
     type: string
@@ -16,3 +17,8 @@ properties:
     example: "2026-02-01T00:00:00Z"
   status:
     $ref: './SubscriptionStatus.yaml'
+  tariff_id:
+    type: integer
+    format: int64
+    description: ID тарифа
+    example: 1

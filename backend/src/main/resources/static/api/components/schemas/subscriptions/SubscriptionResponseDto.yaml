@@ -21,3 +21,5 @@ properties:
     format: date-time
   status:
     $ref: './SubscriptionStatus.yaml'
+  tariff:
+    $ref: '../tariffs/TariffPlanResponseDto.yaml'

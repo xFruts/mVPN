@@ -38,6 +38,9 @@ public class Tariff {
   @Column(nullable = false)
   Integer trafficLimitGb;
 
+  @Column(nullable = false)
+  Integer durationOfDays;
+
   @ManyToMany(fetch = FetchType.LAZY)
   @JoinTable(
       name = "tariff_plan_servers",
