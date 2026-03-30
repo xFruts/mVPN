@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: mVPN API
-  version: 0.0.1
+  version: 1.0.0
   contact:
     name: Maxow Support
     email: maxowinc@gmail.com

@@ -8,9 +8,11 @@ import java.util.List;
 
 public interface SubscriptionService {
 
-  SubscriptionResponseDto createSubscription(Long userId, CreateUpdateSubscriptionDto subscriptionRequestDto);
+  SubscriptionResponseDto createSubscription(Long userId,
+                                             CreateUpdateSubscriptionDto subscriptionRequestDto);
 
-  SubscriptionResponseDto updateSubscription(Long id, CreateUpdateSubscriptionDto subscriptionRequestDto);
+  SubscriptionResponseDto updateSubscription(Long id,
+                                             CreateUpdateSubscriptionDto subscriptionRequestDto);
 
   void deleteSubscription(Long id);
 
@@ -18,5 +20,5 @@ public interface SubscriptionService {
 
   List<SubscriptionResponseDto> findSubscriptionsByUserId(Long id);
 
-  void extendSubscription(Long userId, String billingMonth);
+  void extendSubscription(Long userId);
 }

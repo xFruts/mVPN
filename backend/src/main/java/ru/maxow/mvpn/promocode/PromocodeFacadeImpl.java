@@ -29,22 +29,17 @@ public class PromocodeFacadeImpl implements PromocodeFacade {
   @Override
   @Transactional
   public void applyPromocode(Long userId, String code) {
-    log.info("Applying promocode {} for user {}", code, userId);
-
-    if (!userRepository.existsById(userId)) {
-      throw new NotFoundException("User", userId);
-    }
-    if (userService.hasActiveSubscriptions(userId)) {
-      throw new BadRequestException("User has active subscriptions");
-    }
-    promocodeService.usePromocode(code);
-
-    CreateUpdateSubscriptionDto dto = new CreateUpdateSubscriptionDto(
-        OffsetDateTime.now(),
-        OffsetDateTime.now().plusMonths(1),
-        SubscriptionStatus.ACTIVE
-    ); //TODO: Костыль. Убрать хардкод и сделать возможность создание разных промокодов
-    subscriptionService.createSubscription(userId, dto);
-    log.info("Promocode {} applied successfully for user {}", code, userId);
+//    log.info("Applying promocode {} for user {}", code, userId);
+//
+//    if (!userRepository.existsById(userId)) {
+//      throw new NotFoundException("User", userId);
+//    }
+//    if (userService.hasActiveSubscriptions(userId)) {
+//      throw new BadRequestException("User has active subscriptions");
+//    }
+//    promocodeService.usePromocode(code);
+//
+//    //TODO: Костыль. Убрать хардкод и сделать возможность создание разных промокодов
+//    log.info("Promocode {} applied successfully for user {}", code, userId);
   }
 }
