@@ -13,6 +13,7 @@ import ru.maxow.mvpn.model.CreateUpdateSubscriptionDto;
 import ru.maxow.mvpn.model.PromocodeResponseDto;
 import ru.maxow.mvpn.model.SubscriptionResponseDto;
 import ru.maxow.mvpn.model.SubscriptionStatus;
+import ru.maxow.mvpn.model.TariffPlanResponseDto;
 import ru.maxow.mvpn.subscription.SubscriptionService;
 import ru.maxow.mvpn.user.UserRepository;
 import ru.maxow.mvpn.user.UserService;
@@ -86,6 +87,10 @@ class PromocodeFacadeTest {
     void shouldApplyPromocodeAndCreateSubscription() {
       PromocodeResponseDto promoDto = new PromocodeResponseDto();
       promoDto.setCode("PROMO1");
+      TariffPlanResponseDto tariff = new TariffPlanResponseDto();
+      tariff.setId(9L);
+      tariff.setDurationOfDays(30);
+      promoDto.setTariff(tariff);
 
       SubscriptionResponseDto subscription = new SubscriptionResponseDto();
       subscription.setId(100L);
@@ -111,9 +116,9 @@ class PromocodeFacadeTest {
 
       CreateUpdateSubscriptionDto dto = dtoCaptor.getValue();
       assertThat(dto.getStatus()).isEqualTo(SubscriptionStatus.ACTIVE);
-      assertThat(dto.getStartDate()).isBetween(before.minusSeconds(1), after.plusSeconds(1));
-      assertThat(dto.getEndDate()).isAfter(dto.getStartDate().plusDays(27));
-      assertThat(dto.getEndDate()).isBefore(dto.getStartDate().plusDays(33));
+      assertThat(dto.getTariffId()).isEqualTo(9L);
+      assertThat(dto.getStartDate()).isNull();
+      assertThat(dto.getEndDate()).isBetween(before.plusDays(30).minusSeconds(1), after.plusDays(30).plusSeconds(1));
     }
   }
 }

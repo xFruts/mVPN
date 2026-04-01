@@ -1,24 +1,15 @@
 package ru.maxow.mvpn.promocode;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
-import java.time.LocalDateTime;
+import jakarta.persistence.*;
 import java.time.OffsetDateTime;
-
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.experimental.FieldDefaults;
 import org.hibernate.annotations.ColumnDefault;
 import ru.maxow.mvpn.model.PromocodeStatus;
+import ru.maxow.mvpn.tariff.Tariff;
 
-/**
- * Entity representing a promotional code.
- */
 @Entity
 @Table(name = "promo_codes")
 @Getter
@@ -34,6 +25,10 @@ public class Promocode {
 
   @Column(nullable = false)
   OffsetDateTime expirationDate;
+
+  @ManyToOne(fetch = FetchType.LAZY)
+  @JoinColumn(name = "tariff_id", nullable = false)
+  Tariff tariff;
 
   @Column(nullable = false)
   @ColumnDefault("1")

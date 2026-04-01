@@ -1,6 +1,5 @@
 package ru.maxow.mvpn.promocode;
 
-import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.UUID;
@@ -13,6 +12,8 @@ import org.springframework.transaction.annotation.Transactional;
 import ru.maxow.mvpn.model.CreatePromocodeRequestDto;
 import ru.maxow.mvpn.model.PromocodeResponseDto;
 import ru.maxow.mvpn.model.PromocodeStatus;
+import ru.maxow.mvpn.tariff.Tariff;
+import ru.maxow.mvpn.tariff.TariffRepository;
 import ru.maxow.mvpn.util.exception.BadRequestException;
 import ru.maxow.mvpn.util.exception.NotFoundException;
 
@@ -24,6 +25,7 @@ public class PromocodeServiceImpl implements  PromocodeService {
 
   PromocodeRepository promocodeRepository;
   PromocodeMapper promocodeMapper;
+  TariffRepository tariffRepository;
 
   @Override
   public PromocodeResponseDto createPromocode(CreatePromocodeRequestDto requestDto) {
@@ -32,6 +34,10 @@ public class PromocodeServiceImpl implements  PromocodeService {
     promocode.setUsageLimit(requestDto.getUsageLimit());
     promocode.setExpirationDate(OffsetDateTime.now().plusDays(requestDto.getValidDays()));
     promocode.setStatus(PromocodeStatus.ACTIVE);
+
+    Tariff tariff = tariffRepository.findById(requestDto.getTariffId())
+        .orElseThrow(() -> new NotFoundException("Tariff", requestDto.getTariffId()));
+    promocode.setTariff(tariff);
 
     Promocode savedPromocode = promocodeRepository.save(promocode);
     log.info("Promocode save with id: {}", savedPromocode.getId());

@@ -5,11 +5,13 @@ import org.mapstruct.Mapping;
 import org.mapstruct.MappingTarget;
 import org.springframework.data.util.Pair;
 import ru.maxow.mvpn.model.CreateUpdateRequestTariffPlanDto;
+import ru.maxow.mvpn.model.ServerLocation;
 import ru.maxow.mvpn.model.TariffPlanResponseDto;
 import ru.maxow.mvpn.server.Server;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 @Mapper(componentModel = "spring")
 public interface TariffMapper {
@@ -29,6 +31,10 @@ public interface TariffMapper {
         .map(this::serverToPair)
         .toList();
   }
+
+  ServerLocation toServerLocation(Server server);
+
+  List<ServerLocation> mapServers(Set<Server> servers);
 
   default Pair<Long, String> serverToPair(Server server) {
     return Pair.of(server.getId(), server.getLocation());

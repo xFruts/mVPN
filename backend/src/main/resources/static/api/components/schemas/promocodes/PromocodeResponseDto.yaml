@@ -27,11 +27,12 @@ properties:
     format: int32
     description: Максимально допустимое количество применений
     example: 100
+  tariff:
+    $ref: '../tariffs/TariffPlanResponseDto.yaml'
   status:
-    # Ссылка на Enum в этой же папке (поэтому ./)
     $ref: './PromocodeStatus.yaml'
   expirationDate:
     type: string
     format: date-time
-    description: "Дата и время истечения срока действия (ISO-8601)"
-    example: "2024-12-31T23:59:59"
+    description: "Дата и время истечения срока действия"
+    example: "2024-12-31T23:59:52Z"

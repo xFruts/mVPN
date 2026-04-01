@@ -7,6 +7,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ru.maxow.mvpn.model.CreateUpdateSubscriptionDto;
+import ru.maxow.mvpn.model.PromocodeResponseDto;
 import ru.maxow.mvpn.model.SubscriptionStatus;
 import ru.maxow.mvpn.subscription.SubscriptionService;
 import ru.maxow.mvpn.user.UserRepository;
@@ -29,17 +30,26 @@ public class PromocodeFacadeImpl implements PromocodeFacade {
   @Override
   @Transactional
   public void applyPromocode(Long userId, String code) {
-//    log.info("Applying promocode {} for user {}", code, userId);
-//
-//    if (!userRepository.existsById(userId)) {
-//      throw new NotFoundException("User", userId);
-//    }
-//    if (userService.hasActiveSubscriptions(userId)) {
-//      throw new BadRequestException("User has active subscriptions");
-//    }
-//    promocodeService.usePromocode(code);
-//
-//    //TODO: Костыль. Убрать хардкод и сделать возможность создание разных промокодов
-//    log.info("Promocode {} applied successfully for user {}", code, userId);
+    log.info("Applying promocode {} for user {}", code, userId);
+
+    if (!userRepository.existsById(userId)) {
+      throw new NotFoundException("User", userId);
+    }
+    if (userService.hasActiveSubscriptions(userId)) {
+      throw new BadRequestException("User has active subscriptions");
+    }
+    PromocodeResponseDto promocodeResponseDto = promocodeService.usePromocode(code);
+    subscriptionService.createSubscription(
+        userId,
+        new CreateUpdateSubscriptionDto()
+            .tariffId(promocodeResponseDto.getTariff().getId())
+            .status(SubscriptionStatus.ACTIVE)
+            .startDate(OffsetDateTime.now())
+            .endDate(
+                OffsetDateTime.now()
+                    .plusDays(promocodeResponseDto.getTariff().getDurationOfDays()))
+    );
+
+    log.info("Promocode {} applied successfully for user {}", code, userId);
   }
 }
