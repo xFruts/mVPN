@@ -1,15 +1,15 @@
 type: object
 required:
-  - billingMonth
+  - paidUntilDate
   - userId
   - payerFullName
   - paidAmount
 properties:
-  billingDate:
+  paidUntilDate:
     type: string
-    pattern: '^\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])$'
+    format: date
     example: "2023-11-10"
-    description: Дата оплаты в формате YYYY-MM-DD
+    description: Дата дня, до которого оплачена подписка в формате YYYY-MM-DD
   userId:
     type: integer
     format: int64
@@ -24,6 +24,11 @@ properties:
     multipleOf: 0.01
     example: 1500.00
     description: Сумма оплаты.
+  currency:
+    type: string
+    maxLength: 3
+    example: "RUB"
+    description: Валюта оплаты в формате ISO 4217 (например, "RUB" для российских рублей).
   userComment:
     type: string
     maxLength: 1000
