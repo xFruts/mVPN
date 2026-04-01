@@ -1,7 +1,6 @@
 package ru.maxow.mvpn.subscription;
 
 import java.time.OffsetDateTime;
-import java.time.YearMonth;
 import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
@@ -15,8 +14,11 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import ru.maxow.mvpn.model.CreateUpdateSubscriptionDto;
 import ru.maxow.mvpn.model.SubscriptionResponseDto;
 import ru.maxow.mvpn.model.SubscriptionStatus;
+import ru.maxow.mvpn.tariff.Tariff;
+import ru.maxow.mvpn.tariff.TariffRepository;
 import ru.maxow.mvpn.user.User;
 import ru.maxow.mvpn.user.UserRepository;
+import ru.maxow.mvpn.util.exception.BadRequestException;
 import ru.maxow.mvpn.util.exception.NotFoundException;
 
 import static org.assertj.core.api.Assertions.*;
@@ -37,12 +39,18 @@ class SubscriptionServiceImplTest {
   @Mock
   private UserRepository userRepository;
 
+  @Mock
+  private TariffRepository tariffRepository;
+
   @InjectMocks
   private SubscriptionServiceImpl subscriptionService;
 
   private User testUser;
   private Subscription testSubscription;
   private SubscriptionResponseDto testSubscriptionDto;
+
+  private String futureBillingDate;
+  private String pastBillingDate;
 
   @BeforeEach
   void setUp() {
@@ -60,6 +68,9 @@ class SubscriptionServiceImplTest {
     testSubscriptionDto = new SubscriptionResponseDto();
     testSubscriptionDto.setId(1L);
     testSubscriptionDto.setStatus(SubscriptionStatus.ACTIVE);
+
+    futureBillingDate = OffsetDateTime.now().plusMonths(1).withNano(0).toString();
+    pastBillingDate = OffsetDateTime.now().minusMonths(1).withNano(0).toString();
   }
 
   @Nested
@@ -71,14 +82,17 @@ class SubscriptionServiceImplTest {
     void shouldCreateSubscriptionSuccessfully() {
       // Arrange
       Long userId = 1L;
+      Long tariffId = 1L;
       CreateUpdateSubscriptionDto requestDto = new CreateUpdateSubscriptionDto();
       OffsetDateTime startDate = OffsetDateTime.now();
       OffsetDateTime endDate = OffsetDateTime.now().plusMonths(1);
       requestDto.setStartDate(startDate);
       requestDto.setEndDate(endDate);
       requestDto.setStatus(SubscriptionStatus.ACTIVE);
+      requestDto.setTariffId(tariffId);
 
       when(userRepository.findById(userId)).thenReturn(Optional.of(testUser));
+      when(tariffRepository.findById(tariffId)).thenReturn(Optional.of(new Tariff()));
       when(subscriptionRepository.save(any(Subscription.class))).thenReturn(testSubscription);
       when(subscriptionMapper.toSubscriptionResponseDto(testSubscription)).thenReturn(testSubscriptionDto);
 
@@ -88,6 +102,7 @@ class SubscriptionServiceImplTest {
       // Assert
       assertThat(result).isNotNull().isEqualTo(testSubscriptionDto);
       verify(userRepository).findById(userId);
+      verify(tariffRepository).findById(tariffId);
       verify(subscriptionRepository).save(any(Subscription.class));
       verify(subscriptionMapper).toSubscriptionResponseDto(testSubscription);
     }
@@ -143,11 +158,13 @@ class SubscriptionServiceImplTest {
     void shouldUpdateSubscriptionSuccessfully() {
       // Arrange
       Long subscriptionId = 1L;
+      Long tariffId = 1L;
       CreateUpdateSubscriptionDto updateDto = new CreateUpdateSubscriptionDto();
       OffsetDateTime newEndDate = OffsetDateTime.now().plusMonths(3);
       updateDto.setStartDate(OffsetDateTime.now());
       updateDto.setEndDate(newEndDate);
       updateDto.setStatus(SubscriptionStatus.CANCELED);
+      updateDto.setTariffId(tariffId);
 
       Subscription updatedSubscription = new Subscription();
       updatedSubscription.setId(subscriptionId);
@@ -155,6 +172,7 @@ class SubscriptionServiceImplTest {
       updatedSubscription.setEndDate(newEndDate);
 
       when(subscriptionRepository.findById(subscriptionId)).thenReturn(Optional.of(testSubscription));
+      when(tariffRepository.findById(tariffId)).thenReturn(Optional.of(new Tariff()));
       when(subscriptionRepository.save(any(Subscription.class))).thenReturn(updatedSubscription);
       when(subscriptionMapper.toSubscriptionResponseDto(updatedSubscription)).thenReturn(testSubscriptionDto);
       doNothing().when(subscriptionMapper).updateSubscriptionFromDto(updateDto, testSubscription);
@@ -307,89 +325,97 @@ class SubscriptionServiceImplTest {
   class ExtendSubscriptionTests {
 
     @Test
-    @DisplayName("Должен успешно продлить подписку на один месяц")
+    @DisplayName("Должен успешно продлить подписку для текущего месяца")
     void shouldExtendSubscriptionSuccessfully() {
       // Arrange
-      Long subscriptionId = 1L;
-      String billingMonth = YearMonth.now().toString();
+      Long userId = 1L;
+      String billingDate = futureBillingDate;
+      OffsetDateTime originalEndDate = OffsetDateTime.now().plusMonths(1);
+      testSubscription.setEndDate(originalEndDate);
+      testSubscription.setStatus(SubscriptionStatus.ACTIVE);
 
-      when(subscriptionRepository.findById(subscriptionId)).thenReturn(Optional.of(testSubscription));
+      when(subscriptionRepository.findFirstByUser_IdOrderByStartDateDesc(userId))
+          .thenReturn(Optional.of(testSubscription));
       when(subscriptionRepository.save(any(Subscription.class))).thenReturn(testSubscription);
 
       // Act
-      subscriptionService.extendSubscription(subscriptionId, billingMonth);
+      subscriptionService.extendSubscription(userId, billingDate);
 
       // Assert
       assertThat(testSubscription.getStatus()).isEqualTo(SubscriptionStatus.ACTIVE);
-      assertThat(testSubscription.getEndDate())
-          .isAfter(OffsetDateTime.now().plusMonths(1).minusSeconds(60));
-      verify(subscriptionRepository).findById(subscriptionId);
-      verify(subscriptionRepository).save(any(Subscription.class));
+      assertThat(testSubscription.getEndDate()).isEqualTo(originalEndDate.plusMonths(1));
+      verify(subscriptionRepository).findFirstByUser_IdOrderByStartDateDesc(userId);
+      verify(subscriptionRepository).save(testSubscription);
     }
 
     @Test
-    @DisplayName("Должен выбросить NotFoundException при продлении несуществующей подписки")
-    void shouldThrowNotFoundExceptionWhenExtendingNonExistentSubscription() {
+    @DisplayName("Должен выбросить BadRequestException если у пользователя нет подписок")
+    void shouldThrowBadRequestExceptionWhenUserHasNoSubscriptions() {
       // Arrange
-      Long nonExistentSubscriptionId = 999L;
-      String billingMonth = YearMonth.now().toString();
+      Long userId = 1L;
+      String billingDate = futureBillingDate;
 
-      when(subscriptionRepository.findById(nonExistentSubscriptionId)).thenReturn(Optional.empty());
+      when(subscriptionRepository.findFirstByUser_IdOrderByStartDateDesc(userId))
+          .thenReturn(Optional.empty());
 
       // Act & Assert
-      assertThatThrownBy(() -> subscriptionService.extendSubscription(nonExistentSubscriptionId, billingMonth))
-          .isInstanceOf(NotFoundException.class)
-          .hasMessageContaining("Subscription");
+      assertThatThrownBy(() -> subscriptionService.extendSubscription(userId, billingDate))
+          .isInstanceOf(BadRequestException.class)
+          .hasMessageContaining("User has no active subscriptions");
 
+      verify(subscriptionRepository).findFirstByUser_IdOrderByStartDateDesc(userId);
       verify(subscriptionRepository, never()).save(any());
     }
 
     @Test
-    @DisplayName("Должен выбросить IllegalArgumentException для некорректного формата даты")
-    void shouldThrowIllegalArgumentExceptionForInvalidBillingMonthFormat() {
+    @DisplayName("Должен выбросить BadRequestException для некорректного формата billingMonth")
+    void shouldThrowBadRequestExceptionForInvalidBillingMonthFormat() {
       // Arrange
-      Long subscriptionId = 1L;
+      Long userId = 1L;
       String invalidBillingMonth = "invalid-date";
 
-      when(subscriptionRepository.findById(subscriptionId)).thenReturn(Optional.of(testSubscription));
-
       // Act & Assert
-      assertThatThrownBy(() -> subscriptionService.extendSubscription(subscriptionId, invalidBillingMonth))
-          .isInstanceOf(IllegalArgumentException.class)
-          .hasMessageContaining("Invalid billing month format");
+      assertThatThrownBy(() -> subscriptionService.extendSubscription(userId, invalidBillingMonth))
+          .isInstanceOf(BadRequestException.class)
+          .hasMessageContaining("Invalid billing date format");
 
+      verify(subscriptionRepository, never()).findFirstByUser_IdOrderByStartDateDesc(anyLong());
       verify(subscriptionRepository, never()).save(any());
     }
 
     @Test
-    @DisplayName("Должен выбросить IllegalArgumentException если месяц в прошлом")
-    void shouldThrowIllegalArgumentExceptionWhenBillingMonthIsInPast() {
+    @DisplayName("Должен выбросить BadRequestException если billingMonth в прошлом")
+    void shouldThrowBadRequestExceptionWhenBillingMonthIsInPast() {
       // Arrange
-      Long subscriptionId = 1L;
-      String pastBillingMonth = YearMonth.now().minusMonths(1).toString();
-
-      when(subscriptionRepository.findById(subscriptionId)).thenReturn(Optional.of(testSubscription));
+      Long userId = 1L;
+      String pastBillingMonth = pastBillingDate;
 
       // Act & Assert
-      assertThatThrownBy(() -> subscriptionService.extendSubscription(subscriptionId, pastBillingMonth))
-          .isInstanceOf(IllegalArgumentException.class)
+      assertThatThrownBy(() -> subscriptionService.extendSubscription(userId, pastBillingMonth))
+          .isInstanceOf(BadRequestException.class)
           .hasMessageContaining("Billing month cannot be in the past");
 
+      verify(subscriptionRepository, never()).findFirstByUser_IdOrderByStartDateDesc(anyLong());
       verify(subscriptionRepository, never()).save(any());
     }
 
     @Test
     @DisplayName("Должен переводить подписку в ACTIVE при продлении из CANCELED")
     void shouldSwitchStatusToActiveWhenExtendingCanceledSubscription() {
-      Long subscriptionId = 1L;
-      String billingMonth = YearMonth.now().toString();
+      // Arrange
+      Long userId = 1L;
+      String billingMonth = futureBillingDate;
       testSubscription.setStatus(SubscriptionStatus.CANCELED);
+      testSubscription.setEndDate(OffsetDateTime.now().plusMonths(1));
 
-      when(subscriptionRepository.findById(subscriptionId)).thenReturn(Optional.of(testSubscription));
+      when(subscriptionRepository.findFirstByUser_IdOrderByStartDateDesc(userId))
+          .thenReturn(Optional.of(testSubscription));
       when(subscriptionRepository.save(any(Subscription.class))).thenReturn(testSubscription);
 
-      subscriptionService.extendSubscription(subscriptionId, billingMonth);
+      // Act
+      subscriptionService.extendSubscription(userId, billingMonth);
 
+      // Assert
       assertThat(testSubscription.getStatus()).isEqualTo(SubscriptionStatus.ACTIVE);
       verify(subscriptionRepository).save(testSubscription);
     }
@@ -397,17 +423,86 @@ class SubscriptionServiceImplTest {
     @Test
     @DisplayName("Должен корректно продлять дату окончания на границе месяца")
     void shouldExtendEndDateOnMonthBoundary() {
-      Long subscriptionId = 1L;
-      String billingMonth = YearMonth.now().toString();
+      // Arrange
+      Long userId = 1L;
+      String billingMonth = futureBillingDate;
       OffsetDateTime boundaryDate = OffsetDateTime.parse("2026-01-31T00:00:00Z");
       testSubscription.setEndDate(boundaryDate);
+      testSubscription.setStatus(SubscriptionStatus.ACTIVE);
 
-      when(subscriptionRepository.findById(subscriptionId)).thenReturn(Optional.of(testSubscription));
+      when(subscriptionRepository.findFirstByUser_IdOrderByStartDateDesc(userId))
+          .thenReturn(Optional.of(testSubscription));
       when(subscriptionRepository.save(any(Subscription.class))).thenReturn(testSubscription);
 
-      subscriptionService.extendSubscription(subscriptionId, billingMonth);
+      // Act
+      subscriptionService.extendSubscription(userId, billingMonth);
 
+      // Assert
       assertThat(testSubscription.getEndDate()).isEqualTo(boundaryDate.plusMonths(1));
+      verify(subscriptionRepository).save(testSubscription);
+    }
+
+    @Test
+    @DisplayName("Должен продлить истекшую и отмененную подписку по текущей логике")
+    void shouldExtendSubscriptionWhenSubscriptionIsExpiredAndCanceled() {
+      // Arrange
+      Long userId = 1L;
+      String billingMonth = futureBillingDate;
+      testSubscription.setStatus(SubscriptionStatus.CANCELED);
+      testSubscription.setEndDate(OffsetDateTime.now().minusMonths(1)); // истекла месяц назад
+
+      when(subscriptionRepository.findFirstByUser_IdOrderByStartDateDesc(userId))
+          .thenReturn(Optional.of(testSubscription));
+      when(subscriptionRepository.save(any(Subscription.class))).thenReturn(testSubscription);
+
+      // Act
+      subscriptionService.extendSubscription(userId, billingMonth);
+
+      // Assert
+      assertThat(testSubscription.getStatus()).isEqualTo(SubscriptionStatus.ACTIVE);
+      verify(subscriptionRepository).save(testSubscription);
+    }
+
+    @Test
+    @DisplayName("Должен успешно продлить подписку для будущего месяца")
+    void shouldExtendSubscriptionForFutureMonth() {
+      // Arrange
+      Long userId = 1L;
+      String futureBillingMonth = OffsetDateTime.now().plusMonths(2).withNano(0).toString();
+      testSubscription.setStatus(SubscriptionStatus.ACTIVE);
+      testSubscription.setEndDate(OffsetDateTime.now().plusMonths(1));
+
+      when(subscriptionRepository.findFirstByUser_IdOrderByStartDateDesc(userId))
+          .thenReturn(Optional.of(testSubscription));
+      when(subscriptionRepository.save(any(Subscription.class))).thenReturn(testSubscription);
+
+      // Act
+      subscriptionService.extendSubscription(userId, futureBillingMonth);
+
+      // Assert
+      assertThat(testSubscription.getStatus()).isEqualTo(SubscriptionStatus.ACTIVE);
+      verify(subscriptionRepository).save(testSubscription);
+    }
+
+    @Test
+    @DisplayName("Должен обновить дату окончания на месяц вперед от текущей даты")
+    void shouldUpdateEndDateByOneMonth() {
+      // Arrange
+      Long userId = 1L;
+      String billingMonth = futureBillingDate;
+      OffsetDateTime currentEndDate = OffsetDateTime.parse("2026-04-15T10:30:00+03:00");
+      testSubscription.setEndDate(currentEndDate);
+      testSubscription.setStatus(SubscriptionStatus.ACTIVE);
+
+      when(subscriptionRepository.findFirstByUser_IdOrderByStartDateDesc(userId))
+          .thenReturn(Optional.of(testSubscription));
+      when(subscriptionRepository.save(any(Subscription.class))).thenReturn(testSubscription);
+
+      // Act
+      subscriptionService.extendSubscription(userId, billingMonth);
+
+      // Assert
+      assertThat(testSubscription.getEndDate()).isEqualTo(currentEndDate.plusMonths(1));
       verify(subscriptionRepository).save(testSubscription);
     }
   }

@@ -25,6 +25,7 @@ public class PaymentVerificationServiceImpl implements PaymentVerificationServic
   public PaymentVerificationResponseDto create(CreateUpdatePaymentVerificationDto dto) {
     PaymentVerification verification = mapper.toEntity(dto);
     verification.setStatus(VerificationStatus.PENDING);
+    verification.setCurrency(dto.getCurrency());
     verification.setCreatedAt(Instant.now());
     repository.save(verification);
     log.info("Payment verification with id: {} has been created", verification.getId());

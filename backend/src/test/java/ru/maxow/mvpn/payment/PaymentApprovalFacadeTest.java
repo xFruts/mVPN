@@ -1,5 +1,6 @@
 package ru.maxow.mvpn.payment;
 
+import java.time.LocalDate;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -34,40 +35,69 @@ class PaymentApprovalFacadeTest {
   class ApproveTests {
 
     @Test
-    @DisplayName("Должен одобрить verification и продлить подписку")
+    @DisplayName("Должен одобрить verification и продлить подписку с правильным billingMonth")
     void shouldApproveAndExtendSubscription() {
+      // Arrange
       PaymentVerificationRequestDto request = new PaymentVerificationRequestDto();
       request.setAdminComment("ok");
 
       PaymentVerificationResponseDto approved = new PaymentVerificationResponseDto();
       approved.setId(10L);
       approved.setUserId(7L);
-      approved.setBillingMonth("2026-09");
+      approved.setPaidUntilDate(LocalDate.parse("2026-09-15"));
 
       when(paymentVerificationService.approve(10L, "ok")).thenReturn(approved);
+      doNothing().when(subscriptionService).extendSubscription(7L, "2026-09-15");
 
+      // Act
       PaymentVerificationResponseDto result = paymentApprovalFacade.approve(10L, request);
 
+      // Assert
       assertThat(result).isNotNull();
       assertThat(result.getId()).isEqualTo(10L);
       assertThat(result.getUserId()).isEqualTo(7L);
+      assertThat(result.getPaidUntilDate()).isEqualTo(LocalDate.parse("2026-09-15"));
 
       verify(paymentVerificationService).approve(10L, "ok");
-      verify(subscriptionService).extendSubscription(7L, "2026-09");
+      verify(subscriptionService).extendSubscription(7L, "2026-09-15");
     }
 
     @Test
     @DisplayName("Не должен продлевать подписку, если approve завершился ошибкой")
     void shouldNotExtendWhenApproveFails() {
+      // Arrange
       PaymentVerificationRequestDto request = new PaymentVerificationRequestDto();
       request.setAdminComment("ok");
 
       when(paymentVerificationService.approve(10L, "ok"))
           .thenThrow(new RuntimeException("approve error"));
 
+      // Act & Assert
       assertThatThrownBy(() -> paymentApprovalFacade.approve(10L, request))
           .isInstanceOf(RuntimeException.class)
           .hasMessageContaining("approve error");
+
+      verify(paymentVerificationService).approve(10L, "ok");
+      verify(subscriptionService, never()).extendSubscription(anyLong(), anyString());
+    }
+
+    @Test
+    @DisplayName("Должен выбросить исключение если paidUntilDate отсутствует")
+    void shouldThrowExceptionIfPaidUntilDateIsNull() {
+      // Arrange
+      PaymentVerificationRequestDto request = new PaymentVerificationRequestDto();
+      request.setAdminComment("ok");
+
+      PaymentVerificationResponseDto approved = new PaymentVerificationResponseDto();
+      approved.setId(10L);
+      approved.setUserId(7L);
+      approved.setPaidUntilDate(null);
+
+      when(paymentVerificationService.approve(10L, "ok")).thenReturn(approved);
+
+      // Act & Assert
+      assertThatThrownBy(() -> paymentApprovalFacade.approve(10L, request))
+          .isInstanceOf(Exception.class);
 
       verify(paymentVerificationService).approve(10L, "ok");
       verify(subscriptionService, never()).extendSubscription(anyLong(), anyString());

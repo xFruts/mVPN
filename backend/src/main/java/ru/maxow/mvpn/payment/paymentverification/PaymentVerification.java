@@ -16,7 +16,7 @@ import java.time.Instant;
 @Table(
     name = "payment_verifications",
     uniqueConstraints = {
-        @UniqueConstraint(columnNames = {"billing_month", "user_id"})
+        @UniqueConstraint(columnNames = {"paid_until_date", "user_id"})
     },
     indexes = {
         @Index(columnList = "status"),
@@ -29,8 +29,8 @@ public class PaymentVerification {
   @GeneratedValue(strategy = GenerationType.IDENTITY)
   Long id;
 
-  @Column(name = "billing_date", nullable = false, length = 10)
-  String billingDate; // 2026-01
+  @Column(name = "paid_until_date", nullable = false, length = 10)
+  String paidUntilDate; // YYYY-MM-DD
 
   @ManyToOne(fetch = FetchType.LAZY, optional = false)
   @JoinColumn(name = "user_id", nullable = false)

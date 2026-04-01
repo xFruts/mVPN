@@ -1,15 +1,15 @@
 package ru.maxow.mvpn.subscription;
 
-import java.time.LocalDateTime;
+import java.time.LocalDate;
 import java.time.OffsetDateTime;
-import java.time.YearMonth;
+import java.time.ZoneOffset;
+import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.List;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.util.Pair;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ru.maxow.mvpn.model.CreateUpdateSubscriptionDto;
@@ -20,6 +20,7 @@ import ru.maxow.mvpn.tariff.TariffRepository;
 import ru.maxow.mvpn.user.User;
 import ru.maxow.mvpn.user.UserRepository;
 import ru.maxow.mvpn.util.exception.NotFoundException;
+import ru.maxow.mvpn.util.exception.BadRequestException;
 
 @Slf4j
 @Service
@@ -68,6 +69,11 @@ public class SubscriptionServiceImpl implements SubscriptionService {
     Subscription subscription = subscriptionRepository.findById(id)
         .orElseThrow(() -> new NotFoundException("Subscription", id));
     subscriptionMapper.updateSubscriptionFromDto(dto, subscription);
+
+    Tariff tariff = tariffRepository.findById(dto.getTariffId())
+        .orElseThrow(() -> new NotFoundException("Tariff", dto.getTariffId()));
+    subscription.setTariff(tariff);
+
     Subscription updatedSubscription = subscriptionRepository.save(subscription);
     log.info("Subscription with id: {} updated", id);
     return subscriptionMapper.toSubscriptionResponseDto(updatedSubscription);
@@ -100,17 +106,37 @@ public class SubscriptionServiceImpl implements SubscriptionService {
   }
 
   @Override
-  public void extendSubscription(Long userId) {
+  @Transactional
+  public void extendSubscription(Long userId, String paidUntilDate) {
+    OffsetDateTime date;
+    try {
+      date = LocalDate.parse(paidUntilDate, DateTimeFormatter.ofPattern("yyyy-MM-dd"))
+          .atStartOfDay()
+          .atOffset(ZoneOffset.UTC);
+    } catch (DateTimeParseException e) {
+      log.warn("Invalid billing month format for user {}: {}", userId, paidUntilDate);
+      throw new BadRequestException("Invalid billing date format. Expected YYYY-MM-DD format");
+    }
+
+    if (date.isBefore(OffsetDateTime.now())) {
+      log.warn("Billing date is in the past for user {}: {}", userId, paidUntilDate);
+      throw new BadRequestException("Billing month cannot be in the past");
+    }
+
     Subscription subscription = subscriptionRepository
         .findFirstByUser_IdOrderByStartDateDesc(userId)
-        .orElseThrow(() -> new NotFoundException("Subscription for user", userId));
+        .orElseThrow(() -> {
+          log.warn("No subscription found for user {}", userId);
+          return new BadRequestException("User has no active subscriptions");
+        });
 
     subscription.setStatus(SubscriptionStatus.ACTIVE);
 
-    subscription.setEndDate(
-        OffsetDateTime.now().plusDays(subscription.getTariff().getDurationOfDays()));
+    OffsetDateTime newEndDate = subscription.getEndDate()
+        .isAfter(date) ? subscription.getEndDate() : date;
+    subscription.setEndDate(newEndDate);
 
-    log.info("Subscription with user_id: {} extended", userId);
     subscriptionRepository.save(subscription);
+    log.info("Subscription for user {} extended until {}", userId, newEndDate);
   }
 }

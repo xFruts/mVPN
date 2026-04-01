@@ -20,5 +20,5 @@ public interface SubscriptionService {
 
   List<SubscriptionResponseDto> findSubscriptionsByUserId(Long id);
 
-  void extendSubscription(Long userId);
+  void extendSubscription(Long userId, String billingDate);
 }

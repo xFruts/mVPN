@@ -1,6 +1,7 @@
 package ru.maxow.mvpn.payment.paymentverification;
 
 import java.time.Instant;
+import java.time.LocalDate;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -38,7 +39,7 @@ class PaymentVerificationServiceTest {
   void setUp() {
     verification = new PaymentVerification();
     verification.setId(1L);
-    verification.setBillingMonth("2026-09");
+    verification.setPaidUntilDate("2026-09-15");
     verification.setStatus(VerificationStatus.PENDING);
   }
 
@@ -50,10 +51,10 @@ class PaymentVerificationServiceTest {
     @DisplayName("Должен создать verification со статусом PENDING")
     void shouldCreateVerificationWithPendingStatus() {
       CreateUpdatePaymentVerificationDto request = new CreateUpdatePaymentVerificationDto();
-      request.setBillingMonth("2026-09");
+      request.setPaidUntilDate(LocalDate.parse("2026-09-15"));
       request.setUserId(12L);
       request.setPayerFullName("Ivan Ivanov");
-      request.setPaidAmount(500.0);
+      request.setPaidAmount(java.math.BigDecimal.valueOf(500.00));
 
       PaymentVerificationResponseDto response = new PaymentVerificationResponseDto();
       response.setId(1L);
