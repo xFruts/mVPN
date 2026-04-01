@@ -20,3 +20,15 @@ spring:
         format_sql: true
 encryption:
   key: DevKey12345DevKey12345DevKey1234
+
+app:
+  cors:
+    allowed-origins:
+      - http://localhost:3000
+      - http://localhost:5173
+
+debug: true
+logging:
+  level:
+    root: DEBUG
+  org.springframework.web: DEBUG

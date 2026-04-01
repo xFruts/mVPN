@@ -6,7 +6,7 @@ services:
     environment:
       SPRING_DATASOURCE_USERNAME: ${DB_USER}
       SPRING_DATASOURCE_PASSWORD: ${DB_PASSWORD}
-      SPRING_PROFILES_ACTIVE: prod
+      SPRING_PROFILES_ACTIVE: dev
       TELEGRAM_BOT_USERNAME: ${TELEGRAM_BOT_USERNAME}
       TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN}
       MINIO_URL: http://minio:9000
@@ -27,21 +27,29 @@ services:
         condition: service_healthy
       kafka:
         condition: service_healthy
-    restart: always
+    restart: unless-stopped
+    networks:
+      - internal
+
   db:
     image: postgres:15
-    restart: always
+    restart: unless-stopped
     environment:
       POSTGRES_DB: mvpn_db
       POSTGRES_USER: ${DB_USER}
       POSTGRES_PASSWORD: ${DB_PASSWORD}
+    ports:
+      - "5432:5432"
     volumes:
       - postgres-data:/var/lib/postgresql/data
+    networks:
+      - internal
     healthcheck:
-      test: [ "CMD-SHELL", "pg_isready -U ${DB_USER} -d mvpn_db" ]
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d mvpn_db"]
       interval: 10s
       timeout: 5s
       retries: 5
+
   minio:
     image: quay.io/minio/minio:latest
     command: server /data --console-address ":9001"
@@ -50,23 +58,27 @@ services:
       MINIO_ROOT_PASSWORD: ${MINIO_SECRET_KEY}
     ports:
       - "9000:9000"
+      - "9001:9001"
     volumes:
       - minio-data:/data
-    restart: always
+    restart: unless-stopped
+    networks:
+      - internal
     healthcheck:
       test: ["CMD-SHELL", "curl -fsS http://127.0.0.1:9000/minio/health/ready || wget -q --spider http://127.0.0.1:9000/minio/health/ready || exit 1"]
       interval: 10s
       timeout: 5s
       retries: 10
+
   kafka:
     image: confluentinc/cp-kafka:7.6.1
-    restart: always
+    restart: unless-stopped
     ports:
       - "9092:9092"
     environment:
       KAFKA_PROCESS_ROLES: broker,controller
       KAFKA_NODE_ID: 1
-      CLUSTER_ID: 'MkU3OEVBNTcwNTJENDM2Qk'
+      CLUSTER_ID: "MkU3OEVBNTcwNTJENDM2Qk"
       KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
       KAFKA_LISTENERS: PLAINTEXT://kafka:29092,CONTROLLER://kafka:29093,PLAINTEXT_HOST://0.0.0.0:9092
       KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:29092,PLAINTEXT_HOST://localhost:9092
@@ -76,14 +88,19 @@ services:
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
       KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
       KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+    networks:
+      - internal
     healthcheck:
       test: ["CMD-SHELL", "kafka-broker-api-versions --bootstrap-server localhost:9092 >/dev/null 2>&1 || exit 1"]
       interval: 10s
       timeout: 10s
       retries: 20
+
 volumes:
   postgres-data:
   minio-data:
+
 networks:
-  default:
+  internal:
     driver: bridge
+

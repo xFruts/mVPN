@@ -63,6 +63,11 @@ app:
       broadcast: ${KAFKA_BROADCAST_GROUP:broadcast-group}
   keycloak:
     client-id: mVPN
+  cors:
+    allowed-origins: []
+    allowed-methods: [ GET, POST, PUT, PATCH, DELETE, OPTIONS ]
+    allowed-headers: [ Authorization, Content-Type, Accept ]
+    allow-credentials: true
 
 management:
   endpoint:
@@ -79,9 +84,3 @@ springdoc:
     path: /swagger-ui.html
     url: /api/openapi.yaml
     disable-swagger-default-url: true
-
-debug: true
-logging:
-  level:
-    root: DEBUG
-  org.springframework.web: DEBUG

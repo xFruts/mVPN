@@ -36,7 +36,13 @@ build/
 .env
 .env.local
 .env.*.local
+.env.dev
 .env.prod
+.env.staging
+.envrc
+
+### Docker local overrides ###
+compose.override.yml
 
 ### Application logs ###
 logs/
