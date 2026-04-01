@@ -14,6 +14,8 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import ru.maxow.mvpn.model.CreatePromocodeRequestDto;
 import ru.maxow.mvpn.model.PromocodeResponseDto;
 import ru.maxow.mvpn.model.PromocodeStatus;
+import ru.maxow.mvpn.tariff.Tariff;
+import ru.maxow.mvpn.tariff.TariffRepository;
 import ru.maxow.mvpn.util.exception.BadRequestException;
 import ru.maxow.mvpn.util.exception.NotFoundException;
 
@@ -30,6 +32,9 @@ class PromocodeServiceTest {
 
   @Mock
   private PromocodeMapper promocodeMapper;
+
+  @Mock
+  private TariffRepository tariffRepository;
 
   @InjectMocks
   private PromocodeServiceImpl promocodeService;
@@ -57,6 +62,10 @@ class PromocodeServiceTest {
       CreatePromocodeRequestDto request = new CreatePromocodeRequestDto();
       request.setUsageLimit(3);
       request.setValidDays(10);
+      request.setTariffId(2L);
+
+      Tariff tariff = new Tariff();
+      tariff.setId(2L);
 
       Promocode saved = new Promocode();
       saved.setId(10L);
@@ -74,6 +83,7 @@ class PromocodeServiceTest {
       response.setStatus(PromocodeStatus.ACTIVE);
       response.setExpirationDate(saved.getExpirationDate());
 
+      when(tariffRepository.findById(2L)).thenReturn(Optional.of(tariff));
       when(promocodeRepository.save(any(Promocode.class))).thenReturn(saved);
       when(promocodeMapper.toDto(saved)).thenReturn(response);
 
@@ -88,10 +98,13 @@ class PromocodeServiceTest {
 
       verify(promocodeRepository).save(any(Promocode.class));
       verify(promocodeMapper).toDto(saved);
+      verify(tariffRepository).findById(2L);
 
       verify(promocodeRepository).save(argThat(entity ->
           entity.getCode() != null
               && entity.getCode().length() == 8
+              && entity.getTariff() != null
+              && entity.getTariff().getId().equals(2L)
               && entity.getUsageLimit().equals(3)
               && entity.getStatus() == PromocodeStatus.ACTIVE
               && !entity.getExpirationDate().isBefore(before.plusDays(10).minusSeconds(1))

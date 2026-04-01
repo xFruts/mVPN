@@ -15,3 +15,8 @@ properties:
     minimum: 1             # @Min(1)
     description: Срок действия в днях
     example: 30
+  tariff_id:
+    type: integer
+    format: int64
+    description: Идентификатор тарифа, который будет применяться при использовании промокода
+    example: 1

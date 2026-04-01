@@ -15,8 +15,9 @@ import ru.maxow.mvpn.model.SubscriptionResponseDto;
 import ru.maxow.mvpn.model.UserResponseDto;
 import ru.maxow.mvpn.subscription.Subscription;
 import ru.maxow.mvpn.subscription.SubscriptionMapper;
+import ru.maxow.mvpn.tariff.TariffMapper;
 
-@Mapper(componentModel = "spring", uses = SubscriptionMapper.class)
+@Mapper(componentModel = "spring", uses = {SubscriptionMapper.class, TariffMapper.class})
 public abstract class UserMapper {
 
   @Mapping(source = "user", target = "subscription", qualifiedByName = "userToSubscriptionDto")
