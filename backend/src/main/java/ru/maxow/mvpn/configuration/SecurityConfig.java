@@ -1,6 +1,7 @@
 package ru.maxow.mvpn.configuration;
 
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.Customizer;
@@ -23,21 +24,25 @@ import java.util.List;
 
 @Configuration
 @EnableWebSecurity
+@EnableConfigurationProperties(CorsProperties.class)
 public class SecurityConfig {
 
   private final String issuerUri;
   private final String clientId;
   private final ClientRegistrationRepository clientRegistrationRepository;
+  private final CorsProperties corsProperties;
 
 
   public SecurityConfig(
       @Value("${spring.security.oauth2.client.provider.keycloak.issuer-uri}") String issuerUri,
       ClientRegistrationRepository clientRegistrationRepository,
-      @Value("${app.keycloak.client-id}") String keycloakClientId
+      @Value("${app.keycloak.client-id}") String keycloakClientId,
+      CorsProperties corsProperties
   ) {
     this.issuerUri = issuerUri;
     this.clientRegistrationRepository = clientRegistrationRepository;
     this.clientId = keycloakClientId;
+    this.corsProperties = corsProperties;
   }
 
   @Bean
@@ -93,25 +98,13 @@ public class SecurityConfig {
   @Bean
   public CorsConfigurationSource corsConfigurationSource() {
     CorsConfiguration configuration = new CorsConfiguration();
+    configuration.setAllowedOrigins(corsProperties.getAllowedOrigins());
+    configuration.setAllowedMethods(corsProperties.getAllowedMethods());
+    configuration.setAllowedHeaders(corsProperties.getAllowedHeaders());
+    configuration.setAllowCredentials(corsProperties.isAllowCredentials());
 
-    configuration.setAllowedOrigins(List.of(
-        "http://localhost:5173",
-        "https://vpn.maxow.ru"
-    ));
-
-    configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH" , "DELETE", "OPTIONS"));
-
-    configuration.setAllowedHeaders(List.of(
-        "Authorization",
-        "Content-Type",
-        "Accept"
-    ));
-
-    configuration.setAllowCredentials(true);
-
-    UrlBasedCorsConfigurationSource source = new  UrlBasedCorsConfigurationSource();
+    UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
     source.registerCorsConfiguration("/**", configuration);
-
     return source;
   }
 
