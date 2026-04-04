@@ -10,6 +10,7 @@ import ru.maxow.mvpn.server.ServerRepository;
 import ru.maxow.mvpn.user.User;
 import ru.maxow.mvpn.user.UserRepository;
 import ru.maxow.mvpn.util.exception.NotFoundException;
+import ru.maxow.mvpn.util.exception.XuiUnavailableException;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
@@ -35,9 +36,12 @@ public class ConfigFacadeImpl implements ConfigFacade {
         .map(server -> {
           try {
             return xuiPanelService.getVlessConfig(server, user);
-          } catch (Exception e) {
-            log.warn("Could not get config for server {} and user {}: {}",
-                server.getName(), user.getFullName(), e.getMessage());
+          } catch (XuiUnavailableException e) {
+            log.warn("XUI is unavailable for server {}: {}", server, e.getMessage());
+            return null;
+          } catch (RuntimeException e) {
+            log.error("Unexpected error while getting config from server {}: {}",
+                server, e.getMessage(), e);
             return null;
           }
         })

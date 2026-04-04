@@ -53,7 +53,10 @@ public class XuiPanelServiceImpl implements XuiPanelService {
           user.getFullName(), server.getName());
     } catch (XuiUnavailableException e) {
       throw e;
-    } catch (Exception e) {
+    }
+    catch (Exception e) {
+      // TODO: Добавить проверку на верность x-ui пароля, чтобы возвращалась отдельная ошибка.
+      //  тут 404 не очень подходит как будто
       throw new XuiUnavailableException(
           "Unexpected error while getting config from XUI server: " + server.getName(), e);
     }
@@ -65,7 +68,8 @@ public class XuiPanelServiceImpl implements XuiPanelService {
 
       return findVlessConfigInInbounds(retryInbounds, user.getFullName(), server.getIp());
     } catch (NotFoundException e) {
-      throw new NotFoundException(String.format("Config for user %s not found on server with id %d", user.getFullName(), server.getId()));
+      throw new NotFoundException(String.format("Config for user %s not found on server with id %d",
+          user.getFullName(), server.getId()));
     } catch (XuiUnavailableException e) {
       throw e;
     } catch (Exception e) {
@@ -183,7 +187,8 @@ public class XuiPanelServiceImpl implements XuiPanelService {
         .flatMap(inbound -> findClientInInbound(inbound, userEmail)
             .stream()
             .map(client -> Pair.of(inbound, client)))
-        .map(pair -> generateVlessLink(pair.getSecond(), serverIp, pair.getFirst()))
+        .map(pair ->
+            generateVlessLink(pair.getSecond(), serverIp, pair.getFirst()))
         .filter(java.util.Objects::nonNull)
         .findFirst()
         .orElseThrow(() -> new NotFoundException("VLESS config for user " + userEmail));
