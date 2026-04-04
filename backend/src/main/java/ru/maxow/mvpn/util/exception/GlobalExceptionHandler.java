@@ -46,7 +46,8 @@ public class GlobalExceptionHandler {
 
   @ResponseStatus(HttpStatus.NOT_FOUND)
   @ExceptionHandler(NoResourceFoundException.class)
-  public ErrorResponse handleNoResourceFoundException(NoResourceFoundException ex, WebRequest request) {
+  public ErrorResponse handleNoResourceFoundException(
+      NoResourceFoundException ex, WebRequest request) {
     log.info("No resource found: path={}", extractPath(request));
     return new ErrorResponse(
         MSG_RESOURCE_NOT_FOUND,
@@ -58,7 +59,8 @@ public class GlobalExceptionHandler {
 
   @ResponseStatus(HttpStatus.METHOD_NOT_ALLOWED)
   @ExceptionHandler(HttpRequestMethodNotSupportedException.class)
-  public ErrorResponse handleHttpRequestNotSupportedException(HttpRequestMethodNotSupportedException ex, WebRequest request) {
+  public ErrorResponse handleHttpRequestNotSupportedException(
+      HttpRequestMethodNotSupportedException ex, WebRequest request) {
     log.warn("Method not allowed: method={}, path={}", ex.getMethod(), extractPath(request));
     return new ErrorResponse(
         MSG_METHOD_NOT_ALLOWED,
@@ -109,10 +111,10 @@ public class GlobalExceptionHandler {
         .stream()
         .collect(Collectors.toMap(
             FieldError::getField,
-            error -> error.getDefaultMessage() != null ? error.getDefaultMessage() : "Invalid value",
-            (left, right) -> left.equals(right) ? left : left + "; " + right,
-            LinkedHashMap::new
-        ));
+            error -> error.getDefaultMessage() != null ?
+                error.getDefaultMessage() : "Invalid value",
+            (left, right) -> left.equals(right) ?
+                left : left + "; " + right, LinkedHashMap::new));
     log.warn("Validation failed: fields={}, path={}", fieldErrors.keySet(), extractPath(request));
     return new ValidationErrorResponse(
         "Validation failed",
@@ -125,9 +127,11 @@ public class GlobalExceptionHandler {
 
   @ResponseStatus(HttpStatus.SERVICE_UNAVAILABLE)
   @ExceptionHandler(XuiUnavailableException.class)
-  public ErrorResponse handleXuiUnavailableException(XuiUnavailableException ex, WebRequest request) {
+  public ErrorResponse handleXuiUnavailableException(
+      XuiUnavailableException ex, WebRequest request) {
     String correlationId = getOrGenerateCorrelationId();
-    log.error("XUI unavailable [correlationId={}]: path={}", correlationId, extractPath(request), ex);
+    log.error("XUI unavailable [correlationId={}]: path={}",
+        correlationId, extractPath(request), ex);
     return new ErrorResponse(
         MSG_XUI_UNAVAILABLE,
         System.currentTimeMillis(),
@@ -140,7 +144,8 @@ public class GlobalExceptionHandler {
   @ExceptionHandler(Exception.class)
   public ErrorResponse handleGlobalException(Exception ex, WebRequest request) {
     String correlationId = getOrGenerateCorrelationId();
-    log.error("Unexpected error [correlationId={}]: path={}", correlationId, extractPath(request), ex);
+    log.error("Unexpected error [correlationId={}]: path={}",
+        correlationId, extractPath(request), ex);
     return new ErrorResponse(
         MSG_UNEXPECTED,
         System.currentTimeMillis(),
