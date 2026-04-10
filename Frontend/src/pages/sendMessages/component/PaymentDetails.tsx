@@ -1,7 +1,7 @@
 import type { UseFormReturn } from 'react-hook-form';
 import { z } from 'zod';
 import styles from '../MainSendMessages.module.css'
-import { schema } from '../MainSendMessages.tsx'
+import { schema } from './SchemaSendMessages.tsx'
 import { BANK } from "@/constant.ts";
 
 type FormData = z.infer<typeof schema>;

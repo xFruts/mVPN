@@ -4,18 +4,10 @@ import { z } from "zod";
 import PaymentDetails from "./component/PaymentDetails.tsx";
 import styles from './MainSendMessages.module.css';
 import {useState} from "react";
-import {BANK, USER_ROLES } from '@/constant.ts'
+import { USER_ROLES } from '@/constant.ts'
 import { Check, SendHorizontal } from 'lucide-react';
 import TextMessages from "./component/TextMessages.tsx";
-
-export const schema = z.object({
-    message: z.string().max(1000),
-    price: z.string(),
-    phone: z.string().regex(/^\+7\d{10}$/, {
-        message: "Неверный формат",
-    }).max(12),
-    bank: z.enum(BANK)
-})
+import { schema } from "./component/SchemaSendMessages.tsx"
 
 type FormData = z.infer<typeof schema>;
 

@@ -1,9 +1,9 @@
 import type { UseFormReturn } from 'react-hook-form';
 import { z } from 'zod';
-import { schema } from "./SettingVpnServers.tsx";
+import { schema } from "./SettingSchema.tsx";
 import styles from "@pages/vpnServers/components/SettingsVpnServers/SettingVpnServers.module.css";
 
-export type FormData = z.infer<typeof schema>;
+type FormData = z.infer<typeof schema>;
 
 interface BasicInfoProps {
     form: UseFormReturn<FormData>;
