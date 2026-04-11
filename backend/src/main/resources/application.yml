@@ -84,3 +84,11 @@ springdoc:
     path: /swagger-ui.html
     url: /api/openapi.yaml
     disable-swagger-default-url: true
+
+vpn:
+  config:
+    profile-title: ${PROFILE_TITLE}
+    profile-description: ${PROFILE_DESCRIPTION}
+    support-url: ${SUPPORT_URL}
+    profile-web-page-url: ${PROFILE_WEB_PAGE_URL}
+    profile-update-interval: ${PROFILE_UPDATE_INTERVAL:24}
