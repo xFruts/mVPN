@@ -16,7 +16,11 @@ ConfigByVerificationCode:
         description: Конфигурация успешно получена
         headers:
           profile-title:
-            description: Название подписки (base64)
+            description: Название подписки
+            schema:
+              type: string
+          profile-description:
+            description: Описание подписки
             schema:
               type: string
           support-url:
@@ -30,20 +34,52 @@ ConfigByVerificationCode:
           profile-update-interval:
             description: Интервал обновления (часы)
             schema:
-              type: integer
-              format: int32
+              type: string
+          subscription-userinfo:
+            description: Информация о подписке пользователя
+            schema:
+              type: string
+          Cache-Control:
+            description: Управление кешированием
+            schema:
+              type: string
         content:
           text/plain:
             schema:
               type: string
               example: "fcarpouhfgnoa9e87fhgzqsjweo987dzwghenfmr9jcx8qej0aOFASWZ687RFYXHWYTAWJ8SXQ8"
       '400':
-        $ref: '../components/responses/error/BadRequest.yaml'
-      401:
-        $ref: '../components/responses/error/Unauthorized.yaml'
-      403:
-        $ref: '../components/responses/error/Forbidden.yaml'
-      404:
-        $ref: '../components/responses/error/NotFound.yaml'
-      503:
-        $ref: '../components/responses/error/ServiceTemporarilyUnavailable.yaml'
+        description: Ошибка валидации данных или некорректный запрос
+        content:
+          text/plain:
+            schema:
+              type: string
+              example: "Verification code is invalid"
+      '401':
+        description: Требуется аутентификация
+        content:
+          text/plain:
+            schema:
+              type: string
+              example: "Unauthorized"
+      '403':
+        description: Доступ запрещен
+        content:
+          text/plain:
+            schema:
+              type: string
+              example: "Forbidden"
+      '404':
+        description: Ресурс не найден
+        content:
+          text/plain:
+            schema:
+              type: string
+              example: "Verification code not found"
+      '503':
+        description: Сервис временно недоступен
+        content:
+          text/plain:
+            schema:
+              type: string
+              example: "Service Temporarily Unavailable"

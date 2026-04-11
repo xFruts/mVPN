@@ -5,14 +5,12 @@ import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import ru.maxow.mvpn.model.ServerStatus;
 import ru.maxow.mvpn.model.SubscriptionStatus;
 import ru.maxow.mvpn.server.Server;
-import ru.maxow.mvpn.server.ServerRepository;
 import ru.maxow.mvpn.subscription.Subscription;
 import ru.maxow.mvpn.subscription.SubscriptionRepository;
-import ru.maxow.mvpn.tariff.Tariff;
-import ru.maxow.mvpn.tariff.TariffRepository;
 import ru.maxow.mvpn.user.User;
 import ru.maxow.mvpn.user.UserRepository;
 import ru.maxow.mvpn.util.exception.BadRequestException;
@@ -35,6 +33,7 @@ public class ConfigFacadeImpl implements ConfigFacade {
   SubscriptionRepository subscriptionRepository;
 
   @Override
+  @Transactional(readOnly = true)
   public String getSubscriptionConfig(UUID verificationCode) {
     User user = userRepository.findByVerificationCode(verificationCode)
         .orElseThrow(() -> new NotFoundException("User by verification code"));
