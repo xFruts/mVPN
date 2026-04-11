@@ -38,8 +38,21 @@ class GlobalExceptionHandlerTest {
     ErrorResponse response = handler.handleNotFoundException(new NotFoundException("User", 1L), request);
 
     assertThat(response.getErrorCode()).isEqualTo("NOT_FOUND");
-    assertThat(response.getMessage()).isEqualTo("Resource not found");
+    assertThat(response.getMessage()).isEqualTo("User with identifier [1] not found");
     assertThat(response.getCorrelationId()).isEqualTo("cid-1");
+  }
+
+  @Test
+  @DisplayName("Given ResourceAlreadyExistsException When handle Then return RESOURCE_ALREADY_EXISTS")
+  void givenResourceAlreadyExistsWhenHandleThenReturnConflictContract() {
+    ErrorResponse response = handler.handleResourceAlreadyExistsException(
+        new ResourceAlreadyExistsException("duplicate user"),
+        webRequest("uri=/v1/users")
+    );
+
+    assertThat(response.getErrorCode()).isEqualTo("RESOURCE_ALREADY_EXISTS");
+    assertThat(response.getMessage()).isEqualTo("Resource already exists");
+    assertThat(response.getCorrelationId()).isNotBlank();
   }
 
   @Test

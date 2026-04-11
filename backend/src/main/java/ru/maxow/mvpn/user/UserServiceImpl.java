@@ -16,6 +16,7 @@ import ru.maxow.mvpn.model.*;
 import ru.maxow.mvpn.subscription.SubscriptionRepository;
 import ru.maxow.mvpn.util.exception.BadRequestException;
 import ru.maxow.mvpn.util.exception.NotFoundException;
+import ru.maxow.mvpn.util.exception.ResourceAlreadyExistsException;
 
 @Service
 @Slf4j
@@ -57,6 +58,11 @@ public class UserServiceImpl implements UserService {
   @Override
   @Transactional
   public UserResponseDto createUser(CreateUserRequestDto dto) {
+    if (userRepository.existsByFullName(dto.getFullName())) {
+      throw new ResourceAlreadyExistsException(
+          "User with full name: " + dto.getFullName() + " already exists");
+    }
+
     User user = userMapper.toUser(dto);
 
     userRepository.save(user);

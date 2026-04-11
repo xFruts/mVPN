@@ -13,6 +13,8 @@ public interface UserRepository extends JpaRepository<User, Long> {
 
   boolean existsByVerificationCode(UUID code);
 
+  boolean existsByFullName(String fullName);
+
   Optional<User> findByUserTelegramId(Long telegramId);
 
   List<User> findAllByRole(UserRole role);

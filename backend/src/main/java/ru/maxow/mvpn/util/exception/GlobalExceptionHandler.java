@@ -4,6 +4,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.slf4j.MDC;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -37,7 +38,7 @@ public class GlobalExceptionHandler {
         ex.getIdentifier(),
         extractPath(request));
     return new ErrorResponse(
-        MSG_RESOURCE_NOT_FOUND,
+        ex.getMessage(),
         System.currentTimeMillis(),
         "NOT_FOUND",
         getOrGenerateCorrelationId()
@@ -74,7 +75,8 @@ public class GlobalExceptionHandler {
   @ExceptionHandler({
       BadRequestException.class,
       MultipartException.class,
-      IllegalArgumentException.class
+      IllegalArgumentException.class,
+      HttpMessageNotReadableException.class
   })
   public ErrorResponse handleBadRequestException(Exception ex, WebRequest request) {
     log.warn("Bad request: type={}, path={}",
@@ -86,6 +88,20 @@ public class GlobalExceptionHandler {
         System.currentTimeMillis(),
         errorCode,
         getOrGenerateCorrelationId());
+  }
+
+  @ResponseStatus(HttpStatus.CONFLICT)
+  @ExceptionHandler(ResourceAlreadyExistsException.class)
+  public ErrorResponse handleResourceAlreadyExistsException(
+      ResourceAlreadyExistsException ex, WebRequest request
+  ) {
+    log.warn("Resource already exists: path={}", extractPath(request));
+    return new ErrorResponse(
+        "Resource already exists",
+        System.currentTimeMillis(),
+        "RESOURCE_ALREADY_EXISTS",
+        getOrGenerateCorrelationId()
+    );
   }
 
   @ResponseStatus(HttpStatus.CONFLICT)
