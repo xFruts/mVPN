@@ -25,6 +25,7 @@ import ru.maxow.mvpn.subscription.Subscription;
 import ru.maxow.mvpn.subscription.SubscriptionRepository;
 import ru.maxow.mvpn.util.exception.BadRequestException;
 import ru.maxow.mvpn.util.exception.NotFoundException;
+import ru.maxow.mvpn.util.exception.ResourceAlreadyExistsException;
 
 import static org.assertj.core.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
@@ -106,6 +107,23 @@ class UserServiceTest {
       // Verify что методы были вызваны нужное количество раз
       verify(userRepository, times(1)).save(any(User.class));
       verify(userMapper, times(1)).toUser(request);
+    }
+
+    @Test
+    @DisplayName("Должен выбросить ResourceAlreadyExistsException при создании пользователя с занятым fullName")
+    void shouldThrowResourceAlreadyExistsWhenFullNameAlreadyExists() {
+      CreateUserRequestDto request = new CreateUserRequestDto();
+      request.setFullName("New User");
+
+      when(userRepository.existsByFullName("New User")).thenReturn(true);
+
+      assertThatThrownBy(() -> userService.createUser(request))
+          .isInstanceOf(ResourceAlreadyExistsException.class)
+          .hasMessageContaining("already exists");
+
+      verify(userRepository).existsByFullName("New User");
+      verify(userMapper, never()).toUser(any(CreateUserRequestDto.class));
+      verify(userRepository, never()).save(any(User.class));
     }
   }
 

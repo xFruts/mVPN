@@ -35,7 +35,7 @@ public class User {
 
   Long userTelegramId;
 
-  @Column(nullable = false)
+  @Column(nullable = false, unique = true)
   String fullName;
 
   UUID verificationCode = UUID.randomUUID();
