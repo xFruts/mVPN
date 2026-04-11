@@ -17,6 +17,7 @@ import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.util.StringUtils;
 import org.springframework.web.client.RestClient;
+import org.springframework.web.util.UriUtils;
 import ru.maxow.mvpn.server.Server;
 import ru.maxow.mvpn.user.User;
 import ru.maxow.mvpn.util.exception.NotFoundException;
@@ -47,7 +48,8 @@ public class XuiPanelServiceImpl implements XuiPanelService {
     try {
       String sessionCookie = login(restClient, server.getXuiLogin(), server.getXuiPassword());
       XuiInboundsResponse inbounds = getInbounds(restClient, sessionCookie);
-      return findVlessConfigInInbounds(inbounds, user.getFullName(), server.getIp());
+      return findVlessConfigInInbounds(
+          inbounds, user.getFullName(), server.getIp(), server.getCountryEmoji());
     } catch (NotFoundException e) {
       log.warn("Config for user {} not found on server {}. Creating client and retrying once.",
           user.getFullName(), server.getName());
@@ -66,7 +68,8 @@ public class XuiPanelServiceImpl implements XuiPanelService {
       String retryCookie = login(restClient, server.getXuiLogin(), server.getXuiPassword());
       XuiInboundsResponse retryInbounds = getInbounds(restClient, retryCookie);
 
-      return findVlessConfigInInbounds(retryInbounds, user.getFullName(), server.getIp());
+      return findVlessConfigInInbounds(
+          retryInbounds, user.getFullName(), server.getIp(), server.getCountryEmoji());
     } catch (NotFoundException e) {
       throw new NotFoundException(String.format("Config for user %s not found on server with id %d",
           user.getFullName(), server.getId()));
@@ -175,7 +178,7 @@ public class XuiPanelServiceImpl implements XuiPanelService {
   }
 
   private String findVlessConfigInInbounds(
-      XuiInboundsResponse inboundsResponse, String userEmail, String serverIp) {
+      XuiInboundsResponse inboundsResponse, String userEmail, String serverIp, String countryEmoji) {
     if (inboundsResponse == null
         || !inboundsResponse.isSuccess()
         || inboundsResponse.getObj() == null) {
@@ -188,7 +191,7 @@ public class XuiPanelServiceImpl implements XuiPanelService {
             .stream()
             .map(client -> Pair.of(inbound, client)))
         .map(pair ->
-            generateVlessLink(pair.getSecond(), serverIp, pair.getFirst()))
+            generateVlessLink(pair.getSecond(), serverIp, countryEmoji, pair.getFirst()))
         .filter(java.util.Objects::nonNull)
         .findFirst()
         .orElseThrow(() -> new NotFoundException("VLESS config for user " + userEmail));
@@ -214,7 +217,7 @@ public class XuiPanelServiceImpl implements XuiPanelService {
   }
 
   private String generateVlessLink(
-      XuiClient client, String address, XuiInboundsResponse.Inbound inbound) {
+      XuiClient client, String address, String countryEmoji, XuiInboundsResponse.Inbound inbound) {
     try {
       JsonNode settings = objectMapper.readTree(inbound.getSettings());
       JsonNode streamSettings = objectMapper.readTree(inbound.getStreamSettings());
@@ -311,7 +314,10 @@ public class XuiPanelServiceImpl implements XuiPanelService {
 
       String remark = inbound.getRemark() != null && !inbound.getRemark().isEmpty()
           ? inbound.getRemark() : inbound.getTag();
-      String finalRemark = URLEncoder.encode(remark, StandardCharsets.UTF_8);
+      if (countryEmoji != null && !countryEmoji.isEmpty()) {
+        remark += countryEmoji;
+      }
+      String finalRemark = UriUtils.encodeFragment(remark, StandardCharsets.UTF_8);
 
       return String.format("vless://%s@%s:%d?%s#%s",
           uuid, address, inbound.getPort(), queryParams, finalRemark);

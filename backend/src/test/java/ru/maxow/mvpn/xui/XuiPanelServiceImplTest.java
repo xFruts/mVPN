@@ -215,6 +215,26 @@ class XuiPanelServiceImplTest {
     assertThat(config).contains("flow=xtls-rprx-vision");
   }
 
+  @Test
+  @DisplayName("Должен добавлять countryEmoji в fragment vless-ссылки")
+  void shouldAppendCountryEmojiToLinkFragment() {
+    Server server = testServer();
+    server.setCountryEmoji("\uD83C\uDDE9\uD83C\uDDEA");
+    User user = testUser("emoji-user");
+
+    XuiInboundsResponse response = inboundsResponse(List.of(
+        inbound(1, 443, "remark", "emoji-user")
+    ));
+
+    mockLoginSuccess(1);
+    mockInboundsSequence(response);
+
+    String config = service.getVlessConfig(server, user);
+
+    assertThat(config).contains("#remark");
+    assertThat(config).contains("%F0%9F%87");
+  }
+
   private void configureLoginChain() {
     RestClient.RequestBodyUriSpec postUriSpec = mock(RestClient.RequestBodyUriSpec.class);
     loginBodySpec = mock(RestClient.RequestBodySpec.class);
@@ -292,6 +312,7 @@ class XuiPanelServiceImplTest {
     server.setXuiLogin("xui");
     server.setPassword("pwd");
     server.setWebBasePath("");
+    server.setCountryEmoji("");
     return server;
   }
 

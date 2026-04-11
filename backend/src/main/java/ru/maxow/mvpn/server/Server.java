@@ -26,15 +26,26 @@ public class Server {
 
   // For admin panel
   String name;
+
   String location;
+
   String ip;
+
   ServerStatus status;
+
   Integer load;
+
   Integer usage;
+
   Integer maxUsers;
+
   Integer maxTraffic; // in GB
+
   String ping;
+
   Double uptime;
+
+  String countryEmoji;
 
   //For connect to server and 3x-ui
   @Convert(converter = AttributeEncryptor.class)

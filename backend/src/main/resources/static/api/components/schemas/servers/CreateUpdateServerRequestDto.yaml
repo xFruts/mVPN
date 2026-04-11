@@ -18,8 +18,12 @@ properties:
     example: "Germany-VPN-01"
   location:
     type: string
-    description: Первые две буквы локации сервера КАПСОМ
-    example: "GE"
+    description: Первые две буквы локации сервера (ISO 3166-1)
+    example: "DE"
+  countryEmoji:
+    type: string
+    description: Эмодзи страны сервера (для отображения в ВПН конфиге)
+    example: "🇩🇪"
   ip:
     type: string
     format: ipv4
