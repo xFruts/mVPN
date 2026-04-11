@@ -1,5 +1,4 @@
 allOf:
-  # Наследуем поля из ListServerDto, чтобы не дублировать name, ip и т.д.
   - $ref: './ListServerDto.yaml'
   - type: object
     properties:
