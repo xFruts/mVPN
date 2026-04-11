@@ -7,7 +7,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ru.maxow.mvpn.model.CreateUpdateRequestTariffPlanDto;
 import ru.maxow.mvpn.model.TariffPlanResponseDto;
+import ru.maxow.mvpn.server.ServerRepository;
 import ru.maxow.mvpn.server.ServerService;
+import ru.maxow.mvpn.util.exception.BadRequestException;
 import ru.maxow.mvpn.util.exception.NotFoundException;
 
 import java.util.List;
@@ -20,6 +22,7 @@ public class TariffServiceImpl implements TariffService {
   TariffRepository tariffPlanRepository;
   TariffMapper tariffMapper;
   ServerService serverService;
+  ServerRepository serverRepository;
 
   @Override
   @Transactional
@@ -28,6 +31,9 @@ public class TariffServiceImpl implements TariffService {
     tariffMapper.updateFromDto(dto, tariff);
 
     tariff.setServers(serverService.getServersById(dto.getServerIds()));
+    if (tariff.getServers().isEmpty()) {
+      throw new NotFoundException("Servers");
+    }
     Tariff createdTariff = tariffPlanRepository.save(tariff);
     return tariffMapper.toResponseDto(createdTariff);
   }
@@ -39,6 +45,20 @@ public class TariffServiceImpl implements TariffService {
         .orElseThrow(() -> new NotFoundException("Tariff", id));
 
     tariffMapper.updateFromDto(dto, existingTariff);
+
+    if (dto.getServerIds().isEmpty()) {
+      throw new BadRequestException("ServerIds is empty");
+    }
+    for (Long serverId : dto.getServerIds()) {
+      if (!serverRepository.existsById(serverId)) {
+        throw new NotFoundException("Server", serverId);
+      }
+    }
+
+    existingTariff.setServers(serverService.getServersById(dto.getServerIds()));
+    if (existingTariff.getServers().isEmpty()) {
+      throw new NotFoundException("Servers");
+    }
     Tariff updatedTariff = tariffPlanRepository.save(existingTariff);
     return  tariffMapper.toResponseDto(updatedTariff);
   }

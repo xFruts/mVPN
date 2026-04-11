@@ -15,6 +15,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import ru.maxow.mvpn.model.CreateUpdateRequestTariffPlanDto;
 import ru.maxow.mvpn.model.TariffPlanResponseDto;
 import ru.maxow.mvpn.server.Server;
+import ru.maxow.mvpn.server.ServerRepository;
 import ru.maxow.mvpn.server.ServerService;
 import ru.maxow.mvpn.util.exception.NotFoundException;
 
@@ -35,6 +36,9 @@ class TariffServiceTest {
 
   @Mock
   private ServerService serverService;
+
+  @Mock
+  private ServerRepository serverRepository;
 
   @InjectMocks
   private TariffServiceImpl tariffService;
@@ -153,6 +157,13 @@ class TariffServiceTest {
       request.setName("Updated Tariff");
       request.setMaxDevices(10);
       request.setTrafficLimitGb(200);
+      request.setServerIds(List.of(10L, 11L));
+
+      Server s1 = new Server();
+      s1.setId(10L);
+      Server s2 = new Server();
+      s2.setId(11L);
+      Set<Server> servers = Set.of(s1, s2);
 
       Tariff updatedTariff = new Tariff();
       updatedTariff.setId(1L);
@@ -167,6 +178,9 @@ class TariffServiceTest {
       expectedResponse.setTrafficLimitGb(200);
 
       when(tariffRepository.findById(1L)).thenReturn(Optional.of(testTariff));
+      when(serverRepository.existsById(10L)).thenReturn(true);
+      when(serverRepository.existsById(11L)).thenReturn(true);
+      when(serverService.getServersById(request.getServerIds())).thenReturn(servers);
       doAnswer(invocation -> {
         CreateUpdateRequestTariffPlanDto dto = invocation.getArgument(0);
         Tariff target = invocation.getArgument(1);
@@ -191,8 +205,34 @@ class TariffServiceTest {
 
       verify(tariffRepository).findById(1L);
       verify(tariffMapper).updateFromDto(request, testTariff);
+      verify(serverRepository).existsById(10L);
+      verify(serverRepository).existsById(11L);
+      verify(serverService).getServersById(request.getServerIds());
       verify(tariffRepository).save(testTariff);
       verify(tariffMapper).toResponseDto(updatedTariff);
+    }
+
+    @Test
+    @DisplayName("Должен выбросить NotFoundException если среди serverIds есть несуществующий сервер")
+    void shouldThrowNotFoundWhenAnyServerIdDoesNotExist() {
+      CreateUpdateRequestTariffPlanDto request = new CreateUpdateRequestTariffPlanDto();
+      request.setName("Updated Tariff");
+      request.setMaxDevices(10);
+      request.setTrafficLimitGb(200);
+      request.setServerIds(List.of(10L, 999L));
+
+      when(tariffRepository.findById(1L)).thenReturn(Optional.of(testTariff));
+      doNothing().when(tariffMapper).updateFromDto(request, testTariff);
+      when(serverRepository.existsById(10L)).thenReturn(true);
+      when(serverRepository.existsById(999L)).thenReturn(false);
+
+      assertThatThrownBy(() -> tariffService.updateTariffPlan(1L, request))
+          .isInstanceOf(NotFoundException.class)
+          .hasMessageContaining("Server")
+          .hasMessageContaining("999");
+
+      verify(serverService, never()).getServersById(any());
+      verify(tariffRepository, never()).save(any());
     }
 
     @Test
