@@ -4,6 +4,7 @@ import ru.maxow.mvpn.model.CreateUpdateSubscriptionDto;
 import ru.maxow.mvpn.model.SubscriptionResponseDto;
 
 import java.util.List;
+import java.util.UUID;
 
 
 public interface SubscriptionService {
@@ -19,6 +20,8 @@ public interface SubscriptionService {
   SubscriptionResponseDto findSubscriptionById(Long id);
 
   List<SubscriptionResponseDto> findSubscriptionsByUserId(Long id);
+
+  String getSubscriptionInfoForUserByCode(UUID verificationCode);
 
   void extendSubscription(Long userId, String billingDate);
 }
