@@ -94,6 +94,8 @@ class TariffServiceTest {
         target.setTrafficLimitGb(dto.getTrafficLimitGb());
         return null;
       }).when(tariffMapper).updateFromDto(eq(request), any(Tariff.class));
+      when(serverRepository.existsById(10L)).thenReturn(true);
+      when(serverRepository.existsById(11L)).thenReturn(true);
       when(serverService.getServersById(request.getServerIds())).thenReturn(servers);
       when(tariffRepository.save(any(Tariff.class))).thenReturn(savedTariff);
       when(tariffMapper.toResponseDto(savedTariff)).thenReturn(expectedResponse);
@@ -113,6 +115,8 @@ class TariffServiceTest {
       verify(tariffRepository).save(tariffCaptor.capture());
       assertThat(tariffCaptor.getValue().getServers()).isEqualTo(servers);
 
+      verify(serverRepository).existsById(10L);
+      verify(serverRepository).existsById(11L);
       verify(serverService).getServersById(request.getServerIds());
       verify(tariffMapper).updateFromDto(eq(request), any(Tariff.class));
       verify(tariffMapper).toResponseDto(savedTariff);
@@ -128,6 +132,7 @@ class TariffServiceTest {
       request.setServerIds(List.of(100L));
 
       doNothing().when(tariffMapper).updateFromDto(eq(request), any(Tariff.class));
+      when(serverRepository.existsById(100L)).thenReturn(true);
       when(serverService.getServersById(request.getServerIds()))
           .thenThrow(new NotFoundException("Server", 100L));
 
@@ -140,6 +145,7 @@ class TariffServiceTest {
           });
 
       verify(tariffMapper).updateFromDto(eq(request), any(Tariff.class));
+      verify(serverRepository).existsById(100L);
       verify(serverService).getServersById(request.getServerIds());
       verify(tariffRepository, never()).save(any());
       verify(tariffMapper, never()).toResponseDto(any());

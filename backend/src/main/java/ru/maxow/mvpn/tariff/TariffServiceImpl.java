@@ -30,10 +30,15 @@ public class TariffServiceImpl implements TariffService {
     Tariff tariff = new Tariff();
     tariffMapper.updateFromDto(dto, tariff);
 
-    tariff.setServers(serverService.getServersById(dto.getServerIds()));
-    if (tariff.getServers().isEmpty()) {
-      throw new NotFoundException("Servers");
+    if (dto.getServerIds().isEmpty()) {
+      throw new BadRequestException("ServerIds is empty");
     }
+    for (Long serverId : dto.getServerIds()) {
+      if (!serverRepository.existsById(serverId)) {
+        throw new NotFoundException("Server", serverId);
+      }
+    }
+    tariff.setServers(serverService.getServersById(dto.getServerIds()));
     Tariff createdTariff = tariffPlanRepository.save(tariff);
     return tariffMapper.toResponseDto(createdTariff);
   }
@@ -56,9 +61,6 @@ public class TariffServiceImpl implements TariffService {
     }
 
     existingTariff.setServers(serverService.getServersById(dto.getServerIds()));
-    if (existingTariff.getServers().isEmpty()) {
-      throw new NotFoundException("Servers");
-    }
     Tariff updatedTariff = tariffPlanRepository.save(existingTariff);
     return  tariffMapper.toResponseDto(updatedTariff);
   }
