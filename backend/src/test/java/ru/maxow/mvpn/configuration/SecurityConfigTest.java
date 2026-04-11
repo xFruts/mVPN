@@ -8,9 +8,9 @@ import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
-import org.springframework.http.ResponseEntity;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.security.authentication.AbstractAuthenticationToken;
+import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.oauth2.client.registration.ClientRegistration;
 import org.springframework.security.oauth2.client.registration.ClientRegistrationRepository;
 import org.springframework.security.oauth2.client.registration.InMemoryClientRegistrationRepository;
@@ -38,7 +38,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @Import({SecurityConfig.class, SecurityConfigTest.SecurityTestBeans.class, SecurityConfigTestController.class})
 @TestPropertySource(properties = {
     "spring.security.oauth2.client.provider.keycloak.issuer-uri=http://localhost:8081/realms/test",
-    "app.keycloak.client-id=mVPN"
+    "app.keycloak.client-id=mVPN",
+    "app.cors.allowed-origins[0]=http://localhost:5173",
+    "app.cors.allowed-origins[1]=https://vpn.maxow.ru"
 })
 @DisplayName("SecurityConfig - integration tests")
 class SecurityConfigTest {
@@ -141,7 +143,7 @@ class SecurityConfigTest {
     assertThat(authentication).isNotNull();
     assertThat(authentication.getName()).isEqualTo("alice");
     assertThat(authentication.getAuthorities())
-        .extracting(a -> a.getAuthority())
+        .extracting(GrantedAuthority::getAuthority)
         .contains("ROLE_VPN_ADMIN", "ROLE_SUPPORT");
   }
 
