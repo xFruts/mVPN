@@ -6,6 +6,8 @@ import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.List;
+import java.util.UUID;
+
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
@@ -103,6 +105,18 @@ public class SubscriptionServiceImpl implements SubscriptionService {
     return subscriptionRepository.findByUser_Id(userId).stream()
         .map(subscriptionMapper::toSubscriptionResponseDto)
         .toList();
+  }
+
+  @Override
+  public String getSubscriptionInfoForUserByCode(UUID verificationCode) {
+    User user = userRepository.findByVerificationCode(verificationCode)
+        .orElseThrow(() -> new NotFoundException("User by verification code"));
+
+    Subscription subscription = subscriptionRepository
+        .findFirstByUser_IdOrderByStartDateDesc(user.getId())
+        .orElseThrow(() -> new NotFoundException("Subscription for user", user.getId()));
+
+    return String.format("expire=%s", subscription.getEndDate().toInstant().getEpochSecond());
   }
 
   @Override
