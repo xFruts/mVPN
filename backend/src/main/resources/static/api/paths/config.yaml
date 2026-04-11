@@ -14,6 +14,24 @@ ConfigByVerificationCode:
     responses:
       200:
         description: Конфигурация успешно получена
+        headers:
+          profile-title:
+            description: Название подписки (base64)
+            schema:
+              type: string
+          support-url:
+            description: Ссылка на поддержку
+            schema:
+              type: string
+          profile-web-page-url:
+            description: Страница подписки
+            schema:
+              type: string
+          profile-update-interval:
+            description: Интервал обновления (часы)
+            schema:
+              type: integer
+              format: int32
         content:
           text/plain:
             schema:
