@@ -13,5 +13,11 @@
     <Class name="ru.maxow.mvpn.broadcast.BroadcastService"/>
     <Bug pattern="EI_EXPOSE_REP2"/>
   </Match>
+
+  <!-- Spring controller collaborators are framework-managed beans, not exposed state -->
+  <Match>
+    <Class name="ru.maxow.mvpn.xui.ConfigController"/>
+    <Bug pattern="EI_EXPOSE_REP2"/>
+  </Match>
 </FindBugsFilter>
 
