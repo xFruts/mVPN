@@ -1,8 +1,11 @@
 package ru.maxow.mvpn.subscription;
 
 import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -69,8 +72,42 @@ class SubscriptionServiceImplTest {
     testSubscriptionDto.setId(1L);
     testSubscriptionDto.setStatus(SubscriptionStatus.ACTIVE);
 
-    futureBillingDate = OffsetDateTime.now().plusMonths(1).withNano(0).toString();
-    pastBillingDate = OffsetDateTime.now().minusMonths(1).withNano(0).toString();
+    futureBillingDate = java.time.LocalDate.now().plusDays(30)
+        .format(DateTimeFormatter.ISO_LOCAL_DATE);
+    pastBillingDate = java.time.LocalDate.now().minusDays(1)
+        .format(DateTimeFormatter.ISO_LOCAL_DATE);
+  }
+
+  @Nested
+  @DisplayName("Информация о подписке по verification code")
+  class SubscriptionInfoTests {
+
+    @Test
+    @DisplayName("Должен вернуть expire в epoch seconds для найденной подписки")
+    void shouldReturnExpireEpochSecondsForVerificationCode() {
+      UUID code = UUID.randomUUID();
+      OffsetDateTime endDate = OffsetDateTime.of(2026, 4, 30, 0, 0, 0, 0, ZoneOffset.UTC);
+      testSubscription.setEndDate(endDate);
+
+      when(userRepository.findByVerificationCode(code)).thenReturn(Optional.of(testUser));
+      when(subscriptionRepository.findFirstByUser_IdOrderByStartDateDesc(testUser.getId()))
+          .thenReturn(Optional.of(testSubscription));
+
+      String result = subscriptionService.getSubscriptionInfoForUserByCode(code);
+
+      assertThat(result).isEqualTo("expire=" + endDate.toInstant().getEpochSecond());
+    }
+
+    @Test
+    @DisplayName("Должен выбросить NotFoundException если пользователь не найден по verification code")
+    void shouldThrowNotFoundWhenUserMissingByVerificationCode() {
+      UUID code = UUID.randomUUID();
+      when(userRepository.findByVerificationCode(code)).thenReturn(Optional.empty());
+
+      assertThatThrownBy(() -> subscriptionService.getSubscriptionInfoForUserByCode(code))
+          .isInstanceOf(NotFoundException.class)
+          .hasMessageContaining("User by verification code");
+    }
   }
 
   @Nested
@@ -330,9 +367,13 @@ class SubscriptionServiceImplTest {
       // Arrange
       Long userId = 1L;
       String billingDate = futureBillingDate;
-      OffsetDateTime originalEndDate = OffsetDateTime.now().plusMonths(1);
+      OffsetDateTime originalEndDate = OffsetDateTime.now().minusDays(10);
       testSubscription.setEndDate(originalEndDate);
       testSubscription.setStatus(SubscriptionStatus.ACTIVE);
+
+      OffsetDateTime expectedEndDate = java.time.LocalDate.parse(billingDate)
+          .atStartOfDay()
+          .atOffset(ZoneOffset.UTC);
 
       when(subscriptionRepository.findFirstByUser_IdOrderByStartDateDesc(userId))
           .thenReturn(Optional.of(testSubscription));
@@ -343,7 +384,7 @@ class SubscriptionServiceImplTest {
 
       // Assert
       assertThat(testSubscription.getStatus()).isEqualTo(SubscriptionStatus.ACTIVE);
-      assertThat(testSubscription.getEndDate()).isEqualTo(originalEndDate.plusMonths(1));
+      assertThat(testSubscription.getEndDate()).isEqualTo(expectedEndDate);
       verify(subscriptionRepository).findFirstByUser_IdOrderByStartDateDesc(userId);
       verify(subscriptionRepository).save(testSubscription);
     }
@@ -425,7 +466,8 @@ class SubscriptionServiceImplTest {
     void shouldExtendEndDateOnMonthBoundary() {
       // Arrange
       Long userId = 1L;
-      String billingMonth = futureBillingDate;
+      String billingMonth = java.time.LocalDate.now().plusDays(10)
+          .format(DateTimeFormatter.ISO_LOCAL_DATE);
       OffsetDateTime boundaryDate = OffsetDateTime.parse("2026-01-31T00:00:00Z");
       testSubscription.setEndDate(boundaryDate);
       testSubscription.setStatus(SubscriptionStatus.ACTIVE);
@@ -438,7 +480,8 @@ class SubscriptionServiceImplTest {
       subscriptionService.extendSubscription(userId, billingMonth);
 
       // Assert
-      assertThat(testSubscription.getEndDate()).isEqualTo(boundaryDate.plusMonths(1));
+      assertThat(testSubscription.getEndDate()).isEqualTo(
+          java.time.LocalDate.parse(billingMonth).atStartOfDay().atOffset(ZoneOffset.UTC));
       verify(subscriptionRepository).save(testSubscription);
     }
 
@@ -460,6 +503,8 @@ class SubscriptionServiceImplTest {
 
       // Assert
       assertThat(testSubscription.getStatus()).isEqualTo(SubscriptionStatus.ACTIVE);
+      assertThat(testSubscription.getEndDate()).isEqualTo(
+          java.time.LocalDate.parse(billingMonth).atStartOfDay().atOffset(ZoneOffset.UTC));
       verify(subscriptionRepository).save(testSubscription);
     }
 
@@ -468,7 +513,8 @@ class SubscriptionServiceImplTest {
     void shouldExtendSubscriptionForFutureMonth() {
       // Arrange
       Long userId = 1L;
-      String futureBillingMonth = OffsetDateTime.now().plusMonths(2).withNano(0).toString();
+      String futureBillingMonth = java.time.LocalDate.now().plusDays(45)
+          .format(DateTimeFormatter.ISO_LOCAL_DATE);
       testSubscription.setStatus(SubscriptionStatus.ACTIVE);
       testSubscription.setEndDate(OffsetDateTime.now().plusMonths(1));
 
@@ -481,16 +527,19 @@ class SubscriptionServiceImplTest {
 
       // Assert
       assertThat(testSubscription.getStatus()).isEqualTo(SubscriptionStatus.ACTIVE);
+      assertThat(testSubscription.getEndDate()).isEqualTo(
+          java.time.LocalDate.parse(futureBillingMonth).atStartOfDay().atOffset(ZoneOffset.UTC));
       verify(subscriptionRepository).save(testSubscription);
     }
 
     @Test
-    @DisplayName("Должен обновить дату окончания на месяц вперед от текущей даты")
-    void shouldUpdateEndDateByOneMonth() {
+    @DisplayName("Должен сохранить текущую endDate если она позже paidUntilDate")
+    void shouldKeepCurrentEndDateWhenItIsAfterPaidUntilDate() {
       // Arrange
       Long userId = 1L;
-      String billingMonth = futureBillingDate;
-      OffsetDateTime currentEndDate = OffsetDateTime.parse("2026-04-15T10:30:00+03:00");
+      String billingMonth = java.time.LocalDate.now().plusDays(5)
+          .format(DateTimeFormatter.ISO_LOCAL_DATE);
+      OffsetDateTime currentEndDate = OffsetDateTime.now().plusDays(20).withNano(0);
       testSubscription.setEndDate(currentEndDate);
       testSubscription.setStatus(SubscriptionStatus.ACTIVE);
 
@@ -502,7 +551,7 @@ class SubscriptionServiceImplTest {
       subscriptionService.extendSubscription(userId, billingMonth);
 
       // Assert
-      assertThat(testSubscription.getEndDate()).isEqualTo(currentEndDate.plusMonths(1));
+      assertThat(testSubscription.getEndDate()).isEqualTo(currentEndDate);
       verify(subscriptionRepository).save(testSubscription);
     }
   }

@@ -117,7 +117,7 @@ class PromocodeFacadeTest {
       CreateUpdateSubscriptionDto dto = dtoCaptor.getValue();
       assertThat(dto.getStatus()).isEqualTo(SubscriptionStatus.ACTIVE);
       assertThat(dto.getTariffId()).isEqualTo(9L);
-      assertThat(dto.getStartDate()).isNull();
+      assertThat(dto.getStartDate()).isBetween(before.minusSeconds(1), after.plusSeconds(1));
       assertThat(dto.getEndDate()).isBetween(before.plusDays(30).minusSeconds(1), after.plusDays(30).plusSeconds(1));
     }
   }
