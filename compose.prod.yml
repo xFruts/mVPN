@@ -43,6 +43,7 @@ services:
       context: ./backend
       dockerfile: Dockerfile
     environment:
+      SERVER_FORWARD_HEADERS_STRATEGY: framework
       SPRING_DATASOURCE_USERNAME: ${DB_USER}
       SPRING_DATASOURCE_PASSWORD: ${DB_PASSWORD}
       SPRING_PROFILES_ACTIVE: prod
