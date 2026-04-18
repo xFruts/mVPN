@@ -10,4 +10,7 @@ import lombok.Setter;
 public class XuiClient {
   private String id;
   private String email;
+  private String flow;
+  private String comment;
+  private Integer reset;
 }

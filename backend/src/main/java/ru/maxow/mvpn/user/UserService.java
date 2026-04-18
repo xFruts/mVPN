@@ -3,6 +3,7 @@ package ru.maxow.mvpn.user;
 import java.util.List;
 import java.util.UUID;
 import ru.maxow.mvpn.model.*;
+import ru.maxow.mvpn.subscription.Subscription;
 
 public interface UserService {
 
@@ -27,6 +28,8 @@ public interface UserService {
   List<User> getUsersByTelegramIds(List<Long> ids);
 
   List<User> getUsersByRole(UserRole role);
+
+  Subscription findLastUserSubscriptionByUserId(Long userId);
 
   boolean hasActiveSubscriptions(Long userId);
 

@@ -13,6 +13,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ru.maxow.mvpn.model.*;
+import ru.maxow.mvpn.subscription.Subscription;
 import ru.maxow.mvpn.subscription.SubscriptionRepository;
 import ru.maxow.mvpn.util.exception.BadRequestException;
 import ru.maxow.mvpn.util.exception.NotFoundException;
@@ -180,6 +181,12 @@ public class UserServiceImpl implements UserService {
   @Override
   public List<User> getUsersByRole(UserRole role) {
     return userRepository.findAllByRole(role);
+  }
+
+  @Override
+  public Subscription findLastUserSubscriptionByUserId(Long userId) {
+    return subscriptionRepository.findFirstByUserOrderByStartDateDesc(findUserById(userId))
+        .orElseThrow(() -> new NotFoundException("Subscription"));
   }
 
   @Override
