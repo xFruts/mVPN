@@ -59,6 +59,31 @@ UsersCollection:
 
 # URL: /v1/users/{userId}
 UserSingle:
+  get:
+    operationId: getUserById
+    summary: Получить пользователя по ID
+    tags: [Users]
+    parameters:
+      - name: userId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+    responses:
+      '200':
+        description: Данные пользователя
+        content:
+          application/json:
+            schema:
+              $ref: '../components/schemas/users/UserResponseDto.yaml'
+      401:
+        $ref: '../components/responses/error/Unauthorized.yaml'
+      403:
+        $ref: '../components/responses/error/Forbidden.yaml'
+      '404':
+        $ref: '../components/responses/error/NotFound.yaml'
+
   put:
     operationId: updateUser
     summary: Обновить данные пользователя
