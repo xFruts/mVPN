@@ -1,8 +1,10 @@
 package ru.maxow.mvpn.server;
 
 import org.mapstruct.Mapper;
+import org.mapstruct.BeanMapping;
 import org.mapstruct.Mapping;
 import org.mapstruct.MappingTarget;
+import org.mapstruct.NullValuePropertyMappingStrategy;
 import ru.maxow.mvpn.model.CreateUpdateServerRequestDto;
 import ru.maxow.mvpn.model.ListServerDto;
 import ru.maxow.mvpn.model.ServerResponseDto;
@@ -21,5 +23,6 @@ public interface ServerMapper {
   @Mapping(target = "successfulChecks", ignore = true)
   @Mapping(target = "failedChecks", ignore = true)
   @Mapping(target = "hostKey", ignore = true)
+  @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
   void updateFromDto(CreateUpdateServerRequestDto dto, @MappingTarget Server server);
 }

@@ -1,0 +1,9 @@
+type: object
+required:
+  - objectKey
+properties:
+  objectKey:
+    type: string
+    description: Object key uploaded to MinIO bucket
+    example: "ssh-keys/6c7f5a5e-8c2f-4bf5-bb32-0d8f7ea76d6f-id_ed25519"
+

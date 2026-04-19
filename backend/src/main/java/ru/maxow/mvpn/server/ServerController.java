@@ -10,8 +10,10 @@ import ru.maxow.mvpn.model.CreateUpdateServerRequestDto;
 import ru.maxow.mvpn.model.PageListServerDto;
 import ru.maxow.mvpn.model.ServerResponseDto;
 import ru.maxow.mvpn.model.ServerStatus;
+import ru.maxow.mvpn.model.UploadSshKeyResponseDto;
 
 import java.util.List;
+import org.springframework.web.multipart.MultipartFile;
 
 @Slf4j
 @RestController
@@ -38,6 +40,11 @@ public class ServerController implements ServersApi {
   @Override
   public ServerResponseDto updateServerStatus(Long id, ServerStatus status) {
     return serverService.updateServerStatus(id, status);
+  }
+
+  @Override
+  public UploadSshKeyResponseDto uploadServerSshKey(MultipartFile file) {
+    return serverService.uploadServerSshKey(file);
   }
 
   @Override

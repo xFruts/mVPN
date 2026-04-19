@@ -11,7 +11,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ru.maxow.mvpn.model.ServerStatus;
 
-import java.io.ByteArrayOutputStream;
+import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.net.InetAddress;
 import java.util.List;
@@ -23,6 +23,7 @@ import java.util.List;
 public class ServerMonitoringServiceImpl implements ServerMonitoringService {
 
   ServerRepository serverRepository;
+  ServerSshKeyStorageService sshKeyStorageService;
 
   @Override
   @Scheduled(fixedRate = 60000)
@@ -81,26 +82,34 @@ public class ServerMonitoringServiceImpl implements ServerMonitoringService {
     Session session = null;
     ChannelExec channel = null;
     try {
+      validateSshAuthConfiguration(server);
+
       JSch jsch = new JSch();
       ServerHostKeyRepository hkr = new ServerHostKeyRepository(server, serverRepository);
 
       jsch.setHostKeyRepository(hkr);
+
+      if (isKeyAuth(server)) {
+        byte[] privateKey = sshKeyStorageService.downloadPrivateKey(server.getSshPrivateKeyObjectKey());
+        jsch.addIdentity("server-" + server.getId(), privateKey, null, null);
+      }
+
       session = jsch.getSession(server.getLogin(), server.getIp(), 22);
-      session.setPassword(server.getPassword());
+
+      if (!isKeyAuth(server)) {
+        session.setPassword(server.getPassword());
+      }
+
       session.connect(10000);
 
       channel = (ChannelExec) session.openChannel("exec");
       channel.setCommand("uptime");
-      ByteArrayOutputStream responseStream = new ByteArrayOutputStream();
-      channel.setOutputStream(responseStream);
-      channel.connect();
+      try (InputStream responseStream = channel.getInputStream()) {
+        channel.connect();
 
-      while (channel.isConnected()) {
-        Thread.sleep(100);
+        String response = new String(responseStream.readAllBytes(), StandardCharsets.UTF_8);
+        parseUptimeResponse(server, response);
       }
-
-      String response = responseStream.toString(StandardCharsets.UTF_8);
-      parseUptimeResponse(server, response);
     } catch (Exception e) {
       log.error("SSH error for server {}: {}", server.getName(), e.getMessage());
       server.setStatus(ServerStatus.INACTIVE);
@@ -113,6 +122,30 @@ public class ServerMonitoringServiceImpl implements ServerMonitoringService {
       if (session != null && session.isConnected()) {
         session.disconnect();
       }
+    }
+  }
+
+  private boolean isKeyAuth(Server server) {
+    return SshAuthType.KEY.equals(resolveAuthType(server));
+  }
+
+  private SshAuthType resolveAuthType(Server server) {
+    return server.getSshAuthType() == null ? SshAuthType.PASSWORD : server.getSshAuthType();
+  }
+
+  private void validateSshAuthConfiguration(Server server) {
+    SshAuthType authType = resolveAuthType(server);
+
+    if (SshAuthType.KEY.equals(authType)
+        && (server.getSshPrivateKeyObjectKey() == null || server.getSshPrivateKeyObjectKey().isBlank())) {
+      throw new IllegalArgumentException(
+          "SSH key auth requires sshPrivateKeyObjectKey for server '" + server.getName() + "'.");
+    }
+
+    if (SshAuthType.PASSWORD.equals(authType)
+        && (server.getPassword() == null || server.getPassword().isBlank())) {
+      throw new IllegalArgumentException(
+          "SSH password auth requires password for server '" + server.getName() + "'.");
     }
   }
 

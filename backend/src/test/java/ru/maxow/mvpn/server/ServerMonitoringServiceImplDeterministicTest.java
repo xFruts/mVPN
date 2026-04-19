@@ -15,22 +15,23 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.util.ReflectionTestUtils;
 import ru.maxow.mvpn.model.ServerStatus;
 
-import java.io.OutputStream;
+import java.io.ByteArrayInputStream;
+import java.io.InputStream;
 import java.net.InetAddress;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicReference;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
-import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockConstruction;
 import static org.mockito.Mockito.mockStatic;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -39,6 +40,9 @@ class ServerMonitoringServiceImplDeterministicTest {
 
   @Mock
   private ServerRepository serverRepository;
+
+  @Mock
+  private ServerSshKeyStorageService sshKeyStorageService;
 
   @InjectMocks
   private ServerMonitoringServiceImpl service;
@@ -61,7 +65,8 @@ class ServerMonitoringServiceImplDeterministicTest {
          MockedConstruction<JSch> ignored = mockConstruction(JSch.class, (jsch, context) -> {
            Session session = mock(Session.class);
            ChannelExec channel = mock(ChannelExec.class);
-           AtomicReference<OutputStream> outputRef = new AtomicReference<>();
+           InputStream uptimeResponse = new ByteArrayInputStream(
+               "load average: 0.42, 0.31, 0.25".getBytes(StandardCharsets.UTF_8));
 
            when(jsch.getSession("admin", "10.0.0.1", 22)).thenReturn(session);
            doNothing().when(session).setPassword("pwd");
@@ -69,14 +74,8 @@ class ServerMonitoringServiceImplDeterministicTest {
            when(session.openChannel("exec")).thenReturn(channel);
 
            doNothing().when(channel).setCommand("uptime");
-           doAnswer(invocation -> {
-             outputRef.set(invocation.getArgument(0));
-             return null;
-           }).when(channel).setOutputStream(any(OutputStream.class));
-           doAnswer(invocation -> {
-             outputRef.get().write("load average: 0.42, 0.31, 0.25".getBytes(StandardCharsets.UTF_8));
-             return null;
-           }).when(channel).connect();
+           when(channel.getInputStream()).thenReturn(uptimeResponse);
+           doNothing().when(channel).connect();
            when(channel.isConnected()).thenReturn(false);
          })) {
       inetMock.when(() -> InetAddress.getByName("10.0.0.1")).thenReturn(inetAddress);
@@ -94,6 +93,45 @@ class ServerMonitoringServiceImplDeterministicTest {
     assertThat(saved.getSuccessfulChecks()).isEqualTo(3L);
     assertThat(saved.getFailedChecks()).isEqualTo(1L);
     assertThat(saved.getUptime()).isEqualTo(75.0);
+  }
+
+  @Test
+  @DisplayName("Given key auth server When updateServerMetrics Then download key and connect without password")
+  void givenKeyAuthServerWhenUpdateMetricsThenUsePrivateKey() throws Exception {
+    Server server = server("10.0.0.10");
+    server.setSshAuthType(SshAuthType.KEY);
+    server.setSshPrivateKeyObjectKey("ssh-keys/server-10/id_ed25519");
+
+    when(serverRepository.findAll()).thenReturn(List.of(server));
+    when(serverRepository.save(any(Server.class))).thenAnswer(invocation -> invocation.getArgument(0));
+    when(sshKeyStorageService.downloadPrivateKey("ssh-keys/server-10/id_ed25519"))
+        .thenReturn("private-key".getBytes(StandardCharsets.UTF_8));
+
+    InetAddress inetAddress = mock(InetAddress.class);
+    when(inetAddress.isReachable(5000)).thenReturn(true);
+
+    try (MockedStatic<InetAddress> inetMock = mockStatic(InetAddress.class);
+         MockedConstruction<JSch> ignored = mockConstruction(JSch.class, (jsch, context) -> {
+           Session session = mock(Session.class);
+           ChannelExec channel = mock(ChannelExec.class);
+           InputStream uptimeResponse = new ByteArrayInputStream(
+               "load average: 0.10, 0.10, 0.10".getBytes(StandardCharsets.UTF_8));
+
+           when(jsch.getSession("admin", "10.0.0.10", 22)).thenReturn(session);
+           doNothing().when(jsch).addIdentity(any(), any(byte[].class), any(), any());
+           doNothing().when(session).connect(anyInt());
+           when(session.openChannel("exec")).thenReturn(channel);
+
+           doNothing().when(channel).setCommand("uptime");
+           when(channel.getInputStream()).thenReturn(uptimeResponse);
+           doNothing().when(channel).connect();
+           when(channel.isConnected()).thenReturn(false);
+         })) {
+      inetMock.when(() -> InetAddress.getByName("10.0.0.10")).thenReturn(inetAddress);
+      service.updateServerMetrics();
+    }
+
+    verify(sshKeyStorageService).downloadPrivateKey("ssh-keys/server-10/id_ed25519");
   }
 
   @Test
@@ -159,6 +197,71 @@ class ServerMonitoringServiceImplDeterministicTest {
     assertThat(saved.getLoad()).isZero();
     assertThat(saved.getSuccessfulChecks()).isEqualTo(1L);
     assertThat(saved.getFailedChecks()).isEqualTo(2L);
+  }
+
+  @Test
+  @DisplayName("Given key auth without private key object key When updateServerMetrics Then persist fallback values")
+  void givenKeyAuthWithoutObjectKeyWhenUpdateThenPersistFallbackValues() throws Exception {
+    Server server = server("10.0.0.11");
+    server.setSshAuthType(SshAuthType.KEY);
+    server.setSshPrivateKeyObjectKey(" ");
+    server.setSuccessfulChecks(4L);
+    server.setFailedChecks(1L);
+
+    when(serverRepository.findAll()).thenReturn(List.of(server));
+    when(serverRepository.save(any(Server.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+    InetAddress inetAddress = mock(InetAddress.class);
+    when(inetAddress.isReachable(5000)).thenReturn(true);
+
+    try (MockedStatic<InetAddress> inetMock = mockStatic(InetAddress.class)) {
+      inetMock.when(() -> InetAddress.getByName("10.0.0.11")).thenReturn(inetAddress);
+      service.updateServerMetrics();
+    }
+
+    ArgumentCaptor<Server> captor = ArgumentCaptor.forClass(Server.class);
+    verify(serverRepository).save(captor.capture());
+    verifyNoInteractions(sshKeyStorageService);
+    Server saved = captor.getValue();
+
+    assertThat(saved.getStatus()).isEqualTo(ServerStatus.INACTIVE);
+    assertThat(saved.getPing()).isEqualTo("N/A");
+    assertThat(saved.getLoad()).isZero();
+    assertThat(saved.getSuccessfulChecks()).isEqualTo(4L);
+    assertThat(saved.getFailedChecks()).isEqualTo(2L);
+  }
+
+  @Test
+  @DisplayName("Given password auth without password When updateServerMetrics Then persist fallback values")
+  void givenPasswordAuthWithoutPasswordWhenUpdateThenPersistFallbackValues() throws Exception {
+    Server server = server("10.0.0.12");
+    server.setSshAuthType(SshAuthType.PASSWORD);
+    server.setPassword(" ");
+    server.setSuccessfulChecks(3L);
+    server.setFailedChecks(0L);
+
+    when(serverRepository.findAll()).thenReturn(List.of(server));
+    when(serverRepository.save(any(Server.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+    InetAddress inetAddress = mock(InetAddress.class);
+    when(inetAddress.isReachable(5000)).thenReturn(true);
+
+    try (MockedStatic<InetAddress> inetMock = mockStatic(InetAddress.class);
+         MockedConstruction<JSch> ignored = mockConstruction(JSch.class)) {
+      inetMock.when(() -> InetAddress.getByName("10.0.0.12")).thenReturn(inetAddress);
+      service.updateServerMetrics();
+    }
+
+    ArgumentCaptor<Server> captor = ArgumentCaptor.forClass(Server.class);
+    verify(serverRepository).save(captor.capture());
+    verify(sshKeyStorageService, never()).downloadPrivateKey(any());
+    Server saved = captor.getValue();
+
+    assertThat(saved.getStatus()).isEqualTo(ServerStatus.INACTIVE);
+    assertThat(saved.getPing()).isEqualTo("N/A");
+    assertThat(saved.getLoad()).isZero();
+    assertThat(saved.getSuccessfulChecks()).isEqualTo(3L);
+    assertThat(saved.getFailedChecks()).isEqualTo(1L);
   }
 
   @Test

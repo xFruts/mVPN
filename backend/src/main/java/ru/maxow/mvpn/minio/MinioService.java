@@ -12,20 +12,22 @@ import java.util.UUID;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
+import lombok.experimental.NonFinal;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
-/*@Slf4j
+@Slf4j
 @Service
 @RequiredArgsConstructor
-@FieldDefaults(level = AccessLevel.PRIVATE)
+@FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class MinioService {
 
-  final MinioClient minioClient;
+  MinioClient minioClient;
 
   @Value("${minio.bucket.name}")
+  @NonFinal
   String bucketName;
 
   @PostConstruct
@@ -43,12 +45,6 @@ public class MinioService {
       throw new RuntimeException("Could not create or check bucket.", e);
     }
   }
-
-  *
-   * Uploads a file to MinIO.
-   *
-   * @param file the file to upload
-   * @return the name of the uploaded object
 
   public String uploadFile(MultipartFile file) {
     try {
@@ -69,11 +65,6 @@ public class MinioService {
       throw new RuntimeException("Could not upload file to MinIO.", e);
     }
   }
-  *
-   * Downloads a file from MinIO.
-   *
-   * @param objectName the name of the object to download
-   * @return an InputStream of the downloaded file
 
   public InputStream downloadFile(String objectName) {
     try {
@@ -88,10 +79,13 @@ public class MinioService {
     }
   }
 
-  *
-   * Deletes a file from MinIO.
-   *
-   * @param objectName the name of the object to delete
+  public byte[] downloadFileAsBytes(String objectName) {
+    try (InputStream inputStream = downloadFile(objectName)) {
+      return inputStream.readAllBytes();
+    } catch (Exception e) {
+      throw new RuntimeException("Could not read file from MinIO.", e);
+    }
+  }
 
   public void deleteFile(String objectName) {
     try {
@@ -106,4 +100,4 @@ public class MinioService {
       throw new RuntimeException("Could not delete file from MinIO.", e);
     }
   }
-}*/
+}

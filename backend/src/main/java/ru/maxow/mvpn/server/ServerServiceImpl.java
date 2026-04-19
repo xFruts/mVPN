@@ -10,10 +10,14 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
+import ru.maxow.mvpn.minio.MinioService;
 import ru.maxow.mvpn.model.CreateUpdateServerRequestDto;
 import ru.maxow.mvpn.model.PageListServerDto;
 import ru.maxow.mvpn.model.ServerResponseDto;
 import ru.maxow.mvpn.model.ServerStatus;
+import ru.maxow.mvpn.model.UploadSshKeyResponseDto;
+import ru.maxow.mvpn.util.exception.BadRequestException;
 import ru.maxow.mvpn.util.exception.NotFoundException;
 
 import java.util.List;
@@ -27,6 +31,7 @@ public class ServerServiceImpl implements ServerService {
 
   ServerRepository serverRepository;
   ServerMapper serverMapper;
+  MinioService minioService;
 
   @Override
   public PageListServerDto getServers(Integer page, Integer size, List<String> sort) {
@@ -88,6 +93,16 @@ public class ServerServiceImpl implements ServerService {
     server.setStatus(status);
     server = serverRepository.save(server);
     return serverMapper.toDto(server);
+  }
+
+  @Override
+  public UploadSshKeyResponseDto uploadServerSshKey(MultipartFile file) {
+    if (file == null || file.isEmpty()) {
+      throw new BadRequestException("SSH key file is required");
+    }
+
+    String objectKey = minioService.uploadFile(file);
+    return new UploadSshKeyResponseDto().objectKey(objectKey);
   }
 
   @Override
