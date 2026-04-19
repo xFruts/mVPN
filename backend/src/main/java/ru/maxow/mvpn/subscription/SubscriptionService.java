@@ -24,4 +24,8 @@ public interface SubscriptionService {
   String getSubscriptionInfoForUserByCode(UUID verificationCode);
 
   void extendSubscription(Long userId, String billingDate);
+
+  Subscription findLastSubscriptionEntityByUserId(Long userId);
+
+  SubscriptionResponseDto getLastSubscriptionByUserId(Long userId);
 }

@@ -115,7 +115,7 @@ class XuiPanelServiceImplTest {
     String config = service.getVlessConfig(server, user);
 
     assertThat(config).contains("vless://" + user.getXuiId() + "@");
-    verify(postUriSpec).uri("/panel/api/inbounds/updateClient/" + otherId);
+    verify(postUriSpec).uri("/panel/api/inbounds/updateClient/" + user.getXuiId());
     verify(subscriptionService).findLastSubscriptionEntityByUserId(user.getId());
   }
 

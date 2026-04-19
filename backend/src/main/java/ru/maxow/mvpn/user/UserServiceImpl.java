@@ -191,11 +191,6 @@ public class UserServiceImpl implements UserService {
     return userRepository.findAllByRole(role);
   }
 
-  @Override
-  public Subscription findLastUserSubscriptionByUserId(Long userId) {
-    return subscriptionRepository.findFirstByUserOrderByStartDateDesc(findUserById(userId))
-        .orElseThrow(() -> new NotFoundException("Subscription"));
-  }
 
   @Override
   public UUID getUserVerificationCode(Long userId) {

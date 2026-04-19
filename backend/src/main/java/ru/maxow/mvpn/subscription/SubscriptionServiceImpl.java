@@ -153,4 +153,20 @@ public class SubscriptionServiceImpl implements SubscriptionService {
     subscriptionRepository.save(subscription);
     log.info("Subscription for user {} extended until {}", userId, newEndDate);
   }
+
+  @Override
+  @Transactional(readOnly = true)
+  public Subscription findLastSubscriptionEntityByUserId(Long userId) {
+    User user = userRepository.findById(userId)
+        .orElseThrow(() -> new NotFoundException("User", userId));
+
+    return subscriptionRepository.findFirstByUserOrderByStartDateDesc(user)
+        .orElseThrow(() -> new NotFoundException("Subscription"));
+  }
+
+  @Override
+  @Transactional(readOnly = true)
+  public SubscriptionResponseDto getLastSubscriptionByUserId(Long userId) {
+    return subscriptionMapper.toSubscriptionResponseDto(findLastSubscriptionEntityByUserId(userId));
+  }
 }
