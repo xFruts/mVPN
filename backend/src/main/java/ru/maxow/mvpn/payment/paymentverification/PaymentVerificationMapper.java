@@ -4,7 +4,10 @@ import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import ru.maxow.mvpn.model.CreateUpdatePaymentVerificationDto;
 import ru.maxow.mvpn.model.PaymentVerificationResponseDto;
-import ru.maxow.mvpn.user.User;
+
+import java.time.Instant;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 
 @Mapper(componentModel = "spring")
 public interface PaymentVerificationMapper {
@@ -17,15 +20,15 @@ public interface PaymentVerificationMapper {
   @Mapping(target = "createdAt", ignore = true)
   @Mapping(target = "verifiedAt", ignore = true)
   @Mapping(target = "verifiedBy", ignore = true)
-  @Mapping(target = "user", source = "userId")
+  @Mapping(target = "user", ignore = true)
   PaymentVerification toEntity(CreateUpdatePaymentVerificationDto dto);
 
-  default User map(Long userId) {
-    if (userId == null) {
-      return null;
-    }
-    User user = new User();
-    user.setId(userId);
-    return user;
+
+  default OffsetDateTime map(Instant value) {
+    return value == null ? null : value.atOffset(ZoneOffset.UTC);
+  }
+
+  default Instant map(OffsetDateTime value) {
+    return value == null ? null : value.toInstant();
   }
 }
