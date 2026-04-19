@@ -43,6 +43,8 @@ paths:
     $ref: './paths/subscriptions.yaml#/SubscriptionById'
   /v1/subscriptions/user/{userId}:
     $ref: './paths/subscriptions.yaml#/SubscriptionsByUser'
+  /v1/subscriptions/user/{userId}/last:
+    $ref: './paths/subscriptions.yaml#/LastSubscription'
 
   /v1/tariffs:
     $ref: './paths/tariffs.yaml#/TariffsCollection'

@@ -46,4 +46,9 @@ public class SubscriptionController implements SubscriptionsApi {
   public void deleteSubscription(Long id) {
     subscriptionService.deleteSubscription(id);
   }
+
+  @Override
+  public SubscriptionResponseDto getLastSubscription(Long userId) {
+    return subscriptionService.getLastSubscriptionByUserId(userId);
+  }
 }
