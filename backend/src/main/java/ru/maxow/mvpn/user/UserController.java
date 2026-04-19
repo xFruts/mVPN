@@ -45,6 +45,11 @@ public class UserController implements UsersApi {
   }
 
   @Override
+  public UserResponseDto getUserById(Long userId) {
+    return userService.findById(userId);
+  }
+
+  @Override
   public UserResponseDto updateUserRole(Long userId, UpdateUserRoleRequest updateUserRoleRequest) {
     return userService.updateUserRole(userId, String.valueOf(updateUserRoleRequest.getRole()));
   }

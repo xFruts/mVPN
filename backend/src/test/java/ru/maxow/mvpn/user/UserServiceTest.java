@@ -128,6 +128,54 @@ class UserServiceTest {
   }
 
   @Nested
+  @DisplayName("Получение пользователя по ID (GET /v1/users/{userId})")
+  class FindByIdTests {
+
+    @Test
+    @DisplayName("Должен вернуть пользователя по id")
+    void shouldReturnUserById() {
+      Long userId = 1L;
+
+      UserResponseDto expectedResponse = new UserResponseDto();
+      expectedResponse.setId(userId);
+      expectedResponse.setFullName(testUser.getFullName());
+      expectedResponse.setRole(testUser.getRole());
+
+      when(userRepository.findById(userId)).thenReturn(Optional.of(testUser));
+      when(userMapper.toUserResponseDto(testUser)).thenReturn(expectedResponse);
+
+      UserResponseDto result = userService.findById(userId);
+
+      assertThat(result)
+          .isNotNull()
+          .satisfies(dto -> {
+            assertThat(dto.getId()).isEqualTo(userId);
+            assertThat(dto.getFullName()).isEqualTo(testUser.getFullName());
+            assertThat(dto.getRole()).isEqualTo(testUser.getRole());
+          });
+
+      verify(userRepository).findById(userId);
+      verify(userMapper).toUserResponseDto(testUser);
+    }
+
+    @Test
+    @DisplayName("Должен бросить NotFoundException если пользователь не найден")
+    void shouldThrowNotFoundWhenUserMissing() {
+      Long userId = 404L;
+
+      when(userRepository.findById(userId)).thenReturn(Optional.empty());
+
+      assertThatThrownBy(() -> userService.findById(userId))
+          .isInstanceOf(NotFoundException.class)
+          .hasMessageContaining("User")
+          .hasMessageContaining(String.valueOf(userId));
+
+      verify(userRepository).findById(userId);
+      verifyNoInteractions(userMapper);
+    }
+  }
+
+  @Nested
   @DisplayName("Обновление пользователя (PUT /v1/users/{userId})")
   class UpdateUserTests {
 
