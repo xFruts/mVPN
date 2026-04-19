@@ -44,4 +44,9 @@ public class ServerController implements ServersApi {
   public void deleteServer(Long id) {
     serverService.deleteServer(id);
   }
+
+  @Override
+  public ServerResponseDto getServerById(Long id) {
+    return serverService.getServer(id);
+  }
 }
