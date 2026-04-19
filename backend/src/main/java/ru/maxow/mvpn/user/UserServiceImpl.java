@@ -123,9 +123,9 @@ public class UserServiceImpl implements UserService {
 
   @Override
   @Transactional(readOnly = true)
-  public boolean hasActiveSubscriptions(Long userId) {
+  public boolean hasAnySubscriptions(Long userId) {
     User user = findUserById(userId);
-    return !subscriptionRepository.findAllByUser(user).isEmpty();
+    return subscriptionRepository.findFirstByUserOrderByStartDateDesc(user).isPresent();
   }
 
   @Override

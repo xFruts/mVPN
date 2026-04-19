@@ -401,7 +401,7 @@ class UserServiceTest {
           .thenReturn(List.of()); // Пусто = нет подписок
 
       // Act
-      boolean result = userService.hasActiveSubscriptions(userId);
+      boolean result = userService.hasAnySubscriptions(userId);
 
       // Assert
       assertThat(result).isFalse();
@@ -417,7 +417,7 @@ class UserServiceTest {
       when(userRepository.findById(userId)).thenReturn(Optional.of(testUser));
       when(subscriptionRepository.findAllByUser(testUser)).thenReturn(List.of(subscription));
 
-      boolean result = userService.hasActiveSubscriptions(userId);
+      boolean result = userService.hasAnySubscriptions(userId);
 
       assertThat(result).isTrue();
       verify(userRepository).findById(userId);

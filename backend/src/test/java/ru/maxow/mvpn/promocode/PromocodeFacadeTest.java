@@ -61,7 +61,7 @@ class PromocodeFacadeTest {
           });
 
       verify(userRepository).existsById(77L);
-      verify(userService, never()).hasActiveSubscriptions(anyLong());
+      verify(userService, never()).hasAnySubscriptions(anyLong());
       verify(promocodeService, never()).usePromocode(anyString());
       verify(subscriptionService, never()).createSubscription(anyLong(), any());
     }
@@ -70,14 +70,14 @@ class PromocodeFacadeTest {
     @DisplayName("Должен выбросить BadRequestException, если у пользователя есть активная подписка")
     void shouldThrowBadRequestWhenUserHasActiveSubscription() {
       when(userRepository.existsById(11L)).thenReturn(true);
-      when(userService.hasActiveSubscriptions(11L)).thenReturn(true);
+      when(userService.hasAnySubscriptions(11L)).thenReturn(true);
 
       assertThatThrownBy(() -> promocodeFacade.applyPromocode(11L, "PROMO1"))
           .isInstanceOf(BadRequestException.class)
           .hasMessageContaining("active subscriptions");
 
       verify(userRepository).existsById(11L);
-      verify(userService).hasActiveSubscriptions(11L);
+      verify(userService).hasAnySubscriptions(11L);
       verify(promocodeService, never()).usePromocode(anyString());
       verify(subscriptionService, never()).createSubscription(anyLong(), any());
     }
@@ -97,7 +97,7 @@ class PromocodeFacadeTest {
       subscription.setStatus(SubscriptionStatus.ACTIVE);
 
       when(userRepository.existsById(5L)).thenReturn(true);
-      when(userService.hasActiveSubscriptions(5L)).thenReturn(false);
+      when(userService.hasAnySubscriptions(5L)).thenReturn(false);
       when(promocodeService.usePromocode("PROMO1")).thenReturn(promoDto);
       when(subscriptionService.createSubscription(eq(5L), any(CreateUpdateSubscriptionDto.class)))
           .thenReturn(subscription);
@@ -107,7 +107,7 @@ class PromocodeFacadeTest {
       OffsetDateTime after = OffsetDateTime.now();
 
       verify(userRepository).existsById(5L);
-      verify(userService).hasActiveSubscriptions(5L);
+      verify(userService).hasAnySubscriptions(5L);
       verify(promocodeService).usePromocode("PROMO1");
 
       ArgumentCaptor<CreateUpdateSubscriptionDto> dtoCaptor =

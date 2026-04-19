@@ -35,7 +35,7 @@ public class PromocodeFacadeImpl implements PromocodeFacade {
     if (!userRepository.existsById(userId)) {
       throw new NotFoundException("User", userId);
     }
-    if (userService.hasActiveSubscriptions(userId)) {
+    if (userService.hasAnySubscriptions(userId)) {
       throw new BadRequestException("User has active subscriptions");
     }
     PromocodeResponseDto promocodeResponseDto = promocodeService.usePromocode(code);
