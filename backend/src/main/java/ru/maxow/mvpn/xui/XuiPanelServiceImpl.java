@@ -20,9 +20,9 @@ import org.springframework.web.client.RestClient;
 import org.springframework.web.util.UriUtils;
 import ru.maxow.mvpn.server.Server;
 import ru.maxow.mvpn.subscription.Subscription;
+import ru.maxow.mvpn.subscription.SubscriptionService;
 import ru.maxow.mvpn.tariff.Tariff;
 import ru.maxow.mvpn.user.User;
-import ru.maxow.mvpn.user.UserService;
 import ru.maxow.mvpn.util.exception.NotFoundException;
 import ru.maxow.mvpn.util.exception.XuiUnavailableException;
 
@@ -40,7 +40,7 @@ public class XuiPanelServiceImpl implements XuiPanelService {
 
   RestClient.Builder restClientBuilder;
   ObjectMapper objectMapper;
-  UserService userService;
+  SubscriptionService subscriptionService;
 
   @Override
   public String getVlessConfig(Server server, User user) {
@@ -156,7 +156,7 @@ public class XuiPanelServiceImpl implements XuiPanelService {
       User user,
       Server server) {
     try {
-      Subscription subscription = userService.findLastUserSubscriptionByUserId(user.getId());
+      Subscription subscription = subscriptionService.findLastSubscriptionEntityByUserId(user.getId());
       Tariff tariff = subscription.getTariff();
 
       String clientSettings = wrapClientPayload(
@@ -202,7 +202,7 @@ public class XuiPanelServiceImpl implements XuiPanelService {
       Server server,
       XuiClient existingClient) {
     try {
-      Subscription subscription = userService.findLastUserSubscriptionByUserId(user.getId());
+      Subscription subscription = subscriptionService.findLastSubscriptionEntityByUserId(user.getId());
       Tariff tariff = subscription.getTariff();
 
       String clientSettings = wrapClientPayload(
