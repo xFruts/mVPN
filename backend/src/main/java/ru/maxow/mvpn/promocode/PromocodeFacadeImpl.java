@@ -36,7 +36,7 @@ public class PromocodeFacadeImpl implements PromocodeFacade {
       throw new NotFoundException("User", userId);
     }
     if (userService.hasAnySubscriptions(userId)) {
-      throw new BadRequestException("User has active subscriptions");
+      throw new BadRequestException("User has subscriptions");
     }
     PromocodeResponseDto promocodeResponseDto = promocodeService.usePromocode(code);
     subscriptionService.createSubscription(
@@ -45,9 +45,6 @@ public class PromocodeFacadeImpl implements PromocodeFacade {
             .tariffId(promocodeResponseDto.getTariff().getId())
             .status(SubscriptionStatus.ACTIVE)
             .startDate(OffsetDateTime.now())
-            .endDate(
-                OffsetDateTime.now()
-                    .plusDays(promocodeResponseDto.getTariff().getDurationOfDays()))
     );
 
     log.info("Promocode {} applied successfully for user {}", code, userId);

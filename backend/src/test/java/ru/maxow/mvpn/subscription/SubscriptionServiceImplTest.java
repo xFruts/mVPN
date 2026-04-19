@@ -11,6 +11,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -122,14 +123,15 @@ class SubscriptionServiceImplTest {
       Long tariffId = 1L;
       CreateUpdateSubscriptionDto requestDto = new CreateUpdateSubscriptionDto();
       OffsetDateTime startDate = OffsetDateTime.now();
-      OffsetDateTime endDate = OffsetDateTime.now().plusMonths(1);
       requestDto.setStartDate(startDate);
-      requestDto.setEndDate(endDate);
       requestDto.setStatus(SubscriptionStatus.ACTIVE);
       requestDto.setTariffId(tariffId);
 
+      Tariff tariff = new Tariff();
+      tariff.setDurationOfDays(30);
+
       when(userRepository.findById(userId)).thenReturn(Optional.of(testUser));
-      when(tariffRepository.findById(tariffId)).thenReturn(Optional.of(new Tariff()));
+      when(tariffRepository.findById(tariffId)).thenReturn(Optional.of(tariff));
       when(subscriptionRepository.save(any(Subscription.class))).thenReturn(testSubscription);
       when(subscriptionMapper.toSubscriptionResponseDto(testSubscription)).thenReturn(testSubscriptionDto);
 
@@ -142,6 +144,11 @@ class SubscriptionServiceImplTest {
       verify(tariffRepository).findById(tariffId);
       verify(subscriptionRepository).save(any(Subscription.class));
       verify(subscriptionMapper).toSubscriptionResponseDto(testSubscription);
+
+      ArgumentCaptor<Subscription> captor = ArgumentCaptor.forClass(Subscription.class);
+      verify(subscriptionRepository).save(captor.capture());
+      assertThat(captor.getValue().getStartDate()).isEqualTo(startDate);
+      assertThat(captor.getValue().getEndDate()).isEqualTo(startDate.plusDays(30));
     }
 
     @Test
@@ -151,7 +158,6 @@ class SubscriptionServiceImplTest {
       Long nonExistentUserId = 999L;
       CreateUpdateSubscriptionDto requestDto = new CreateUpdateSubscriptionDto();
       requestDto.setStartDate(OffsetDateTime.now());
-      requestDto.setEndDate(OffsetDateTime.now().plusMonths(1));
 
       when(userRepository.findById(nonExistentUserId)).thenReturn(Optional.empty());
 
@@ -165,24 +171,31 @@ class SubscriptionServiceImplTest {
     }
 
     @Test
-    @DisplayName("Должен выбросить IllegalArgumentException если дата окончания раньше даты начала")
-    void shouldThrowIllegalArgumentExceptionWhenEndDateBeforeStartDate() {
-      // Arrange
+    @DisplayName("Должен использовать текущую дату UTC как startDate, если она не передана")
+    void shouldUseCurrentUtcStartDateWhenStartDateIsMissing() {
       Long userId = 1L;
+      Long tariffId = 1L;
       CreateUpdateSubscriptionDto requestDto = new CreateUpdateSubscriptionDto();
-      OffsetDateTime startDate = OffsetDateTime.now();
-      OffsetDateTime endDate = startDate.minusDays(1);
-      requestDto.setStartDate(startDate);
-      requestDto.setEndDate(endDate);
+      requestDto.setStatus(SubscriptionStatus.ACTIVE);
+      requestDto.setTariffId(tariffId);
+
+      Tariff tariff = new Tariff();
+      tariff.setDurationOfDays(10);
 
       when(userRepository.findById(userId)).thenReturn(Optional.of(testUser));
+      when(tariffRepository.findById(tariffId)).thenReturn(Optional.of(tariff));
+      when(subscriptionRepository.save(any(Subscription.class))).thenReturn(testSubscription);
+      when(subscriptionMapper.toSubscriptionResponseDto(testSubscription)).thenReturn(testSubscriptionDto);
 
-      // Act & Assert
-      assertThatThrownBy(() -> subscriptionService.createSubscription(userId, requestDto))
-          .isInstanceOf(IllegalArgumentException.class)
-          .hasMessageContaining("End date cannot be before start date");
+      OffsetDateTime before = OffsetDateTime.now(ZoneOffset.UTC);
+      subscriptionService.createSubscription(userId, requestDto);
+      OffsetDateTime after = OffsetDateTime.now(ZoneOffset.UTC);
 
-      verify(subscriptionRepository, never()).save(any());
+      ArgumentCaptor<Subscription> captor = ArgumentCaptor.forClass(Subscription.class);
+      verify(subscriptionRepository).save(captor.capture());
+
+      assertThat(captor.getValue().getStartDate()).isBetween(before.minusSeconds(1), after.plusSeconds(1));
+      assertThat(captor.getValue().getEndDate()).isEqualTo(captor.getValue().getStartDate().plusDays(10));
     }
   }
 
@@ -199,7 +212,6 @@ class SubscriptionServiceImplTest {
       CreateUpdateSubscriptionDto updateDto = new CreateUpdateSubscriptionDto();
       OffsetDateTime newEndDate = OffsetDateTime.now().plusMonths(3);
       updateDto.setStartDate(OffsetDateTime.now());
-      updateDto.setEndDate(newEndDate);
       updateDto.setStatus(SubscriptionStatus.CANCELED);
       updateDto.setTariffId(tariffId);
 
@@ -209,7 +221,9 @@ class SubscriptionServiceImplTest {
       updatedSubscription.setEndDate(newEndDate);
 
       when(subscriptionRepository.findById(subscriptionId)).thenReturn(Optional.of(testSubscription));
-      when(tariffRepository.findById(tariffId)).thenReturn(Optional.of(new Tariff()));
+      Tariff tariff = new Tariff();
+      tariff.setDurationOfDays(30);
+      when(tariffRepository.findById(tariffId)).thenReturn(Optional.of(tariff));
       when(subscriptionRepository.save(any(Subscription.class))).thenReturn(updatedSubscription);
       when(subscriptionMapper.toSubscriptionResponseDto(updatedSubscription)).thenReturn(testSubscriptionDto);
       doNothing().when(subscriptionMapper).updateSubscriptionFromDto(updateDto, testSubscription);

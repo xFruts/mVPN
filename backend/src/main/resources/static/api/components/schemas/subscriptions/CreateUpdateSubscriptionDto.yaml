@@ -1,20 +1,13 @@
 type: object
 required:
-  - startDate
-  - endDate
   - status
   - tariff_id
 properties:
   startDate:
     type: string
     format: date-time
-    description: Дата начала
+    description: Дата начала (если не передана, устанавливается текущая дата UTC)
     example: "2026-01-01T00:00:00Z"
-  endDate:
-    type: string
-    format: date-time
-    description: Дата окончания
-    example: "2026-02-01T00:00:00Z"
   status:
     $ref: './SubscriptionStatus.yaml'
   tariff_id:

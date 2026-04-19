@@ -45,18 +45,16 @@ public class SubscriptionServiceImpl implements SubscriptionService {
     Subscription subscription = new Subscription();
     subscription.setUser(user);
 
-    subscription.setStartDate(dto.getStartDate());
-
-    if (dto.getEndDate().isBefore(dto.getStartDate())) {
-      throw new IllegalArgumentException("End date cannot be before start date");
-    }
-
-    subscription.setEndDate(dto.getEndDate());
-
-    subscription.setStatus(dto.getStatus());
-
     Tariff tariff = tariffRepository.findById(dto.getTariffId())
         .orElseThrow(() -> new NotFoundException("Tariff", dto.getTariffId()));
+
+    OffsetDateTime startDate = dto.getStartDate() != null
+        ? dto.getStartDate()
+        : OffsetDateTime.now(ZoneOffset.UTC);
+
+    subscription.setStartDate(startDate);
+    subscription.setEndDate(startDate.plusDays(tariff.getDurationOfDays()));
+    subscription.setStatus(dto.getStatus());
     subscription.setTariff(tariff);
 
     Subscription savedSubscription = subscriptionRepository.save(subscription);
@@ -74,7 +72,15 @@ public class SubscriptionServiceImpl implements SubscriptionService {
 
     Tariff tariff = tariffRepository.findById(dto.getTariffId())
         .orElseThrow(() -> new NotFoundException("Tariff", dto.getTariffId()));
+
+    OffsetDateTime effectiveStartDate = subscription.getStartDate();
+    if (effectiveStartDate == null) {
+      effectiveStartDate = OffsetDateTime.now(ZoneOffset.UTC);
+      subscription.setStartDate(effectiveStartDate);
+    }
+
     subscription.setTariff(tariff);
+    subscription.setEndDate(effectiveStartDate.plusDays(tariff.getDurationOfDays()));
 
     Subscription updatedSubscription = subscriptionRepository.save(subscription);
     log.info("Subscription with id: {} updated", id);
@@ -160,7 +166,7 @@ public class SubscriptionServiceImpl implements SubscriptionService {
     User user = userRepository.findById(userId)
         .orElseThrow(() -> new NotFoundException("User", userId));
 
-    return subscriptionRepository.findFirstByUserOrderByStartDateDesc(user)
+    return subscriptionRepository.findFirstWithTariffByUserOrderByStartDateDesc(user)
         .orElseThrow(() -> new NotFoundException("Subscription"));
   }
 
