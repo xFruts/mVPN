@@ -1,14 +1,10 @@
 package ru.maxow.mvpn.user;
 
-import java.time.OffsetDateTime;
 import java.util.Comparator;
 import java.util.Optional;
-
-import lombok.RequiredArgsConstructor;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.Named;
-import org.springframework.beans.factory.annotation.Autowired;
 import ru.maxow.mvpn.model.CreateUserRequestDto;
 import ru.maxow.mvpn.model.ListUserDto;
 import ru.maxow.mvpn.model.SubscriptionResponseDto;
@@ -37,18 +33,21 @@ public abstract class UserMapper {
 
     if (subscriptionOptional.isPresent()) {
       Subscription subscription = subscriptionOptional.get();
+      String tariffName = subscription.getTariff() != null ? subscription.getTariff().getName() : null;
 
       return new ListUserDto()
           .id(user.getId())
           .fullName(user.getFullName())
           .role(user.getRole().name())
           .subscriptionStatus(subscription.getStatus())
-          .endDate(OffsetDateTime.from(subscription.getEndDate()));
+          .endDate(subscription.getEndDate())
+          .tariffName(tariffName);
     }
     return new ListUserDto()
         .id(user.getId())
         .fullName(user.getFullName())
-        .role(user.getRole().name());
+        .role(user.getRole().name())
+        .tariffName(null);
   }
 
   @Named("userToSubscriptionDto")

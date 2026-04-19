@@ -15,3 +15,7 @@ properties:
     type: string
     format: date-time
     description: Дата окончания подписки
+  tariffName:
+    type: string
+    nullable: true
+    description: Название тарифа последней подписки пользователя
