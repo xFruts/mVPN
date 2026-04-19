@@ -61,6 +61,32 @@ SubscriptionsByUser:
       '404':
         $ref: '../components/responses/error/NotFound.yaml'
 
+# URL: /v1/subscriptions/user/{userId}/last
+LastSubscription:
+  get:
+    operationId: getLastSubscription
+    summary: Получить последнюю подписку пользователя
+    tags: [Subscriptions]
+    parameters:
+      - name: userId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+    responses:
+      '200':
+        description: Последняя подписка пользователя
+        content:
+          application/json:
+            schema:
+              $ref: '../components/schemas/subscriptions/SubscriptionResponseDto.yaml'
+    401:
+      $ref: '../components/responses/error/Unauthorized.yaml'
+    403:
+      $ref: '../components/responses/error/Forbidden.yaml'
+    '404':
+      $ref: '../components/responses/error/NotFound.yaml'
 
 # URL: /v1/subscriptions/{id}
 SubscriptionById:
