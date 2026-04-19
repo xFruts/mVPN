@@ -60,6 +60,30 @@ ServersCollection:
         $ref: '../components/responses/error/Forbidden.yaml'
 
 ServerSingle:
+  get:
+    operationId: getServerById
+    summary: Получить данные сервера по ID
+    tags: [Servers]
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+    responses:
+      '200':
+        description: Успешный ответ
+        content:
+          application/json:
+            schema:
+              $ref: '../components/schemas/servers/ServerResponseDto.yaml'
+      401:
+        $ref: '../components/responses/error/Unauthorized.yaml'
+      403:
+        $ref: '../components/responses/error/Forbidden.yaml'
+      '404':
+        $ref: '../components/responses/error/NotFound.yaml'
   put:
     operationId: updateServer
     summary: Обновить данные сервера
