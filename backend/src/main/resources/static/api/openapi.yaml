@@ -38,6 +38,8 @@ paths:
     $ref: './paths/servers.yaml#/ServerSingle'
   /v1/servers/{id}/status:
     $ref: './paths/servers.yaml#/ServerStatusUpdate'
+  /v1/servers/ssh-keys:
+    $ref: './paths/servers.yaml#/ServerSshKeyUpload'
 
   /v1/subscriptions/{id}:
     $ref: './paths/subscriptions.yaml#/SubscriptionById'

@@ -2,6 +2,8 @@ package ru.maxow.mvpn.server;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.Table;
 import jakarta.persistence.Id;
 import jakarta.persistence.GeneratedValue;
@@ -53,6 +55,13 @@ public class Server {
 
   @Convert(converter = AttributeEncryptor.class)
   String password;
+
+  @Enumerated(EnumType.STRING)
+  @Column(name = "ssh_auth_type")
+  SshAuthType sshAuthType = SshAuthType.PASSWORD;
+
+  @Column(name = "ssh_private_key_object_key")
+  String sshPrivateKeyObjectKey;
 
   @Convert(converter = AttributeEncryptor.class)
   String xuiLogin;

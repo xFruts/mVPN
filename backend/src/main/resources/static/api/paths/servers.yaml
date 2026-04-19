@@ -165,3 +165,35 @@ ServerStatusUpdate:
         $ref: '../components/responses/error/Unauthorized.yaml'
       403:
         $ref: '../components/responses/error/Forbidden.yaml'
+
+ServerSshKeyUpload:
+  post:
+    operationId: uploadServerSshKey
+    summary: Загрузить SSH private key
+    description: Загружает SSH private key в MinIO и возвращает object key для поля sshPrivateKeyObjectKey
+    tags: [Servers]
+    requestBody:
+      required: true
+      content:
+        multipart/form-data:
+          schema:
+            type: object
+            required: [ file ]
+            properties:
+              file:
+                type: string
+                format: binary
+                description: SSH private key file (например id_ed25519)
+    responses:
+      '201':
+        description: SSH ключ загружен
+        content:
+          application/json:
+            schema:
+              $ref: '../components/schemas/servers/UploadSshKeyResponseDto.yaml'
+      '400':
+        $ref: '../components/responses/error/BadRequest.yaml'
+      401:
+        $ref: '../components/responses/error/Unauthorized.yaml'
+      403:
+        $ref: '../components/responses/error/Forbidden.yaml'

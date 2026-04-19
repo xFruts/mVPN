@@ -53,7 +53,7 @@ minio:
     name: minioadmin
     secret: minioadmin
   bucket:
-    name: user-configs
+    name: vpn-configs
 
 app:
   kafka:

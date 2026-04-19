@@ -1,0 +1,6 @@
+type: string
+description: Режим SSH аутентификации для сбора метрик сервера
+enum:
+  - PASSWORD
+  - KEY
+

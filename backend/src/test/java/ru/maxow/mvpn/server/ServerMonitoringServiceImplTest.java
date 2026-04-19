@@ -1,6 +1,8 @@
 package ru.maxow.mvpn.server;
 
 import java.util.List;
+import java.net.InetAddress;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -9,11 +11,15 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
 import org.mockito.junit.jupiter.MockitoExtension;
 import ru.maxow.mvpn.model.ServerStatus;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.nullable;
 import static org.mockito.Mockito.*;
 
 /**
@@ -34,13 +40,18 @@ class ServerMonitoringServiceImplTest {
   @Mock
   private ServerRepository serverRepository;
 
+  @Mock
+  private ServerSshKeyStorageService sshKeyStorageService;
+
   @InjectMocks
   private ServerMonitoringServiceImpl monitoringService;
+
+  private MockedStatic<InetAddress> inetAddressMock;
 
   private Server testServer;
 
   @BeforeEach
-  void setUp() {
+  void setUp() throws Exception {
     testServer = new Server();
     testServer.setId(1L);
     testServer.setName("Moscow-1");
@@ -54,6 +65,18 @@ class ServerMonitoringServiceImplTest {
     testServer.setUptime(99.5);
     testServer.setSuccessfulChecks(199L);
     testServer.setFailedChecks(1L);
+
+    InetAddress inetAddress = mock(InetAddress.class);
+    lenient().when(inetAddress.isReachable(anyInt())).thenReturn(false);
+
+    inetAddressMock = mockStatic(InetAddress.class);
+    inetAddressMock.when(() -> InetAddress.getByName(anyString())).thenReturn(inetAddress);
+    inetAddressMock.when(() -> InetAddress.getByName(nullable(String.class))).thenReturn(inetAddress);
+  }
+
+  @AfterEach
+  void tearDown() {
+    inetAddressMock.close();
   }
 
   @Nested
@@ -90,6 +113,7 @@ class ServerMonitoringServiceImplTest {
       // Assert
       verify(serverRepository).findAll();
       verify(serverRepository, never()).save(any());
+      verifyNoInteractions(sshKeyStorageService);
     }
 
     @Test
