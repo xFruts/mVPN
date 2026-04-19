@@ -1,0 +1,24 @@
+type: object
+description: Страница со списком заявок на верификацию платежа
+properties:
+  content:
+    type: array
+    items:
+      $ref: './PaymentVerificationResponseDto.yaml'
+  totalElements:
+    type: integer
+    format: int64
+    example: 150
+  totalPages:
+    type: integer
+    format: int32
+    example: 15
+  size:
+    type: integer
+    format: int32
+    example: 10
+  number:
+    type: integer
+    format: int32
+    example: 0
+

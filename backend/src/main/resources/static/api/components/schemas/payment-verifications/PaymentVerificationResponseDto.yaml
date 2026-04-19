@@ -26,3 +26,7 @@ properties:
   adminComment:
     type: string
     example: "Чек получен"
+  createdAt:
+    type: string
+    format: date-time
+    example: "2026-04-19T12:00:00Z"

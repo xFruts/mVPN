@@ -1,5 +1,66 @@
 # POST /v1/payment-verifications
 PaymentVerificationsCollection:
+  get:
+    operationId: getPaymentVerifications
+    summary: Получить список заявок на верификацию платежей
+    tags: [Payment Verifications]
+    parameters:
+      - name: page
+        in: query
+        schema:
+          type: integer
+          default: 0
+      - name: size
+        in: query
+        schema:
+          type: integer
+          default: 20
+      - name: sort
+        in: query
+        description: Сортировка (например, createdAt,desc)
+        schema:
+          type: array
+          items:
+            type: string
+      - name: status
+        in: query
+        required: false
+        schema:
+          $ref: '../components/schemas/payment-verifications/VerificationStatus.yaml'
+      - name: fullName
+        in: query
+        required: false
+        description: Поиск по ФИО пользователя (user.fullName, contains, case-insensitive)
+        schema:
+          type: string
+      - name: createdFrom
+        in: query
+        description: Нижняя граница даты создания (ISO-8601, 2025-04-12T12:00:00Z).
+          Если параметр не передан, по умолчанию используется первое число текущего месяца в UTC
+          (00:00:00Z).
+        schema:
+          type: string
+          format: date-time
+      - name: createdTo
+        in: query
+        description: Верхняя граница даты создания (ISO-8601, 2025-04-12T12:00:00Z).
+          Если параметр не передан, по умолчанию используется текущий момент времени в UTC 
+          (00:00:00Z).
+        schema:
+          type: string
+          format: date-time
+    responses:
+      '200':
+        description: Страница заявок на верификацию
+        content:
+          application/json:
+            schema:
+              $ref: '../components/schemas/payment-verifications/PageListPaymentVerificationDto.yaml'
+      401:
+        $ref: '../components/responses/error/Unauthorized.yaml'
+      403:
+        $ref: '../components/responses/error/Forbidden.yaml'
+
   post:
     operationId: createPaymentVerification
     summary: Создать заявку на проверку платежа

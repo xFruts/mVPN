@@ -2,6 +2,8 @@ package ru.maxow.mvpn.payment.paymentverification;
 
 import java.time.Instant;
 import java.time.LocalDate;
+import java.time.OffsetDateTime;
+import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -10,11 +12,19 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.ArgumentCaptor;
 import org.mockito.junit.jupiter.MockitoExtension;
 import ru.maxow.mvpn.model.CreateUpdatePaymentVerificationDto;
+import ru.maxow.mvpn.model.PageListPaymentVerificationDto;
 import ru.maxow.mvpn.model.PaymentVerificationResponseDto;
 import ru.maxow.mvpn.model.VerificationStatus;
+import ru.maxow.mvpn.user.User;
+import ru.maxow.mvpn.user.UserRepository;
 import ru.maxow.mvpn.util.exception.NotFoundException;
+import ru.maxow.mvpn.util.exception.BadRequestException;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.jpa.domain.Specification;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -29,6 +39,9 @@ class PaymentVerificationServiceTest {
 
   @Mock
   private PaymentVerificationRepository repository;
+
+  @Mock
+  private UserRepository userRepository;
 
   @InjectMocks
   private PaymentVerificationServiceImpl paymentVerificationService;
@@ -56,11 +69,15 @@ class PaymentVerificationServiceTest {
       request.setPayerFullName("Ivan Ivanov");
       request.setPaidAmount(java.math.BigDecimal.valueOf(500.00));
 
+      User existingUser = new User();
+      existingUser.setId(12L);
+
       PaymentVerificationResponseDto response = new PaymentVerificationResponseDto();
       response.setId(1L);
       response.setStatus(VerificationStatus.PENDING);
 
       when(mapper.toEntity(request)).thenReturn(verification);
+      when(userRepository.findById(12L)).thenReturn(Optional.of(existingUser));
       when(repository.save(verification)).thenReturn(verification);
       when(mapper.toDto(verification)).thenReturn(response);
 
@@ -70,11 +87,141 @@ class PaymentVerificationServiceTest {
       assertThat(result.getStatus()).isEqualTo(VerificationStatus.PENDING);
 
       verify(mapper).toEntity(request);
+      verify(userRepository).findById(12L);
       verify(repository).save(verification);
       verify(mapper).toDto(verification);
 
+      assertThat(verification.getUser()).isEqualTo(existingUser);
       assertThat(verification.getStatus()).isEqualTo(VerificationStatus.PENDING);
       assertThat(verification.getCreatedAt()).isNotNull();
+    }
+
+    @Test
+    @DisplayName("Должен бросить NotFoundException, если пользователь не найден")
+    void shouldThrowNotFoundWhenUserMissingOnCreate() {
+      CreateUpdatePaymentVerificationDto request = new CreateUpdatePaymentVerificationDto();
+      request.setPaidUntilDate(LocalDate.parse("2026-09-15"));
+      request.setUserId(404L);
+      request.setPayerFullName("Ivan Ivanov");
+      request.setPaidAmount(java.math.BigDecimal.valueOf(500.00));
+
+      when(mapper.toEntity(request)).thenReturn(verification);
+      when(userRepository.findById(404L)).thenReturn(Optional.empty());
+
+      assertThatThrownBy(() -> paymentVerificationService.create(request))
+          .isInstanceOf(NotFoundException.class)
+          .satisfies(error -> {
+            NotFoundException ex = (NotFoundException) error;
+            assertThat(ex.getEntityName()).isEqualTo("User");
+            assertThat(ex.getIdentifier()).isEqualTo(404L);
+          });
+
+      verify(userRepository).findById(404L);
+      verify(repository, never()).save(any());
+      verify(mapper, never()).toDto(any());
+    }
+  }
+
+  @Nested
+  @DisplayName("Получение страницы заявок")
+  class GetAllAsPageTests {
+
+    @Test
+    @DisplayName("Должен вернуть страницу верификаций с маппингом в DTO")
+    void shouldReturnPageOfVerifications() {
+      PaymentVerification second = new PaymentVerification();
+      second.setId(2L);
+      second.setPaidUntilDate("2026-10-01");
+      second.setStatus(VerificationStatus.PENDING);
+
+      PaymentVerificationResponseDto firstDto = new PaymentVerificationResponseDto();
+      firstDto.setId(1L);
+      PaymentVerificationResponseDto secondDto = new PaymentVerificationResponseDto();
+      secondDto.setId(2L);
+
+      PageImpl<PaymentVerification> page = new PageImpl<>(
+          List.of(verification, second),
+          PageRequest.of(0, 20),
+          2);
+
+      when(repository.findAll(any(Specification.class), any(PageRequest.class))).thenReturn(page);
+      when(mapper.toDto(verification)).thenReturn(firstDto);
+      when(mapper.toDto(second)).thenReturn(secondDto);
+
+      PageListPaymentVerificationDto result = paymentVerificationService.getAllAsPage(
+          0,
+          20,
+          List.of("createdAt,desc"),
+          VerificationStatus.PENDING,
+          "Ivan",
+          OffsetDateTime.parse("2026-04-01T00:00:00Z"),
+          OffsetDateTime.parse("2026-04-30T23:59:59Z"));
+
+      assertThat(result).isNotNull();
+      assertThat(result.getContent()).hasSize(2);
+      assertThat(result.getTotalElements()).isEqualTo(2);
+      assertThat(result.getNumber()).isEqualTo(0);
+      assertThat(result.getSize()).isEqualTo(20);
+
+      verify(repository).findAll(any(Specification.class), any(PageRequest.class));
+      verify(mapper).toDto(verification);
+      verify(mapper).toDto(second);
+    }
+
+    @Test
+    @DisplayName("Должен использовать сортировку createdAt,desc по умолчанию")
+    void shouldUseDefaultCreatedAtDescSortWhenSortMissing() {
+      when(repository.findAll(any(Specification.class), any(PageRequest.class)))
+          .thenReturn(new PageImpl<>(List.of(), PageRequest.of(0, 10), 0));
+
+      paymentVerificationService.getAllAsPage(0, 10, null, null, null, null, null);
+
+      ArgumentCaptor<PageRequest> captor = ArgumentCaptor.forClass(PageRequest.class);
+      verify(repository).findAll(any(Specification.class), captor.capture());
+
+      var order = captor.getValue().getSort().getOrderFor("createdAt");
+      assertThat(order).isNotNull();
+      assertThat(order.getDirection().name()).isEqualTo("DESC");
+    }
+
+    @Test
+    @DisplayName("Должен бросить BadRequestException если createdFrom позже createdTo")
+    void shouldThrowBadRequestWhenFromAfterTo() {
+      OffsetDateTime from = OffsetDateTime.parse("2026-05-01T00:00:00Z");
+      OffsetDateTime to = OffsetDateTime.parse("2026-04-01T00:00:00Z");
+
+      assertThatThrownBy(() -> paymentVerificationService.getAllAsPage(
+          0,
+          20,
+          null,
+          null,
+          null,
+          from,
+          to))
+          .isInstanceOf(BadRequestException.class)
+          .hasMessageContaining("createdFrom must be earlier than createdTo");
+
+      verify(repository, never()).findAll(any(Specification.class), any(PageRequest.class));
+    }
+
+    @Test
+    @DisplayName("Должен игнорировать blank fullName и возвращать страницу")
+    void shouldIgnoreBlankFullName() {
+      when(repository.findAll(any(Specification.class), any(PageRequest.class)))
+          .thenReturn(new PageImpl<>(List.of(verification), PageRequest.of(0, 10), 1));
+      when(mapper.toDto(verification)).thenReturn(new PaymentVerificationResponseDto());
+
+      PageListPaymentVerificationDto result = paymentVerificationService.getAllAsPage(
+          0,
+          10,
+          null,
+          null,
+          "   ",
+          null,
+          null);
+
+      assertThat(result).isNotNull();
+      verify(repository).findAll(any(Specification.class), any(PageRequest.class));
     }
   }
 
