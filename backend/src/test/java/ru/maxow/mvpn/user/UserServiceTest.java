@@ -392,13 +392,13 @@ class UserServiceTest {
   class HasActiveSubscriptionsTests {
 
     @Test
-    @DisplayName("Должен вернуть true если у пользователя есть активные подписки")
-    void shouldReturnTrueWhenUserHasActiveSubscriptions() {
+    @DisplayName("Должен вернуть false, если у пользователя нет подписок")
+    void shouldReturnFalseWhenUserHasNoSubscriptions() {
       // Arrange
       Long userId = 1L;
       when(userRepository.findById(userId)).thenReturn(Optional.of(testUser));
-      when(subscriptionRepository.findAllByUser(testUser))
-          .thenReturn(List.of()); // Пусто = нет подписок
+      when(subscriptionRepository.findFirstByUserOrderByStartDateDesc(testUser))
+          .thenReturn(Optional.empty());
 
       // Act
       boolean result = userService.hasAnySubscriptions(userId);
@@ -406,6 +406,7 @@ class UserServiceTest {
       // Assert
       assertThat(result).isFalse();
       verify(userRepository).findById(userId);
+      verify(subscriptionRepository).findFirstByUserOrderByStartDateDesc(testUser);
     }
 
     @Test
@@ -415,13 +416,14 @@ class UserServiceTest {
       Subscription subscription = new Subscription();
 
       when(userRepository.findById(userId)).thenReturn(Optional.of(testUser));
-      when(subscriptionRepository.findAllByUser(testUser)).thenReturn(List.of(subscription));
+      when(subscriptionRepository.findFirstByUserOrderByStartDateDesc(testUser))
+          .thenReturn(Optional.of(subscription));
 
       boolean result = userService.hasAnySubscriptions(userId);
 
       assertThat(result).isTrue();
       verify(userRepository).findById(userId);
-      verify(subscriptionRepository).findAllByUser(testUser);
+      verify(subscriptionRepository).findFirstByUserOrderByStartDateDesc(testUser);
     }
   }
 

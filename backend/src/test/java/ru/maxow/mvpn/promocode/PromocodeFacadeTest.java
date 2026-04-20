@@ -67,14 +67,14 @@ class PromocodeFacadeTest {
     }
 
     @Test
-    @DisplayName("Должен выбросить BadRequestException, если у пользователя есть активная подписка")
+    @DisplayName("Должен выбросить BadRequestException, если у пользователя уже есть подписки")
     void shouldThrowBadRequestWhenUserHasActiveSubscription() {
       when(userRepository.existsById(11L)).thenReturn(true);
       when(userService.hasAnySubscriptions(11L)).thenReturn(true);
 
       assertThatThrownBy(() -> promocodeFacade.applyPromocode(11L, "PROMO1"))
           .isInstanceOf(BadRequestException.class)
-          .hasMessageContaining("active subscriptions");
+          .hasMessageContaining("has subscriptions");
 
       verify(userRepository).existsById(11L);
       verify(userService).hasAnySubscriptions(11L);
