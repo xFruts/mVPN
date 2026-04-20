@@ -44,7 +44,3 @@ properties:
     example: 80.00
   sshAuthType:
     $ref: './SshAuthType.yaml'
-  sshPrivateKeyObjectKey:
-    type: string
-    description: Ключ объекта в MinIO с private key, если используется SSH key auth
-    example: "ssh-keys/server-01/id_ed25519"
