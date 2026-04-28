@@ -63,6 +63,9 @@ public class Server {
   @Column(name = "ssh_private_key_object_key")
   String sshPrivateKeyObjectKey;
 
+  @Enumerated(EnumType.STRING)
+  SubscriptionFormat subscriptionFormat = SubscriptionFormat.VLESS;
+
   @Convert(converter = AttributeEncryptor.class)
   String xuiLogin;
 

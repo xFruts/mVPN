@@ -1,14 +1,17 @@
 package ru.maxow.mvpn.xui;
 
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import ru.maxow.mvpn.model.ServerStatus;
 import ru.maxow.mvpn.model.SubscriptionStatus;
 import ru.maxow.mvpn.server.Server;
+import ru.maxow.mvpn.server.SubscriptionFormat;
 import ru.maxow.mvpn.subscription.Subscription;
 import ru.maxow.mvpn.subscription.SubscriptionRepository;
 import ru.maxow.mvpn.tariff.Tariff;
@@ -24,6 +27,7 @@ import java.util.Base64;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
+import com.fasterxml.jackson.core.JsonProcessingException;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -44,6 +48,18 @@ class ConfigFacadeImplTest {
 
   @InjectMocks
   private ConfigFacadeImpl configFacade;
+
+  @BeforeEach
+  void setUp() {
+    // Инициализируем реальный ObjectMapper в ConfigFacadeImpl используя reflection
+    try {
+      java.lang.reflect.Field field = ConfigFacadeImpl.class.getDeclaredField("objectMapper");
+      field.setAccessible(true);
+      field.set(configFacade, new ObjectMapper());
+    } catch (Exception e) {
+      throw new RuntimeException(e);
+    }
+  }
 
   @Test
   @DisplayName("Должен выбросить NotFoundException, если пользователь по verificationCode не найден")
@@ -76,10 +92,62 @@ class ConfigFacadeImplTest {
         .thenThrow(new XuiUnavailableException("xui temporarily unavailable"));
     when(xuiPanelService.getVlessConfig(server2, user)).thenReturn("vless://ok-2");
 
-    String encoded = configFacade.getSubscriptionConfig(code);
-    String decoded = new String(Base64.getDecoder().decode(encoded), StandardCharsets.UTF_8);
+    SubscriptionConfigPayload payload = configFacade.getSubscriptionConfig(code);
+    String decoded = new String(Base64.getDecoder().decode(payload.body()), StandardCharsets.UTF_8);
 
+    assertThat(payload.format()).isEqualTo(SubscriptionFormat.VLESS);
     assertThat(decoded).isEqualTo("vless://ok-2");
+  }
+
+  @Test
+  @DisplayName("Должен вернуть JSON payload без base64, если все серверы настроены на JSON")
+  void shouldReturnJsonPayloadWhenServersUseJsonFormat() throws JsonProcessingException {
+    UUID code = UUID.randomUUID();
+    User user = user(500L, "json-user");
+    Server server = server(9L, "JSON-1");
+    server.setSubscriptionFormat(SubscriptionFormat.JSON);
+    Subscription subscription = activeSubscription(user, Set.of(server));
+
+    when(userRepository.findByVerificationCode(code)).thenReturn(Optional.of(user));
+    when(subscriptionRepository.findFirstByUser_IdOrderByStartDateDesc(user.getId()))
+        .thenReturn(Optional.of(subscription));
+    when(xuiPanelService.getJsonConfig(server, user)).thenReturn("{\"format\":\"json\",\"remarks\":\"JSON-1\"}");
+
+    SubscriptionConfigPayload payload = configFacade.getSubscriptionConfig(code);
+
+    assertThat(payload.format()).isEqualTo(SubscriptionFormat.JSON);
+    // Payload должен быть JSON массив с одним элементом
+    assertThat(payload.body()).isEqualTo("[{\"format\":\"json\",\"remarks\":\"JSON-1\"}]");
+  }
+
+  @Test
+  @DisplayName("Должен вернуть JSON массив с несколькими конфигами")
+  void shouldReturnJsonArrayWithMultipleConfigs() throws JsonProcessingException {
+    UUID code = UUID.randomUUID();
+    User user = user(700L, "multi-json-user");
+    Server server1 = server(10L, "Server-1");
+    server1.setSubscriptionFormat(SubscriptionFormat.JSON);
+    Server server2 = server(11L, "Server-2");
+    server2.setSubscriptionFormat(SubscriptionFormat.JSON);
+    Subscription subscription = activeSubscription(user, Set.of(server1, server2));
+
+    when(userRepository.findByVerificationCode(code)).thenReturn(Optional.of(user));
+    when(subscriptionRepository.findFirstByUser_IdOrderByStartDateDesc(user.getId()))
+        .thenReturn(Optional.of(subscription));
+    when(xuiPanelService.getJsonConfig(server1, user)).thenReturn("{\"format\":\"json\",\"remarks\":\"Server-1\"}");
+    when(xuiPanelService.getJsonConfig(server2, user)).thenReturn("{\"format\":\"json\",\"remarks\":\"Server-2\"}");
+
+    SubscriptionConfigPayload payload = configFacade.getSubscriptionConfig(code);
+
+    assertThat(payload.format()).isEqualTo(SubscriptionFormat.JSON);
+    // Должен быть массив с двумя элементами
+    assertThat(payload.body()).contains("\"format\":\"json\"");
+    assertThat(payload.body()).startsWith("[");
+    assertThat(payload.body()).endsWith("]");
+
+    // Проверяем, что это валидный JSON
+    Object[] parsed = new ObjectMapper().readValue(payload.body(), Object[].class);
+    assertThat(parsed).hasSize(2);
   }
 
   @Test
@@ -145,6 +213,28 @@ class ConfigFacadeImplTest {
     assertThatThrownBy(() -> configFacade.getSubscriptionConfig(code))
         .isInstanceOf(BadRequestException.class)
         .hasMessageContaining("Subscription is not active or expired");
+  }
+
+  @Test
+  @DisplayName("Должен выбросить BadRequestException, если форматы серверов смешаны")
+  void shouldThrowWhenServerFormatsAreMixed() {
+    UUID code = UUID.randomUUID();
+    User user = user(600L, "mixed-user");
+    Server jsonServer = server(1L, "JSON-1");
+    jsonServer.setSubscriptionFormat(SubscriptionFormat.JSON);
+    Server vlessServer = server(2L, "VLESS-1");
+    vlessServer.setSubscriptionFormat(SubscriptionFormat.VLESS);
+    Subscription subscription = activeSubscription(user, Set.of(jsonServer, vlessServer));
+
+    when(userRepository.findByVerificationCode(code)).thenReturn(Optional.of(user));
+    when(subscriptionRepository.findFirstByUser_IdOrderByStartDateDesc(user.getId()))
+        .thenReturn(Optional.of(subscription));
+    when(xuiPanelService.getJsonConfig(jsonServer, user)).thenReturn("{\"format\":\"json\"}");
+    when(xuiPanelService.getVlessConfig(vlessServer, user)).thenReturn("vless://ok");
+
+    assertThatThrownBy(() -> configFacade.getSubscriptionConfig(code))
+        .isInstanceOf(BadRequestException.class)
+        .hasMessageContaining("Mixed subscription formats");
   }
 
   private User user(Long id, String fullName) {

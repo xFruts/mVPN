@@ -7,6 +7,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+import ru.maxow.mvpn.server.SubscriptionFormat;
 import ru.maxow.mvpn.subscription.SubscriptionService;
 import ru.maxow.mvpn.util.exception.NotFoundException;
 
@@ -46,7 +47,8 @@ class ConfigControllerTest {
   @DisplayName("Should return text config and subscription headers")
   void shouldReturnPlainConfigWithHeaders() throws Exception {
     UUID code = UUID.randomUUID();
-    when(configFacade.getSubscriptionConfig(code)).thenReturn("YmFzZTY0LWNvbmZpZw==");
+    when(configFacade.getSubscriptionConfig(code))
+        .thenReturn(new SubscriptionConfigPayload("YmFzZTY0LWNvbmZpZw==", SubscriptionFormat.VLESS));
     when(subscriptionService.getSubscriptionInfoForUserByCode(code)).thenReturn("expire=1798502400");
 
     mockMvc.perform(get("/v1/config/{verificationCode}", code))
@@ -60,6 +62,20 @@ class ConfigControllerTest {
         .andExpect(header().string("profile-update-interval", "12"))
         .andExpect(header().string("subscription-userinfo", "expire=1798502400"))
         .andExpect(header().string("Cache-Control", "no-store"));
+  }
+
+  @Test
+  @DisplayName("Should return json config with application/json content type")
+  void shouldReturnJsonConfigWithJsonContentType() throws Exception {
+    UUID code = UUID.randomUUID();
+    when(configFacade.getSubscriptionConfig(code))
+        .thenReturn(new SubscriptionConfigPayload("{\"format\":\"json\"}", SubscriptionFormat.JSON));
+    when(subscriptionService.getSubscriptionInfoForUserByCode(code)).thenReturn("expire=1798502400");
+
+    mockMvc.perform(get("/v1/config/{verificationCode}", code))
+        .andExpect(status().isOk())
+        .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
+        .andExpect(content().string("{\"format\":\"json\"}"));
   }
 
   @Test
