@@ -62,6 +62,7 @@ class XuiPanelServiceImplTest {
   private RestClient.ResponseSpec settingsResponseSpec;
   private RestClient.ResponseSpec inboundsResponseSpec;
   private RestClient.ResponseSpec jsonResponseSpec;
+  private RestClient.ResponseSpec trafficResponseSpec;
   private RestClient.ResponseSpec addClientResponseSpec;
   private RestClient.ResponseSpec updateClientResponseSpec;
 
@@ -326,6 +327,45 @@ class XuiPanelServiceImplTest {
     verify(postUriSpec).uri("/panel/setting/all");
   }
 
+  @Test
+  @DisplayName("Корректно парсит traffic-ответ XUI с лишним полем uuid")
+  void shouldParseTrafficResponseWithUuidField() {
+    Server server = testServer();
+    String clientId = UUID.randomUUID().toString();
+
+    mockLoginSuccess(1);
+    String responseBody = """
+        {"success":true,"msg":"","obj":[{"id":28,"inboundId":1,"enable":true,"email":"Veles","uuid":"fb5e3a84-0b0a-4b9f-a473-1fc4247c98b4","subId":"900ba993-f787-4e28-9ca5-0bee9b183a4f","up":17893514,"down":70659736,"allTime":88553250,"expiryTime":1779987036226,"total":107374182400,"reset":0,"lastOnline":1777395194027}]}
+        """;
+    when(trafficResponseSpec.body(String.class)).thenReturn(responseBody);
+
+    XuiClientTraffic traffic = service.getClientTraffic(server, clientId);
+
+    assertThat(traffic.getUpload()).isEqualTo(17893514L);
+    assertThat(traffic.getDownload()).isEqualTo(70659736L);
+    assertThat(traffic.getTotal()).isEqualTo(107374182400L);
+    assertThat(traffic.getEmail()).isEqualTo("Veles");
+    assertThat(traffic.getEnable()).isTrue();
+  }
+
+  @Test
+  @DisplayName("Возвращает нулевой traffic, если XUI вернул пустой obj")
+  void shouldReturnEmptyTrafficWhenObjIsEmpty() {
+    Server server = testServer();
+    String clientId = UUID.randomUUID().toString();
+
+    mockLoginSuccess(1);
+    when(trafficResponseSpec.body(String.class)).thenReturn("{\"success\":true,\"msg\":\"\",\"obj\":[]}");
+
+    XuiClientTraffic traffic = service.getClientTraffic(server, clientId);
+
+    assertThat(traffic.getUpload()).isEqualTo(0L);
+    assertThat(traffic.getDownload()).isEqualTo(0L);
+    assertThat(traffic.getAllTime()).isEqualTo(0L);
+    assertThat(traffic.getTotal()).isEqualTo(0L);
+    assertThat(traffic.getEnable()).isFalse();
+  }
+
   private void configurePostChain() {
     postUriSpec = mock(RestClient.RequestBodyUriSpec.class);
     loginBodySpec = mock(RestClient.RequestBodySpec.class);
@@ -379,8 +419,10 @@ class XuiPanelServiceImplTest {
     RestClient.RequestHeadersUriSpec<?> getUriSpec = mock(RestClient.RequestHeadersUriSpec.class);
     RestClient.RequestHeadersSpec<?> inboundsHeadersSpec = mock(RestClient.RequestHeadersSpec.class);
     RestClient.RequestHeadersSpec<?> jsonHeadersSpec = mock(RestClient.RequestHeadersSpec.class);
+    RestClient.RequestHeadersSpec<?> trafficHeadersSpec = mock(RestClient.RequestHeadersSpec.class);
     inboundsResponseSpec = mock(RestClient.ResponseSpec.class);
     jsonResponseSpec = mock(RestClient.ResponseSpec.class);
+    trafficResponseSpec = mock(RestClient.ResponseSpec.class);
 
     doReturn(getUriSpec).when(restClient).get();
     when(getUriSpec.uri(anyString())).thenAnswer(invocation -> {
@@ -391,6 +433,9 @@ class XuiPanelServiceImplTest {
       if (uri.contains("/json/")) {
         return jsonHeadersSpec;
       }
+      if (uri.contains("/panel/api/inbounds/getClientTrafficsById/")) {
+        return trafficHeadersSpec;
+      }
       throw new IllegalStateException("Unexpected GET URI: " + uri);
     });
     doReturn(inboundsHeadersSpec).when(inboundsHeadersSpec)
@@ -398,6 +443,8 @@ class XuiPanelServiceImplTest {
     doReturn(inboundsResponseSpec).when(inboundsHeadersSpec).retrieve();
     doReturn(jsonHeadersSpec).when(jsonHeadersSpec).header(eq(HttpHeaders.COOKIE), any(String[].class));
     doReturn(jsonResponseSpec).when(jsonHeadersSpec).retrieve();
+    doReturn(trafficHeadersSpec).when(trafficHeadersSpec).header(eq(HttpHeaders.COOKIE), any(String[].class));
+    doReturn(trafficResponseSpec).when(trafficHeadersSpec).retrieve();
   }
 
   private void mockLoginSuccess(int calls) {

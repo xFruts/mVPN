@@ -12,6 +12,8 @@ import ru.maxow.mvpn.server.Server;
 import ru.maxow.mvpn.server.SubscriptionFormat;
 import ru.maxow.mvpn.subscription.Subscription;
 import ru.maxow.mvpn.subscription.SubscriptionRepository;
+import ru.maxow.mvpn.subscription.traffic.SubscriptionTrafficState;
+import ru.maxow.mvpn.subscription.traffic.SubscriptionTrafficStateService;
 import ru.maxow.mvpn.user.User;
 import ru.maxow.mvpn.user.UserRepository;
 import ru.maxow.mvpn.util.exception.BadRequestException;
@@ -35,6 +37,7 @@ public class ConfigFacadeImpl implements ConfigFacade {
   XuiPanelService xuiPanelService;
   UserRepository userRepository;
   SubscriptionRepository subscriptionRepository;
+  SubscriptionTrafficStateService trafficStateService;
   ObjectMapper objectMapper;
 
   @Override
@@ -50,6 +53,19 @@ public class ConfigFacadeImpl implements ConfigFacade {
     if (subscription.getStatus() != SubscriptionStatus.ACTIVE ||
         subscription.getEndDate().isBefore(java.time.OffsetDateTime.now())) {
       throw new BadRequestException("Subscription is not active or expired for user");
+    }
+
+    long trafficLimitBytes = subscription.getTariff().getTrafficLimitGb() * 1024L * 1024L * 1024L;
+    SubscriptionTrafficState cachedTrafficState = trafficStateService
+        .getTrafficStateBySubscriptionId(subscription.getId())
+        .orElse(null);
+    if (cachedTrafficState != null && cachedTrafficState.getUsedBytes() >= trafficLimitBytes) {
+      throw new BadRequestException("Traffic limit exceeded for subscription");
+    }
+
+    SubscriptionTrafficState trafficState = trafficStateService.syncTrafficForSubscription(user, subscription);
+    if (trafficState.getUsedBytes() >= trafficLimitBytes) {
+      throw new BadRequestException("Traffic limit exceeded for subscription");
     }
 
     List<ResolvedServerConfig> configs = getActiveServersByUserSubscription(subscription).stream()

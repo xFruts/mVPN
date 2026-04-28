@@ -18,6 +18,8 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import ru.maxow.mvpn.model.CreateUpdateSubscriptionDto;
 import ru.maxow.mvpn.model.SubscriptionResponseDto;
 import ru.maxow.mvpn.model.SubscriptionStatus;
+import ru.maxow.mvpn.subscription.traffic.SubscriptionTrafficState;
+import ru.maxow.mvpn.subscription.traffic.SubscriptionTrafficStateService;
 import ru.maxow.mvpn.tariff.Tariff;
 import ru.maxow.mvpn.tariff.TariffRepository;
 import ru.maxow.mvpn.user.User;
@@ -46,6 +48,9 @@ class SubscriptionServiceImplTest {
   @Mock
   private TariffRepository tariffRepository;
 
+  @Mock
+  private SubscriptionTrafficStateService trafficStateService;
+
   @InjectMocks
   private SubscriptionServiceImpl subscriptionService;
 
@@ -69,6 +74,12 @@ class SubscriptionServiceImplTest {
     testSubscription.setEndDate(OffsetDateTime.now().plusMonths(1));
     testSubscription.setStatus(SubscriptionStatus.ACTIVE);
 
+    Tariff testTariff = new Tariff();
+    testTariff.setId(1L);
+    testTariff.setTrafficLimitGb(100);
+    testTariff.setDurationOfDays(30);
+    testSubscription.setTariff(testTariff);
+
     testSubscriptionDto = new SubscriptionResponseDto();
     testSubscriptionDto.setId(1L);
     testSubscriptionDto.setStatus(SubscriptionStatus.ACTIVE);
@@ -84,19 +95,56 @@ class SubscriptionServiceImplTest {
   class SubscriptionInfoTests {
 
     @Test
-    @DisplayName("Должен вернуть expire в epoch seconds для найденной подписки")
-    void shouldReturnExpireEpochSecondsForVerificationCode() {
+    @DisplayName("Должен вернуть информацию о подписке со статистикой трафика")
+    void shouldReturnSubscriptionInfoWithTrafficForVerificationCode() {
       UUID code = UUID.randomUUID();
       OffsetDateTime endDate = OffsetDateTime.of(2026, 4, 30, 0, 0, 0, 0, ZoneOffset.UTC);
       testSubscription.setEndDate(endDate);
 
+      // Mock traffic state
+      SubscriptionTrafficState trafficState = new SubscriptionTrafficState();
+      trafficState.setUsedUploadBytes(1000L);
+      trafficState.setUsedDownloadBytes(2000L);
+
       when(userRepository.findByVerificationCode(code)).thenReturn(Optional.of(testUser));
       when(subscriptionRepository.findFirstByUser_IdOrderByStartDateDesc(testUser.getId()))
           .thenReturn(Optional.of(testSubscription));
+      when(trafficStateService.syncTrafficForSubscription(testUser, testSubscription))
+          .thenReturn(trafficState);
 
       String result = subscriptionService.getSubscriptionInfoForUserByCode(code);
 
-      assertThat(result).isEqualTo("expire=" + endDate.toInstant().getEpochSecond());
+      long trafficLimitBytes = 100L * 1024L * 1024L * 1024L;
+      long expireSec = endDate.toInstant().getEpochSecond();
+      String expected = String.format(
+          "upload=%d; download=%d; total=%d; expire=%d",
+          1000L, 2000L, trafficLimitBytes, expireSec
+      );
+      
+      assertThat(result).isEqualTo(expected);
+    }
+
+    @Test
+    @DisplayName("Должен использовать кэшированный traffic-state, если он уже есть")
+    void shouldReturnSubscriptionInfoFromCachedTrafficStateWithoutResync() {
+      UUID code = UUID.randomUUID();
+      testSubscription.setEndDate(OffsetDateTime.of(2026, 4, 30, 0, 0, 0, 0, ZoneOffset.UTC));
+
+      SubscriptionTrafficState trafficState = new SubscriptionTrafficState();
+      trafficState.setUsedUploadBytes(111L);
+      trafficState.setUsedDownloadBytes(222L);
+
+      when(userRepository.findByVerificationCode(code)).thenReturn(Optional.of(testUser));
+      when(subscriptionRepository.findFirstByUser_IdOrderByStartDateDesc(testUser.getId()))
+          .thenReturn(Optional.of(testSubscription));
+      when(trafficStateService.getTrafficStateBySubscriptionId(testSubscription.getId()))
+          .thenReturn(Optional.of(trafficState));
+
+      String result = subscriptionService.getSubscriptionInfoForUserByCode(code);
+
+      assertThat(result).contains("upload=111");
+      assertThat(result).contains("download=222");
+      verify(trafficStateService, never()).syncTrafficForSubscription(any(), any());
     }
 
     @Test

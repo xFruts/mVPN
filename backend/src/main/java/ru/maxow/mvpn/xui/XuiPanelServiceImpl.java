@@ -5,7 +5,6 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import lombok.AccessLevel;
-import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.util.Pair;
@@ -22,6 +21,7 @@ import org.springframework.web.util.UriUtils;
 import ru.maxow.mvpn.server.Server;
 import ru.maxow.mvpn.subscription.Subscription;
 import ru.maxow.mvpn.subscription.SubscriptionService;
+import org.springframework.context.annotation.Lazy;
 import ru.maxow.mvpn.tariff.Tariff;
 import ru.maxow.mvpn.user.User;
 import ru.maxow.mvpn.util.exception.NotFoundException;
@@ -34,7 +34,6 @@ import java.util.Optional;
 
 @Slf4j
 @Service
-@RequiredArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class XuiPanelServiceImpl implements XuiPanelService {
   private static final long BYTES_IN_GIGABYTE = 1024L * 1024L * 1024L;
@@ -43,6 +42,15 @@ public class XuiPanelServiceImpl implements XuiPanelService {
   RestClient.Builder restClientBuilder;
   ObjectMapper objectMapper;
   SubscriptionService subscriptionService;
+
+  public XuiPanelServiceImpl(
+      RestClient.Builder restClientBuilder,
+      ObjectMapper objectMapper,
+      @Lazy SubscriptionService subscriptionService) {
+    this.restClientBuilder = restClientBuilder;
+    this.objectMapper = objectMapper;
+    this.subscriptionService = subscriptionService;
+  }
 
 
   @Override
@@ -142,15 +150,18 @@ public class XuiPanelServiceImpl implements XuiPanelService {
       Server server,
       User user,
       RestClient restClient) {
-    upsertClient(server, user, restClient);
-
-    String refreshedCookie = login(restClient, server.getXuiLogin(), server.getXuiPassword());
-    XuiInboundsResponse refreshedInbounds = getInbounds(restClient, refreshedCookie);
-    return new PreparedSession(refreshedCookie, refreshedInbounds);
+    String sessionCookie = login(restClient, server.getXuiLogin(), server.getXuiPassword());
+    upsertClient(server, user, restClient, sessionCookie);
+    XuiInboundsResponse refreshedInbounds = getInbounds(restClient, sessionCookie);
+    return new PreparedSession(sessionCookie, refreshedInbounds);
   }
 
   private void upsertClient(Server server, User user, RestClient restClient) {
     String sessionCookie = login(restClient, server.getXuiLogin(), server.getXuiPassword());
+    upsertClient(server, user, restClient, sessionCookie);
+  }
+
+  private void upsertClient(Server server, User user, RestClient restClient, String sessionCookie) {
     XuiInboundsResponse inbounds = getInbounds(restClient, sessionCookie);
 
     Optional<XuiInboundsResponse.Inbound> vlessInboundOpt = findVlessInbound(inbounds);
@@ -192,13 +203,18 @@ public class XuiPanelServiceImpl implements XuiPanelService {
 
   private int resolveSubscriptionPort(RestClient panelRestClient, String sessionCookie, Server server) {
     try {
-      JsonNode settingsResponse = panelRestClient.post()
+      String settingsBody = panelRestClient.post()
           .uri("/panel/setting/all")
           .header(HttpHeaders.COOKIE, sessionCookie)
           .contentType(MediaType.APPLICATION_FORM_URLENCODED)
           .body(new LinkedMultiValueMap<String, String>())
           .retrieve()
-          .body(JsonNode.class);
+          .body(String.class);
+
+      JsonNode settingsResponse = null;
+      if (settingsBody != null && !settingsBody.isBlank()) {
+        settingsResponse = objectMapper.readTree(settingsBody);
+      }
 
       int subPort = settingsResponse == null
           ? DEFAULT_SUBSCRIPTION_PORT
@@ -562,6 +578,58 @@ public class XuiPanelServiceImpl implements XuiPanelService {
     } catch (Exception e) {
       log.error("Unexpected error generating VLESS link for inbound ID: {}", inbound.getId(), e);
       throw new XuiUnavailableException("Failed to generate VLESS link due to unexpected error");
+    }
+  }
+
+  @Override
+  public XuiClientTraffic getClientTraffic(Server server, String clientId) {
+    String baseUrl = buildBaseUrl(server);
+    RestClient restClient = restClientBuilder.baseUrl(baseUrl).build();
+
+    try {
+      String sessionCookie = login(restClient, server.getXuiLogin(), server.getXuiPassword());
+
+      String encodedClientId = UriUtils.encodePathSegment(clientId, StandardCharsets.UTF_8);
+      String uri = "/panel/api/inbounds/getClientTrafficsById/" + encodedClientId;
+
+      String responseBody = restClient.get()
+          .uri(uri)
+          .header(HttpHeaders.COOKIE, sessionCookie)
+          .retrieve()
+          .body(String.class);
+
+      JsonNode response = null;
+      if (responseBody != null && !responseBody.isBlank()) {
+        response = objectMapper.readTree(responseBody);
+      }
+
+      if (response == null || !response.path("success").asBoolean(false)) {
+        throw new XuiUnavailableException(
+            "XUI returned invalid traffic response for server: " + server.getName());
+      }
+
+      JsonNode objArray = response.path("obj");
+      if (!objArray.isArray() || objArray.isEmpty()) {
+        log.warn("No traffic data found for clientId {} on server {}",
+            clientId, server.getId());
+        return new XuiClientTraffic(null, null, false, null, 0L, 0L, 0L, 0L, 0L, 0, 0L);
+      }
+
+      JsonNode trafficNode = objArray.get(0);
+      return objectMapper.treeToValue(trafficNode, XuiClientTraffic.class);
+      
+    } catch (XuiUnavailableException e) {
+      throw e;
+    } catch (RestClientException e) {
+      log.warn("Failed to get traffic from XUI server. serverId={}, clientId={}",
+          server.getId(), clientId, e);
+      throw new XuiUnavailableException(
+          "Failed to get traffic from XUI server: " + server.getName(), e);
+    } catch (Exception e) {
+      log.error("Unexpected error getting traffic from server {}. clientId={}",
+          server.getId(), clientId, e);
+      throw new XuiUnavailableException(
+          "Unexpected error while getting traffic: " + server.getName(), e);
     }
   }
 }
