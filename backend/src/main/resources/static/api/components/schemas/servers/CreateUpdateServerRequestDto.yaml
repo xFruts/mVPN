@@ -64,6 +64,10 @@ properties:
     type: string
     format: password
     example: "GNWERcwm;"
+  subscriptionFormat:
+    $ref: './SubscriptionFormat.yaml'
+    description: Формат выдачи конфигурации по серверу (VLESS или JSON)
+    default: VLESS
   port:
     type: integer
     format: int32

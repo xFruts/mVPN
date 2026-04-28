@@ -48,6 +48,11 @@ ConfigByVerificationCode:
             schema:
               type: string
               example: "fcarpouhfgnoa9e87fhgzqsjweo987dzwghenfmr9jcx8qej0aOFASWZ687RFYXHWYTAWJ8SXQ8"
+          application/json:
+            schema:
+              type: string
+              example: |-
+                {"format":"json","nodes":[...]}
       '400':
         description: Ошибка валидации данных или некорректный запрос
         content:

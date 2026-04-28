@@ -1,6 +1,7 @@
 package ru.maxow.mvpn.xui;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.JsonNode;
 import java.time.OffsetDateTime;
 import java.util.Arrays;
 import java.util.List;
@@ -18,6 +19,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.util.MultiValueMap;
+import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestClient;
 import ru.maxow.mvpn.server.Server;
 import ru.maxow.mvpn.subscription.Subscription;
@@ -34,7 +36,6 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -54,10 +55,13 @@ class XuiPanelServiceImplTest {
 
   private RestClient.RequestBodyUriSpec postUriSpec;
   private RestClient.RequestBodySpec loginBodySpec;
+  private RestClient.RequestBodySpec settingsBodySpec;
   private RestClient.RequestBodySpec addClientBodySpec;
   private RestClient.RequestBodySpec updateClientBodySpec;
   private RestClient.ResponseSpec loginResponseSpec;
+  private RestClient.ResponseSpec settingsResponseSpec;
   private RestClient.ResponseSpec inboundsResponseSpec;
+  private RestClient.ResponseSpec jsonResponseSpec;
   private RestClient.ResponseSpec addClientResponseSpec;
   private RestClient.ResponseSpec updateClientResponseSpec;
 
@@ -82,14 +86,18 @@ class XuiPanelServiceImplTest {
         inbound(1, 443, "moscow", user.getXuiId().toString(), "old-name", true, 0)
     ));
 
-    mockLoginSuccess(1);
-    mockInboundsSequence(response);
+    mockLoginSuccess(2);
+    mockUpdateClientSuccess();
+    mockInboundsSequence(response, response);
+    mockSubPortResponse(2096);
+    when(subscriptionService.findLastSubscriptionEntityByUserId(user.getId()))
+        .thenReturn(activeSubscription());
 
     String config = service.getVlessConfig(server, user);
 
     assertThat(config).contains("vless://" + user.getXuiId() + "@1.2.3.4:443?");
     assertThat(config).contains("#moscow");
-    verify(subscriptionService, never()).findLastSubscriptionEntityByUserId(any());
+    verify(subscriptionService).findLastSubscriptionEntityByUserId(user.getId());
   }
 
   @Test
@@ -106,9 +114,9 @@ class XuiPanelServiceImplTest {
         inbound(1, 443, "first", user.getXuiId().toString(), "petrov", true, 0)
     ));
 
-    mockLoginSuccess(3);
+    mockLoginSuccess(2);
     mockUpdateClientSuccess();
-    mockInboundsSequence(disabledByEmail, disabledByEmail, enabledByXuiId);
+    mockInboundsSequence(disabledByEmail, enabledByXuiId);
     when(subscriptionService.findLastSubscriptionEntityByUserId(user.getId()))
         .thenReturn(activeSubscription());
 
@@ -132,9 +140,9 @@ class XuiPanelServiceImplTest {
         inbound(1, 443, "first", user.getXuiId().toString(), "sidorov", true, 0)
     ));
 
-    mockLoginSuccess(3);
+    mockLoginSuccess(2);
     mockAddClientSuccess();
-    mockInboundsSequence(withoutClient, withoutClient, withClient);
+    mockInboundsSequence(withoutClient, withClient);
     when(subscriptionService.findLastSubscriptionEntityByUserId(user.getId()))
         .thenReturn(activeSubscription());
 
@@ -155,9 +163,9 @@ class XuiPanelServiceImplTest {
         inbound(1, 443, "first", UUID.randomUUID().toString(), "other-user", true, 0)
     ));
 
-    mockLoginSuccess(3);
+    mockLoginSuccess(2);
     mockAddClientSuccess();
-    mockInboundsSequence(withoutClient, withoutClient, withoutClient);
+    mockInboundsSequence(withoutClient, withoutClient);
     when(subscriptionService.findLastSubscriptionEntityByUserId(user.getId()))
         .thenReturn(activeSubscription());
 
@@ -203,8 +211,12 @@ class XuiPanelServiceImplTest {
 
     XuiInboundsResponse response = inboundsResponse(List.of(tlsWsInbound(user.getXuiId().toString(), "ws-user")));
 
-    mockLoginSuccess(1);
-    mockInboundsSequence(response);
+    mockLoginSuccess(2);
+    mockUpdateClientSuccess();
+    mockInboundsSequence(response, response);
+    mockSubPortResponse(2096);
+    when(subscriptionService.findLastSubscriptionEntityByUserId(user.getId()))
+        .thenReturn(activeSubscription());
 
     String config = service.getVlessConfig(server, user);
 
@@ -217,12 +229,111 @@ class XuiPanelServiceImplTest {
     assertThat(config).contains("host=edge.example");
   }
 
+  @Test
+  @DisplayName("Возвращает JSON конфиг после базовой подготовки клиента")
+  void shouldReturnJsonConfigAfterClientPreparation() {
+    Server server = testServer();
+    User user = testUser("json-user");
+
+    XuiInboundsResponse response = inboundsResponse(List.of(
+        inbound(1, 443, "moscow", user.getXuiId().toString(), "json-user", true, 0)
+    ));
+
+    mockLoginSuccess(2);
+    mockUpdateClientSuccess();
+    mockInboundsSequence(response, response);
+    mockSubPortResponse(2096);
+    when(subscriptionService.findLastSubscriptionEntityByUserId(user.getId()))
+        .thenReturn(activeSubscription());
+    when(jsonResponseSpec.body(String.class)).thenReturn("{\"format\":\"json\"}");
+
+    String config = service.getJsonConfig(server, user);
+
+    assertThat(config).isEqualTo("{\"format\":\"json\",\"remarks\":\"Moscow-1\"}");
+  }
+
+  @Test
+  @DisplayName("Бросает XuiUnavailableException, если JSON endpoint вернул Error!")
+  void shouldThrowWhenJsonEndpointReturnsErrorText() {
+    Server server = testServer();
+    User user = testUser("json-user");
+
+    XuiInboundsResponse response = inboundsResponse(List.of(
+        inbound(1, 443, "moscow", user.getXuiId().toString(), "json-user", true, 0)
+    ));
+
+    mockLoginSuccess(2);
+    mockUpdateClientSuccess();
+    mockInboundsSequence(response, response);
+    when(subscriptionService.findLastSubscriptionEntityByUserId(user.getId()))
+        .thenReturn(activeSubscription());
+    when(jsonResponseSpec.body(String.class)).thenReturn("Error!");
+
+    assertThatThrownBy(() -> service.getJsonConfig(server, user))
+        .isInstanceOf(XuiUnavailableException.class)
+        .hasMessageContaining("invalid JSON subscription response");
+  }
+
+  @Test
+  @DisplayName("Бросает XuiUnavailableException, если /json/{subId} вернул 404")
+  void shouldThrowWhenRootJsonPathReturns404() {
+    Server server = testServer();
+    User user = testUser("json-user");
+
+    XuiInboundsResponse response = inboundsResponse(List.of(
+        inbound(1, 443, "moscow", user.getXuiId().toString(), "json-user", true, 0)
+    ));
+
+    mockLoginSuccess(2);
+    mockUpdateClientSuccess();
+    mockInboundsSequence(response, response);
+    when(subscriptionService.findLastSubscriptionEntityByUserId(user.getId()))
+        .thenReturn(activeSubscription());
+    when(jsonResponseSpec.body(String.class))
+        .thenThrow(HttpClientErrorException.create(
+            HttpStatus.NOT_FOUND,
+            "Not Found",
+            HttpHeaders.EMPTY,
+            new byte[0],
+            null));
+
+    assertThatThrownBy(() -> service.getJsonConfig(server, user))
+        .isInstanceOf(XuiUnavailableException.class)
+        .hasMessageContaining("Failed to get JSON config from XUI server");
+  }
+
+  @Test
+  @DisplayName("Использует fallback subPort=2096, если /panel/setting/all недоступен")
+  void shouldFallbackToDefaultSubPortWhenSettingsRequestFails() {
+    Server server = testServer();
+    User user = testUser("json-user");
+
+    XuiInboundsResponse response = inboundsResponse(List.of(
+        inbound(1, 443, "moscow", user.getXuiId().toString(), "json-user", true, 0)
+    ));
+
+    mockLoginSuccess(2);
+    mockUpdateClientSuccess();
+    mockInboundsSequence(response, response);
+    when(settingsResponseSpec.body(eq(JsonNode.class))).thenThrow(new RuntimeException("settings down"));
+    when(subscriptionService.findLastSubscriptionEntityByUserId(user.getId()))
+        .thenReturn(activeSubscription());
+    when(jsonResponseSpec.body(String.class)).thenReturn("{\"format\":\"json\"}");
+
+    String config = service.getJsonConfig(server, user);
+
+    assertThat(config).isEqualTo("{\"format\":\"json\",\"remarks\":\"Moscow-1\"}");
+    verify(postUriSpec).uri("/panel/setting/all");
+  }
+
   private void configurePostChain() {
     postUriSpec = mock(RestClient.RequestBodyUriSpec.class);
     loginBodySpec = mock(RestClient.RequestBodySpec.class);
+    settingsBodySpec = mock(RestClient.RequestBodySpec.class);
     addClientBodySpec = mock(RestClient.RequestBodySpec.class);
     updateClientBodySpec = mock(RestClient.RequestBodySpec.class);
     loginResponseSpec = mock(RestClient.ResponseSpec.class);
+    settingsResponseSpec = mock(RestClient.ResponseSpec.class);
     addClientResponseSpec = mock(RestClient.ResponseSpec.class);
     updateClientResponseSpec = mock(RestClient.ResponseSpec.class);
 
@@ -234,6 +345,9 @@ class XuiPanelServiceImplTest {
       }
       if ("/panel/api/inbounds/addClient".equals(uri)) {
         return addClientBodySpec;
+      }
+      if ("/panel/setting/all".equals(uri)) {
+        return settingsBodySpec;
       }
       if (uri.startsWith("/panel/api/inbounds/updateClient/")) {
         return updateClientBodySpec;
@@ -250,6 +364,11 @@ class XuiPanelServiceImplTest {
     when(addClientBodySpec.body(any(MultiValueMap.class))).thenReturn(addClientBodySpec);
     when(addClientBodySpec.retrieve()).thenReturn(addClientResponseSpec);
 
+    when(settingsBodySpec.header(eq(HttpHeaders.COOKIE), any(String[].class))).thenReturn(settingsBodySpec);
+    when(settingsBodySpec.contentType(MediaType.APPLICATION_FORM_URLENCODED)).thenReturn(settingsBodySpec);
+    when(settingsBodySpec.body(any(MultiValueMap.class))).thenReturn(settingsBodySpec);
+    when(settingsBodySpec.retrieve()).thenReturn(settingsResponseSpec);
+
     when(updateClientBodySpec.header(eq(HttpHeaders.COOKIE), any(String[].class))).thenReturn(updateClientBodySpec);
     when(updateClientBodySpec.contentType(MediaType.APPLICATION_FORM_URLENCODED)).thenReturn(updateClientBodySpec);
     when(updateClientBodySpec.body(any(MultiValueMap.class))).thenReturn(updateClientBodySpec);
@@ -258,13 +377,27 @@ class XuiPanelServiceImplTest {
 
   private void configureGetInboundsChain() {
     RestClient.RequestHeadersUriSpec<?> getUriSpec = mock(RestClient.RequestHeadersUriSpec.class);
-    RestClient.RequestHeadersSpec<?> getHeadersSpec = mock(RestClient.RequestHeadersSpec.class);
+    RestClient.RequestHeadersSpec<?> inboundsHeadersSpec = mock(RestClient.RequestHeadersSpec.class);
+    RestClient.RequestHeadersSpec<?> jsonHeadersSpec = mock(RestClient.RequestHeadersSpec.class);
     inboundsResponseSpec = mock(RestClient.ResponseSpec.class);
+    jsonResponseSpec = mock(RestClient.ResponseSpec.class);
 
     doReturn(getUriSpec).when(restClient).get();
-    doReturn(getHeadersSpec).when(getUriSpec).uri("/panel/api/inbounds/list");
-    doReturn(getHeadersSpec).when(getHeadersSpec).header(eq(HttpHeaders.COOKIE), any(String[].class));
-    doReturn(inboundsResponseSpec).when(getHeadersSpec).retrieve();
+    when(getUriSpec.uri(anyString())).thenAnswer(invocation -> {
+      String uri = invocation.getArgument(0, String.class);
+      if ("/panel/api/inbounds/list".equals(uri)) {
+        return inboundsHeadersSpec;
+      }
+      if (uri.contains("/json/")) {
+        return jsonHeadersSpec;
+      }
+      throw new IllegalStateException("Unexpected GET URI: " + uri);
+    });
+    doReturn(inboundsHeadersSpec).when(inboundsHeadersSpec)
+        .header(eq(HttpHeaders.COOKIE), any(String[].class));
+    doReturn(inboundsResponseSpec).when(inboundsHeadersSpec).retrieve();
+    doReturn(jsonHeadersSpec).when(jsonHeadersSpec).header(eq(HttpHeaders.COOKIE), any(String[].class));
+    doReturn(jsonResponseSpec).when(jsonHeadersSpec).retrieve();
   }
 
   private void mockLoginSuccess(int calls) {
@@ -290,6 +423,13 @@ class XuiPanelServiceImplTest {
 
   private void mockUpdateClientSuccess() {
     when(updateClientResponseSpec.body(String.class)).thenReturn("ok");
+  }
+
+  private void mockSubPortResponse(int subPort) {
+    var mapper = new ObjectMapper();
+    JsonNode response = mapper.createObjectNode()
+        .set("obj", mapper.createObjectNode().put("subPort", subPort));
+    when(settingsResponseSpec.body(eq(JsonNode.class))).thenReturn(response);
   }
 
   private ResponseEntity<Void> loginResponseWithCookie() {

@@ -44,3 +44,5 @@ properties:
     example: 80.00
   sshAuthType:
     $ref: './SshAuthType.yaml'
+  subscriptionFormat:
+    $ref: './SubscriptionFormat.yaml'

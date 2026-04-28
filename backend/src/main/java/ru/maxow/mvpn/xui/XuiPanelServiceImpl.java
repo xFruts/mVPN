@@ -17,6 +17,7 @@ import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.util.StringUtils;
 import org.springframework.web.client.RestClient;
+import org.springframework.web.client.RestClientException;
 import org.springframework.web.util.UriUtils;
 import ru.maxow.mvpn.server.Server;
 import ru.maxow.mvpn.subscription.Subscription;
@@ -37,10 +38,12 @@ import java.util.Optional;
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class XuiPanelServiceImpl implements XuiPanelService {
   private static final long BYTES_IN_GIGABYTE = 1024L * 1024L * 1024L;
+  private static final int DEFAULT_SUBSCRIPTION_PORT = 2096;
 
   RestClient.Builder restClientBuilder;
   ObjectMapper objectMapper;
   SubscriptionService subscriptionService;
+
 
   @Override
   public String getVlessConfig(Server server, User user) {
@@ -48,34 +51,10 @@ public class XuiPanelServiceImpl implements XuiPanelService {
     RestClient restClient = restClientBuilder.baseUrl(baseUrl).build();
 
     try {
-      String sessionCookie = login(restClient, server.getXuiLogin(), server.getXuiPassword());
-      XuiInboundsResponse inbounds = getInbounds(restClient, sessionCookie);
+      PreparedSession preparedSession = prepareSessionWithSyncedClient(server, user, restClient);
+      XuiInboundsResponse inbounds = preparedSession.inbounds();
       return findVlessConfigInInbounds(
           inbounds, user, server.getIp(), server.getCountryEmoji());
-    } catch (NotFoundException e) {
-      log.warn(
-          "XUI config not found, upserting client and retrying once. serverId={}, serverName={},"
-              + " userId={}, xuiId={}, userEmail={}",
-          server.getId(),
-          server.getName(),
-          user.getId(),
-          user.getXuiId(),
-          user.getFullName());
-    } catch (XuiUnavailableException e) {
-      throw e;
-    } catch (Exception e) {
-      throw new XuiUnavailableException(
-          "Unexpected error while getting config from XUI server: " + server.getName(), e);
-    }
-
-    try {
-      upsertClient(server, user, restClient);
-
-      String retryCookie = login(restClient, server.getXuiLogin(), server.getXuiPassword());
-      XuiInboundsResponse retryInbounds = getInbounds(restClient, retryCookie);
-
-      return findVlessConfigInInbounds(
-          retryInbounds, user, server.getIp(), server.getCountryEmoji());
     } catch (NotFoundException e) {
       throw new NotFoundException(String.format("Config for user %s not found on server with id %d",
           user.getFullName(), server.getId()));
@@ -83,15 +62,91 @@ public class XuiPanelServiceImpl implements XuiPanelService {
       throw e;
     } catch (Exception e) {
       throw new XuiUnavailableException(
-          "Unexpected error while creating/retrying config on XUI server: " + server.getName(), e);
+          "Unexpected error while preparing/getting config from XUI server: " + server.getName(), e);
     }
   }
+
+  @Override
+  public String getJsonConfig(Server server, User user) {
+    String panelBaseUrl = buildBaseUrl(server);
+    RestClient panelRestClient = restClientBuilder.baseUrl(panelBaseUrl).build();
+    String rootBaseUrl = buildRootBaseUrl(server);
+    RestClient jsonRestClient = restClientBuilder.baseUrl(rootBaseUrl).build();
+
+    try {
+      PreparedSession preparedSession = prepareSessionWithSyncedClient(server, user, panelRestClient);
+
+      if (user.getXuiSubscription() == null) {
+        throw new XuiUnavailableException("Missing XUI subscription id for user: " + user.getId());
+      }
+
+      int subscriptionPort = resolveSubscriptionPort(panelRestClient, preparedSession.sessionCookie(), server);
+      String rootJsonPath = buildJsonSubscriptionUrl(server, user, subscriptionPort);
+      String jsonConfig = fetchJsonConfigAtPath(jsonRestClient, preparedSession.sessionCookie(), rootJsonPath, server);
+      return replaceRemarksWithServerName(jsonConfig, server);
+    } catch (XuiUnavailableException e) {
+      throw e;
+    } catch (RestClientException e) {
+      log.warn("Failed to get JSON config from XUI server. serverId={}, userId={}, xuiId={}",
+          server.getId(), user.getId(), user.getXuiId(), e);
+      throw new XuiUnavailableException(
+          "Failed to get JSON config from XUI server: " + server.getName(), e);
+    } catch (Exception e) {
+      throw new XuiUnavailableException(
+          "Unexpected error while getting JSON config from XUI server: " + server.getName(), e);
+    }
+  }
+
+  private String fetchJsonConfigAtPath(
+      RestClient jsonRestClient,
+      String sessionCookie,
+      String jsonPath,
+      Server server) {
+    String response = jsonRestClient.get()
+        .uri(jsonPath)
+        .header(HttpHeaders.COOKIE, sessionCookie)
+        .retrieve()
+        .body(String.class);
+
+    if (!StringUtils.hasText(response) || "Error!".equalsIgnoreCase(response.trim())) {
+      throw new XuiUnavailableException(
+          "XUI returned invalid JSON subscription response for server: " + server.getName());
+    }
+
+    return response;
+  }
+
+  private String replaceRemarksWithServerName(String jsonConfig, Server server) {
+    try {
+      JsonNode root = objectMapper.readTree(jsonConfig);
+      if (root.isObject()) {
+        ((ObjectNode) root).put("remarks", server.getName() + server.getCountryEmoji());
+        return objectMapper.writeValueAsString(root);
+      }
+      return jsonConfig;
+    } catch (JsonProcessingException e) {
+      log.warn("Failed to replace remarks in JSON config for server {}: {}", server.getId(), e.getMessage());
+      return jsonConfig;
+    }
+  }
+
 
   @Override
   public void createClient(Server server, User user) {
     String baseUrl = buildBaseUrl(server);
     RestClient restClient = restClientBuilder.baseUrl(baseUrl).build();
     upsertClient(server, user, restClient);
+  }
+
+  private PreparedSession prepareSessionWithSyncedClient(
+      Server server,
+      User user,
+      RestClient restClient) {
+    upsertClient(server, user, restClient);
+
+    String refreshedCookie = login(restClient, server.getXuiLogin(), server.getXuiPassword());
+    XuiInboundsResponse refreshedInbounds = getInbounds(restClient, refreshedCookie);
+    return new PreparedSession(refreshedCookie, refreshedInbounds);
   }
 
   private void upsertClient(Server server, User user, RestClient restClient) {
@@ -114,12 +169,52 @@ public class XuiPanelServiceImpl implements XuiPanelService {
     addClientToInbound(restClient, sessionCookie, inbound, user, server);
   }
 
+  private record PreparedSession(String sessionCookie, XuiInboundsResponse inbounds) {}
+
   private String buildBaseUrl(Server server) {
     String baseUrl = String.format("https://%s:%d", server.getIp(), server.getPort());
     if (StringUtils.hasText(server.getWebBasePath())) {
       baseUrl += "/" + server.getWebBasePath();
     }
     return baseUrl;
+  }
+
+  private String buildRootBaseUrl(Server server) {
+    return String.format("https://%s:%d", server.getIp(), server.getPort());
+  }
+
+  private String buildJsonSubscriptionUrl(Server server, User user, int subscriptionPort) {
+    String baseUrl = String.format("https://%s:%d", server.getIp(), subscriptionPort);
+    String encodedSubId = UriUtils.encodePathSegment(
+          user.getXuiSubscription().toString(), StandardCharsets.UTF_8);
+    return baseUrl + "/json/" + encodedSubId;
+  }
+
+  private int resolveSubscriptionPort(RestClient panelRestClient, String sessionCookie, Server server) {
+    try {
+      JsonNode settingsResponse = panelRestClient.post()
+          .uri("/panel/setting/all")
+          .header(HttpHeaders.COOKIE, sessionCookie)
+          .contentType(MediaType.APPLICATION_FORM_URLENCODED)
+          .body(new LinkedMultiValueMap<String, String>())
+          .retrieve()
+          .body(JsonNode.class);
+
+      int subPort = settingsResponse == null
+          ? DEFAULT_SUBSCRIPTION_PORT
+          : settingsResponse.path("obj").path("subPort").asInt(DEFAULT_SUBSCRIPTION_PORT);
+
+      if (subPort <= 0) {
+        log.warn("Invalid subPort from XUI settings. serverId={}, subPort={}, fallback={}",
+            server.getId(), subPort, DEFAULT_SUBSCRIPTION_PORT);
+        return DEFAULT_SUBSCRIPTION_PORT;
+      }
+      return subPort;
+    } catch (Exception e) {
+      log.warn("Failed to resolve subPort from XUI settings. serverId={}, fallback={}",
+          server.getId(), DEFAULT_SUBSCRIPTION_PORT, e);
+      return DEFAULT_SUBSCRIPTION_PORT;
+    }
   }
 
   private String login(RestClient restClient, String username, String password) {

@@ -5,5 +5,6 @@ import ru.maxow.mvpn.user.User;
 
 public interface XuiPanelService {
   String getVlessConfig(Server server, User user);
+  String getJsonConfig(Server server, User user);
   void createClient(Server server, User user);
 }

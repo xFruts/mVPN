@@ -53,7 +53,7 @@ public class ConfigController implements ConfigApi {
   }
 
   public String getConfigByVerificationCode(UUID verificationCode) {
-    String config = configFacade.getSubscriptionConfig(verificationCode);
+    SubscriptionConfigPayload config = configFacade.getSubscriptionConfig(verificationCode);
     String subscriptionInfo = subscriptionService
         .getSubscriptionInfoForUserByCode(verificationCode);
 
@@ -62,7 +62,7 @@ public class ConfigController implements ConfigApi {
     if (attributes != null) {
       HttpServletResponse response = attributes.getResponse();
       if (response != null) {
-        response.setContentType("text/plain;charset=UTF-8");
+        response.setContentType(config.contentType() + ";charset=UTF-8");
 
         if (profileTitle != null) {
           response.setHeader(
@@ -92,9 +92,10 @@ public class ConfigController implements ConfigApi {
         response.setHeader("Cache-Control", "no-store");
       }
     }
-    return config;
+    return config.body();
   }
 
+  @SuppressWarnings("unused")
   @ExceptionHandler(NotFoundException.class)
   public ResponseEntity<String> handleNotFoundException(NotFoundException e) {
     return ResponseEntity.status(HttpStatus.NOT_FOUND)
@@ -102,6 +103,7 @@ public class ConfigController implements ConfigApi {
         .body(e.getMessage());
   }
 
+  @SuppressWarnings("unused")
   @ExceptionHandler(BadRequestException.class)
   public ResponseEntity<String> handleBadRequestException(BadRequestException e) {
     return ResponseEntity.status(HttpStatus.BAD_REQUEST)
@@ -109,6 +111,7 @@ public class ConfigController implements ConfigApi {
         .body(e.getLocalizedMessage());
   }
 
+  @SuppressWarnings("unused")
   @ExceptionHandler(Exception.class)
   public ResponseEntity<String> handleException(Exception e) {
     return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
