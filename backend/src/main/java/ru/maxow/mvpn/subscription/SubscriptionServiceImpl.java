@@ -17,6 +17,8 @@ import org.springframework.transaction.annotation.Transactional;
 import ru.maxow.mvpn.model.CreateUpdateSubscriptionDto;
 import ru.maxow.mvpn.model.SubscriptionResponseDto;
 import ru.maxow.mvpn.model.SubscriptionStatus;
+import ru.maxow.mvpn.subscription.traffic.SubscriptionTrafficState;
+import ru.maxow.mvpn.subscription.traffic.SubscriptionTrafficStateService;
 import ru.maxow.mvpn.tariff.Tariff;
 import ru.maxow.mvpn.tariff.TariffRepository;
 import ru.maxow.mvpn.user.User;
@@ -34,6 +36,7 @@ public class SubscriptionServiceImpl implements SubscriptionService {
   SubscriptionMapper subscriptionMapper;
   UserRepository userRepository;
   TariffRepository tariffRepository;
+  SubscriptionTrafficStateService trafficStateService;
 
   @Override
   @Transactional
@@ -114,6 +117,7 @@ public class SubscriptionServiceImpl implements SubscriptionService {
   }
 
   @Override
+  @Transactional(readOnly = true)
   public String getSubscriptionInfoForUserByCode(UUID verificationCode) {
     User user = userRepository.findByVerificationCode(verificationCode)
         .orElseThrow(() -> new NotFoundException("User by verification code"));
@@ -122,7 +126,25 @@ public class SubscriptionServiceImpl implements SubscriptionService {
         .findFirstByUser_IdOrderByStartDateDesc(user.getId())
         .orElseThrow(() -> new NotFoundException("Subscription for user", user.getId()));
 
-    return String.format("expire=%s", subscription.getEndDate().toInstant().getEpochSecond());
+    SubscriptionTrafficState trafficState = trafficStateService
+        .getTrafficStateBySubscriptionId(subscription.getId())
+        .orElse(null);
+    if (trafficState == null) {
+      trafficState = trafficStateService.syncTrafficForSubscription(user, subscription);
+    }
+
+    Tariff tariff = subscription.getTariff();
+    long trafficLimitBytes = tariff.getTrafficLimitGb() * 1024L * 1024L * 1024L;
+
+    long expireSec = subscription.getEndDate().toInstant().getEpochSecond();
+
+    return String.format(
+        "upload=%d; download=%d; total=%d; expire=%d",
+        trafficState.getUsedUploadBytes(),
+        trafficState.getUsedDownloadBytes(),
+        trafficLimitBytes,
+        expireSec
+    );
   }
 
   @Override

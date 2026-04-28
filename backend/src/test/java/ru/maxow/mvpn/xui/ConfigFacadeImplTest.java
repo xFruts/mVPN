@@ -14,6 +14,8 @@ import ru.maxow.mvpn.server.Server;
 import ru.maxow.mvpn.server.SubscriptionFormat;
 import ru.maxow.mvpn.subscription.Subscription;
 import ru.maxow.mvpn.subscription.SubscriptionRepository;
+import ru.maxow.mvpn.subscription.traffic.SubscriptionTrafficState;
+import ru.maxow.mvpn.subscription.traffic.SubscriptionTrafficStateService;
 import ru.maxow.mvpn.tariff.Tariff;
 import ru.maxow.mvpn.user.User;
 import ru.maxow.mvpn.user.UserRepository;
@@ -31,7 +33,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 @DisplayName("ConfigFacadeImpl - Unit тесты")
@@ -46,6 +48,9 @@ class ConfigFacadeImplTest {
   @Mock
   private SubscriptionRepository subscriptionRepository;
 
+  @Mock
+  private SubscriptionTrafficStateService trafficStateService;
+
   @InjectMocks
   private ConfigFacadeImpl configFacade;
 
@@ -59,6 +64,18 @@ class ConfigFacadeImplTest {
     } catch (Exception e) {
       throw new RuntimeException(e);
     }
+
+    // Mock default traffic state to return empty traffic (no usage)
+    // Use lenient() to avoid UnnecessaryStubbing errors in tests that don't use trafficStateService
+    SubscriptionTrafficState defaultTrafficState = new SubscriptionTrafficState();
+    defaultTrafficState.setUsedBytes(0L);
+    defaultTrafficState.setUsedUploadBytes(0L);
+    defaultTrafficState.setUsedDownloadBytes(0L);
+    org.mockito.Mockito.lenient()
+        .when(trafficStateService.syncTrafficForSubscription(
+            org.mockito.ArgumentMatchers.any(User.class),
+            org.mockito.ArgumentMatchers.any(Subscription.class)))
+        .thenReturn(defaultTrafficState);
   }
 
   @Test
@@ -101,7 +118,7 @@ class ConfigFacadeImplTest {
 
   @Test
   @DisplayName("Должен вернуть JSON payload без base64, если все серверы настроены на JSON")
-  void shouldReturnJsonPayloadWhenServersUseJsonFormat() throws JsonProcessingException {
+  void shouldReturnJsonPayloadWhenServersUseJsonFormat() {
     UUID code = UUID.randomUUID();
     User user = user(500L, "json-user");
     Server server = server(9L, "JSON-1");
@@ -216,6 +233,32 @@ class ConfigFacadeImplTest {
   }
 
   @Test
+  @DisplayName("Должен быстро отклонять уже исчерпанную подписку без повторной синхронизации")
+  void shouldRejectExceededSubscriptionUsingCachedTrafficWithoutResync() {
+    UUID code = UUID.randomUUID();
+    User user = user(800L, "cached-user");
+    Server server = server(21L, "CACHE-1");
+    Subscription subscription = activeSubscription(user, Set.of(server));
+    subscription.setId(900L);
+
+    SubscriptionTrafficState exhausted = new SubscriptionTrafficState();
+    exhausted.setUsedBytes(100L * 1024L * 1024L * 1024L);
+
+    when(userRepository.findByVerificationCode(code)).thenReturn(Optional.of(user));
+    when(subscriptionRepository.findFirstByUser_IdOrderByStartDateDesc(user.getId()))
+        .thenReturn(Optional.of(subscription));
+    when(trafficStateService.getTrafficStateBySubscriptionId(subscription.getId()))
+        .thenReturn(Optional.of(exhausted));
+
+    assertThatThrownBy(() -> configFacade.getSubscriptionConfig(code))
+        .isInstanceOf(BadRequestException.class)
+        .hasMessageContaining("Traffic limit exceeded");
+
+    verify(trafficStateService, never()).syncTrafficForSubscription(any(User.class), any(Subscription.class));
+    verifyNoInteractions(xuiPanelService);
+  }
+
+  @Test
   @DisplayName("Должен выбросить BadRequestException, если форматы серверов смешаны")
   void shouldThrowWhenServerFormatsAreMixed() {
     UUID code = UUID.randomUUID();
@@ -255,6 +298,7 @@ class ConfigFacadeImplTest {
   private Subscription activeSubscription(User user, Set<Server> servers) {
     Tariff tariff = new Tariff();
     tariff.setServers(servers);
+    tariff.setTrafficLimitGb(100);  // Set default traffic limit
 
     Subscription subscription = new Subscription();
     subscription.setUser(user);
