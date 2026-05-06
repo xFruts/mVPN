@@ -1,4 +1,4 @@
-package ru.maxow.mvpn.xui;
+package ru.maxow.mvpn.xui.config;
 
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.AccessLevel;
@@ -14,6 +14,7 @@ import ru.maxow.mvpn.api.ConfigApi;
 import ru.maxow.mvpn.subscription.SubscriptionService;
 import ru.maxow.mvpn.util.exception.BadRequestException;
 import ru.maxow.mvpn.util.exception.NotFoundException;
+import ru.maxow.mvpn.xui.SubscriptionConfigPayload;
 import java.util.UUID;
 
 @RestController

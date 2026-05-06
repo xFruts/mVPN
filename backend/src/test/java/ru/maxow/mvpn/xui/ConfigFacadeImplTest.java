@@ -22,6 +22,8 @@ import ru.maxow.mvpn.user.UserRepository;
 import ru.maxow.mvpn.util.exception.BadRequestException;
 import ru.maxow.mvpn.util.exception.NotFoundException;
 import ru.maxow.mvpn.util.exception.XuiUnavailableException;
+import ru.maxow.mvpn.xui.config.ConfigCacheService;
+import ru.maxow.mvpn.xui.config.ConfigSyncService;
 
 import java.time.OffsetDateTime;
 import java.nio.charset.StandardCharsets;
@@ -30,6 +32,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import ru.maxow.mvpn.xui.config.ConfigFacadeImpl;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -50,6 +53,12 @@ class ConfigFacadeImplTest {
 
   @Mock
   private SubscriptionTrafficStateService trafficStateService;
+
+  @Mock
+  private ConfigCacheService configCacheService;
+
+  @Mock
+  private ConfigSyncService configSyncService;
 
   @InjectMocks
   private ConfigFacadeImpl configFacade;
@@ -76,6 +85,14 @@ class ConfigFacadeImplTest {
             org.mockito.ArgumentMatchers.any(User.class),
             org.mockito.ArgumentMatchers.any(Subscription.class)))
         .thenReturn(defaultTrafficState);
+
+    org.mockito.Mockito.lenient()
+        .when(configCacheService.get(org.mockito.ArgumentMatchers.anyLong()))
+        .thenReturn(null);
+    org.mockito.Mockito.lenient()
+        .doNothing()
+        .when(configSyncService)
+        .asyncSyncSubscription(org.mockito.ArgumentMatchers.any(UUID.class));
   }
 
   @Test

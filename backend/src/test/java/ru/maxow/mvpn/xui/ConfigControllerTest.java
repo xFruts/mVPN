@@ -10,6 +10,8 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import ru.maxow.mvpn.server.SubscriptionFormat;
 import ru.maxow.mvpn.subscription.SubscriptionService;
 import ru.maxow.mvpn.util.exception.NotFoundException;
+import ru.maxow.mvpn.xui.config.ConfigController;
+import ru.maxow.mvpn.xui.config.ConfigFacade;
 
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
