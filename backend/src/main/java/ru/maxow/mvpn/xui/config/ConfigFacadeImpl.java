@@ -1,4 +1,4 @@
-package ru.maxow.mvpn.xui;
+package ru.maxow.mvpn.xui.config;
 
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
@@ -19,9 +19,10 @@ import ru.maxow.mvpn.user.UserRepository;
 import ru.maxow.mvpn.util.exception.BadRequestException;
 import ru.maxow.mvpn.util.exception.NotFoundException;
 import ru.maxow.mvpn.util.exception.XuiUnavailableException;
-
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
+import ru.maxow.mvpn.xui.SubscriptionConfigPayload;
+import ru.maxow.mvpn.xui.XuiPanelService;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import java.util.List;
@@ -39,6 +40,8 @@ public class ConfigFacadeImpl implements ConfigFacade {
   SubscriptionRepository subscriptionRepository;
   SubscriptionTrafficStateService trafficStateService;
   ObjectMapper objectMapper;
+  ConfigCacheService configCacheService;
+  ConfigSyncService configSyncService;
 
   @Override
   @Transactional(readOnly = true)
@@ -68,6 +71,13 @@ public class ConfigFacadeImpl implements ConfigFacade {
       throw new BadRequestException("Traffic limit exceeded for subscription");
     }
 
+    SubscriptionConfigPayload cached = configCacheService.get(user.getId());
+    if (cached != null) {
+      log.debug("Returning cached subscription payload for verificationCode={}", verificationCode);
+      configSyncService.asyncSyncSubscription(verificationCode);
+      return cached;
+    }
+
     List<ResolvedServerConfig> configs = getActiveServersByUserSubscription(subscription).stream()
         .map(server -> {
           try {
@@ -92,7 +102,17 @@ public class ConfigFacadeImpl implements ConfigFacade {
       throw new NotFoundException("No configs found for user");
     }
 
-    return resolvePayload(configs);
+    SubscriptionConfigPayload payload = resolvePayload(configs);
+    // store into cache and trigger background sync to ensure clients exist on XUI
+    try {
+      configCacheService.put(user.getId(), payload);
+      configSyncService.asyncSyncSubscription(verificationCode);
+    } catch (Exception e) {
+      log.warn("Failed to schedule background sync or cache payload for verificationCode={}: {}",
+          verificationCode, e.getMessage());
+    }
+
+    return payload;
   }
 
   private List<Server> getActiveServersByUserSubscription(Subscription subscription) {
@@ -101,7 +121,7 @@ public class ConfigFacadeImpl implements ConfigFacade {
         .toList();
   }
 
-    private SubscriptionConfigPayload resolvePayload(List<ResolvedServerConfig> configs) {
+          private SubscriptionConfigPayload resolvePayload(List<ResolvedServerConfig> configs) {
       Set<SubscriptionFormat> formats = configs.stream()
           .map(ResolvedServerConfig::format)
           .collect(java.util.stream.Collectors.toSet());
