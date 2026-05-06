@@ -1,23 +1,19 @@
 package ru.maxow.mvpn.xui;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import lombok.AccessLevel;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.data.util.Pair;
 import org.springframework.http.HttpHeaders;
-import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
-import org.springframework.util.LinkedMultiValueMap;
-import org.springframework.util.MultiValueMap;
-import org.springframework.util.StringUtils;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.util.UriUtils;
+import org.springframework.beans.factory.support.ScopeNotActiveException;
+import org.springframework.web.context.request.RequestContextHolder;
 import ru.maxow.mvpn.server.Server;
 import ru.maxow.mvpn.subscription.Subscription;
 import ru.maxow.mvpn.subscription.SubscriptionService;
@@ -27,36 +23,50 @@ import ru.maxow.mvpn.user.User;
 import ru.maxow.mvpn.util.exception.NotFoundException;
 import ru.maxow.mvpn.util.exception.XuiUnavailableException;
 
-import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
-import java.time.Instant;
 import java.util.Optional;
 
+/**
+ * Интеграция с XUI (3x-ui): синхронизация клиентов, генерация конфигов и чтение трафика.
+ */
 @Slf4j
 @Service
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class XuiPanelServiceImpl implements XuiPanelService {
-  private static final long BYTES_IN_GIGABYTE = 1024L * 1024L * 1024L;
-  private static final int DEFAULT_SUBSCRIPTION_PORT = 2096;
-
-  RestClient.Builder restClientBuilder;
-  ObjectMapper objectMapper;
   SubscriptionService subscriptionService;
+  ObjectProvider<RequestScopedSubPortCache> subPortCacheProvider;
+  XuiSessionClient sessionClient;
+  XuiInboundClient inboundClient;
+  XuiJsonConfigClient jsonConfigClient;
+  XuiClientPayloadBuilder payloadBuilder;
+  XuiInboundMutator inboundMutator;
+  VlessLinkBuilder vlessLinkBuilder;
+  XuiTrafficMapper trafficMapper;
 
   public XuiPanelServiceImpl(
-      RestClient.Builder restClientBuilder,
-      ObjectMapper objectMapper,
-      @Lazy SubscriptionService subscriptionService) {
-    this.restClientBuilder = restClientBuilder;
-    this.objectMapper = objectMapper;
+      XuiSessionClient sessionClient,
+      XuiInboundClient inboundClient,
+      XuiJsonConfigClient jsonConfigClient,
+      @Lazy SubscriptionService subscriptionService,
+      ObjectProvider<RequestScopedSubPortCache> subPortCacheProvider,
+      XuiClientPayloadBuilder payloadBuilder,
+      XuiInboundMutator inboundMutator,
+      VlessLinkBuilder vlessLinkBuilder,
+      XuiTrafficMapper trafficMapper) {
+    this.sessionClient = sessionClient;
+    this.inboundClient = inboundClient;
+    this.jsonConfigClient = jsonConfigClient;
     this.subscriptionService = subscriptionService;
+    this.subPortCacheProvider = subPortCacheProvider;
+    this.payloadBuilder = payloadBuilder;
+    this.inboundMutator = inboundMutator;
+    this.vlessLinkBuilder = vlessLinkBuilder;
+    this.trafficMapper = trafficMapper;
   }
-
 
   @Override
   public String getVlessConfig(Server server, User user) {
-    String baseUrl = buildBaseUrl(server);
-    RestClient restClient = restClientBuilder.baseUrl(baseUrl).build();
+    RestClient restClient = sessionClient.buildPanelClient(server);
 
     try {
       PreparedSession preparedSession = prepareSessionWithSyncedClient(server, user, restClient);
@@ -74,12 +84,14 @@ public class XuiPanelServiceImpl implements XuiPanelService {
     }
   }
 
+  /**
+   * Запрашивает JSON-конфиг. subPort вычисляется один раз на запрос и
+   * переиспользуется через request-scope кэш.
+   */
   @Override
   public String getJsonConfig(Server server, User user) {
-    String panelBaseUrl = buildBaseUrl(server);
-    RestClient panelRestClient = restClientBuilder.baseUrl(panelBaseUrl).build();
-    String rootBaseUrl = buildRootBaseUrl(server);
-    RestClient jsonRestClient = restClientBuilder.baseUrl(rootBaseUrl).build();
+    RestClient panelRestClient = sessionClient.buildPanelClient(server);
+    RestClient jsonRestClient = sessionClient.buildRootClient(server);
 
     try {
       PreparedSession preparedSession = prepareSessionWithSyncedClient(server, user, panelRestClient);
@@ -88,10 +100,34 @@ public class XuiPanelServiceImpl implements XuiPanelService {
         throw new XuiUnavailableException("Missing XUI subscription id for user: " + user.getId());
       }
 
-      int subscriptionPort = resolveSubscriptionPort(panelRestClient, preparedSession.sessionCookie(), server);
-      String rootJsonPath = buildJsonSubscriptionUrl(server, user, subscriptionPort);
-      String jsonConfig = fetchJsonConfigAtPath(jsonRestClient, preparedSession.sessionCookie(), rootJsonPath, server);
-      return replaceRemarksWithServerName(jsonConfig, server);
+      Integer cachedSubPort = null;
+      RequestScopedSubPortCache subPortCache;
+      if (RequestContextHolder.getRequestAttributes() == null) {
+        subPortCache = null;
+      } else {
+        try {
+          subPortCache = subPortCacheProvider.getIfAvailable();
+        } catch (ScopeNotActiveException e) {
+          subPortCache = null;
+        }
+      }
+      if (subPortCache != null) {
+        cachedSubPort = subPortCache.get(server.getId());
+      }
+
+      int subscriptionPort = cachedSubPort != null
+          ? cachedSubPort
+          : jsonConfigClient.resolveSubscriptionPort(
+              panelRestClient, preparedSession.sessionCookie(), server);
+
+      if (subPortCache != null && cachedSubPort == null) {
+        subPortCache.put(server.getId(), subscriptionPort);
+      }
+
+      String rootJsonPath = jsonConfigClient.buildJsonSubscriptionUrl(server, user, subscriptionPort);
+      String jsonConfig = jsonConfigClient.fetchJsonConfigAtPath(
+          jsonRestClient, preparedSession.sessionCookie(), rootJsonPath, server);
+      return jsonConfigClient.replaceRemarksWithServerName(jsonConfig, server);
     } catch (XuiUnavailableException e) {
       throw e;
     } catch (RestClientException e) {
@@ -105,64 +141,43 @@ public class XuiPanelServiceImpl implements XuiPanelService {
     }
   }
 
-  private String fetchJsonConfigAtPath(
-      RestClient jsonRestClient,
-      String sessionCookie,
-      String jsonPath,
-      Server server) {
-    String response = jsonRestClient.get()
-        .uri(jsonPath)
-        .header(HttpHeaders.COOKIE, sessionCookie)
-        .retrieve()
-        .body(String.class);
-
-    if (!StringUtils.hasText(response) || "Error!".equalsIgnoreCase(response.trim())) {
-      throw new XuiUnavailableException(
-          "XUI returned invalid JSON subscription response for server: " + server.getName());
-    }
-
-    return response;
-  }
-
-  private String replaceRemarksWithServerName(String jsonConfig, Server server) {
-    try {
-      JsonNode root = objectMapper.readTree(jsonConfig);
-      if (root.isObject()) {
-        ((ObjectNode) root).put("remarks", server.getName() + server.getCountryEmoji());
-        return objectMapper.writeValueAsString(root);
-      }
-      return jsonConfig;
-    } catch (JsonProcessingException e) {
-      log.warn("Failed to replace remarks in JSON config for server {}: {}", server.getId(), e.getMessage());
-      return jsonConfig;
-    }
-  }
-
-
   @Override
   public void createClient(Server server, User user) {
-    String baseUrl = buildBaseUrl(server);
-    RestClient restClient = restClientBuilder.baseUrl(baseUrl).build();
+    RestClient restClient = sessionClient.buildPanelClient(server);
     upsertClient(server, user, restClient);
   }
 
+  /**
+   * Логинится, синхронизирует клиента (add/update) и возвращает inbounds
+   * без повторного сетевого запроса.
+   */
   private PreparedSession prepareSessionWithSyncedClient(
       Server server,
       User user,
       RestClient restClient) {
-    String sessionCookie = login(restClient, server.getXuiLogin(), server.getXuiPassword());
-    upsertClient(server, user, restClient, sessionCookie);
-    XuiInboundsResponse refreshedInbounds = getInbounds(restClient, sessionCookie);
-    return new PreparedSession(sessionCookie, refreshedInbounds);
+    String sessionCookie = sessionClient.login(restClient, server);
+    XuiInboundsResponse inbounds = upsertClientAndReturnInbounds(server, user, restClient, sessionCookie);
+    return new PreparedSession(sessionCookie, inbounds);
   }
 
-  private void upsertClient(Server server, User user, RestClient restClient) {
-    String sessionCookie = login(restClient, server.getXuiLogin(), server.getXuiPassword());
-    upsertClient(server, user, restClient, sessionCookie);
+  private XuiInboundsResponse upsertClientAndReturnInbounds(
+      Server server,
+      User user,
+      RestClient restClient) {
+    String sessionCookie = sessionClient.login(restClient, server);
+    return upsertClientAndReturnInbounds(server, user, restClient, sessionCookie);
   }
 
-  private void upsertClient(Server server, User user, RestClient restClient, String sessionCookie) {
-    XuiInboundsResponse inbounds = getInbounds(restClient, sessionCookie);
+  /**
+   * Выполняет upsert клиента и локально обновляет настройки inbound,
+   * чтобы не делать повторный GET inbounds.
+   */
+  private XuiInboundsResponse upsertClientAndReturnInbounds(
+      Server server,
+      User user,
+      RestClient restClient,
+      String sessionCookie) {
+    XuiInboundsResponse inbounds = inboundClient.getInbounds(restClient, sessionCookie);
 
     Optional<XuiInboundsResponse.Inbound> vlessInboundOpt = findVlessInbound(inbounds);
 
@@ -171,222 +186,42 @@ public class XuiPanelServiceImpl implements XuiPanelService {
     }
 
     XuiInboundsResponse.Inbound inbound = vlessInboundOpt.get();
-    Optional<XuiClient> existingClient = findClientInInbound(inbound, user);
-    if (existingClient.isPresent()) {
-      updateClientInInbound(restClient, sessionCookie, inbound, user, server, existingClient.get());
-      return;
+    Optional<XuiClient> existingClient = inboundMutator.findClientInInbound(inbound, user);
+
+    Subscription subscription = subscriptionService.findLastSubscriptionEntityByUserId(user.getId());
+    Tariff tariff = subscription.getTariff();
+    ObjectNode clientPayload = payloadBuilder.buildClientPayload(user, subscription, tariff,
+        existingClient.orElse(null));
+    String clientSettings;
+    try {
+      clientSettings = payloadBuilder.wrapClientPayload(clientPayload);
+    } catch (JsonProcessingException e) {
+      log.error(
+          "XUI client payload serialization failed. serverId={}, userId={}, xuiId={}",
+          server.getId(),
+          user.getId(),
+          user.getXuiId(),
+          e);
+      throw new XuiUnavailableException("Failed to prepare client settings");
     }
 
-    addClientToInbound(restClient, sessionCookie, inbound, user, server);
+    if (existingClient.isPresent()) {
+      inboundClient.updateClientInInbound(restClient, sessionCookie, inbound, user, server,
+          existingClient.get(), clientSettings);
+      inboundMutator.applyClientPayloadToInbound(inbound, clientPayload, existingClient.get());
+      return inbounds;
+    }
+
+    inboundClient.addClientToInbound(restClient, sessionCookie, inbound, user, server, clientSettings);
+    inboundMutator.applyClientPayloadToInbound(inbound, clientPayload, null);
+    return inbounds;
+  }
+
+  private void upsertClient(Server server, User user, RestClient restClient) {
+    upsertClientAndReturnInbounds(server, user, restClient);
   }
 
   private record PreparedSession(String sessionCookie, XuiInboundsResponse inbounds) {}
-
-  private String buildBaseUrl(Server server) {
-    String baseUrl = String.format("https://%s:%d", server.getIp(), server.getPort());
-    if (StringUtils.hasText(server.getWebBasePath())) {
-      baseUrl += "/" + server.getWebBasePath();
-    }
-    return baseUrl;
-  }
-
-  private String buildRootBaseUrl(Server server) {
-    return String.format("https://%s:%d", server.getIp(), server.getPort());
-  }
-
-  private String buildJsonSubscriptionUrl(Server server, User user, int subscriptionPort) {
-    String baseUrl = String.format("https://%s:%d", server.getIp(), subscriptionPort);
-    String encodedSubId = UriUtils.encodePathSegment(
-          user.getXuiSubscription().toString(), StandardCharsets.UTF_8);
-    return baseUrl + "/json/" + encodedSubId;
-  }
-
-  private int resolveSubscriptionPort(RestClient panelRestClient, String sessionCookie, Server server) {
-    try {
-      String settingsBody = panelRestClient.post()
-          .uri("/panel/setting/all")
-          .header(HttpHeaders.COOKIE, sessionCookie)
-          .contentType(MediaType.APPLICATION_FORM_URLENCODED)
-          .body(new LinkedMultiValueMap<String, String>())
-          .retrieve()
-          .body(String.class);
-
-      JsonNode settingsResponse = null;
-      if (settingsBody != null && !settingsBody.isBlank()) {
-        settingsResponse = objectMapper.readTree(settingsBody);
-      }
-
-      int subPort = settingsResponse == null
-          ? DEFAULT_SUBSCRIPTION_PORT
-          : settingsResponse.path("obj").path("subPort").asInt(DEFAULT_SUBSCRIPTION_PORT);
-
-      if (subPort <= 0) {
-        log.warn("Invalid subPort from XUI settings. serverId={}, subPort={}, fallback={}",
-            server.getId(), subPort, DEFAULT_SUBSCRIPTION_PORT);
-        return DEFAULT_SUBSCRIPTION_PORT;
-      }
-      return subPort;
-    } catch (Exception e) {
-      log.warn("Failed to resolve subPort from XUI settings. serverId={}, fallback={}",
-          server.getId(), DEFAULT_SUBSCRIPTION_PORT, e);
-      return DEFAULT_SUBSCRIPTION_PORT;
-    }
-  }
-
-  private String login(RestClient restClient, String username, String password) {
-    MultiValueMap<String, String> formData = new LinkedMultiValueMap<>();
-    formData.add("username", username);
-    formData.add("password", password);
-
-    ResponseEntity<Void> response = restClient.post()
-        .uri("/login")
-        .contentType(MediaType.APPLICATION_FORM_URLENCODED)
-        .body(formData)
-        .retrieve()
-        .toBodilessEntity();
-
-    String cookie = response.getHeaders().getFirst(HttpHeaders.SET_COOKIE);
-    if (cookie == null) {
-      throw new XuiUnavailableException("Login failed: No session cookie");
-    }
-    return cookie;
-  }
-
-  private XuiInboundsResponse getInbounds(RestClient restClient, String sessionCookie) {
-    return restClient.get()
-        .uri("/panel/api/inbounds/list")
-        .header(HttpHeaders.COOKIE, sessionCookie)
-        .retrieve()
-        .body(XuiInboundsResponse.class);
-  }
-
-  private void addClientToInbound(
-      RestClient restClient,
-      String sessionCookie,
-      XuiInboundsResponse.Inbound inbound,
-      User user,
-      Server server) {
-    try {
-      Subscription subscription = subscriptionService.findLastSubscriptionEntityByUserId(user.getId());
-      Tariff tariff = subscription.getTariff();
-
-      String clientSettings = wrapClientPayload(
-          buildClientPayload(user, subscription, tariff, null));
-
-      MultiValueMap<String, String> formData = new LinkedMultiValueMap<>();
-      formData.add("id", String.valueOf(inbound.getId()));
-      formData.add("settings", clientSettings);
-
-      String response = restClient.post()
-          .uri("/panel/api/inbounds/addClient")
-          .header(HttpHeaders.COOKIE, sessionCookie)
-          .contentType(MediaType.APPLICATION_FORM_URLENCODED)
-          .body(formData)
-          .retrieve()
-          .body(String.class);
-
-      log.info(
-          "XUI addClient success. serverId={}, serverName={}, inboundId={}, userId={},"
-              + " xuiId={}, response={}",
-          server.getId(),
-          server.getName(),
-          inbound.getId(),
-          user.getId(),
-          user.getXuiId(),
-          response);
-    } catch (JsonProcessingException e) {
-      log.error(
-          "XUI addClient payload serialization failed. serverId={}, userId={}, xuiId={}",
-          server.getId(),
-          user.getId(),
-          user.getXuiId(),
-          e);
-      throw new XuiUnavailableException("Failed to prepare new client settings");
-    }
-  }
-
-  private void updateClientInInbound(
-      RestClient restClient,
-      String sessionCookie,
-      XuiInboundsResponse.Inbound inbound,
-      User user,
-      Server server,
-      XuiClient existingClient) {
-    try {
-      Subscription subscription = subscriptionService.findLastSubscriptionEntityByUserId(user.getId());
-      Tariff tariff = subscription.getTariff();
-
-      String clientSettings = wrapClientPayload(
-          buildClientPayload(user, subscription, tariff, existingClient));
-
-      MultiValueMap<String, String> formData = new LinkedMultiValueMap<>();
-      formData.add("id", String.valueOf(inbound.getId()));
-      formData.add("settings", clientSettings);
-
-      String response = restClient.post()
-          .uri("/panel/api/inbounds/updateClient/" + existingClient.getId())
-          .header(HttpHeaders.COOKIE, sessionCookie)
-          .contentType(MediaType.APPLICATION_FORM_URLENCODED)
-          .body(formData)
-          .retrieve()
-          .body(String.class);
-
-      log.info(
-          "XUI updateClient success. serverId={}, serverName={}, inboundId={}, userId={},"
-              + " xuiId={}, response={}",
-          server.getId(),
-          server.getName(),
-          inbound.getId(),
-          user.getId(),
-          user.getXuiId(),
-          response);
-    } catch (JsonProcessingException e) {
-      log.error(
-          "XUI updateClient payload serialization failed. serverId={}, userId={}, xuiId={}",
-          server.getId(),
-          user.getId(),
-          user.getXuiId(),
-          e);
-      throw new XuiUnavailableException("Failed to edit client settings");
-    }
-  }
-
-  private ObjectNode buildClientPayload(
-      User user,
-      Subscription subscription,
-      Tariff tariff,
-      XuiClient existingClient) {
-    ObjectNode clientNode = objectMapper.createObjectNode();
-    String flow = existingClient != null && StringUtils.hasText(existingClient.getFlow())
-        ? existingClient.getFlow()
-        : "xtls-rprx-vision";
-    String comment = existingClient != null && existingClient.getComment() != null
-        ? existingClient.getComment()
-        : "";
-    int reset = existingClient != null && existingClient.getReset() != null
-        ? existingClient.getReset()
-        : 0;
-
-    clientNode.put("id", String.valueOf(user.getXuiId()));
-    clientNode.put("flow", flow);
-    clientNode.put("email", user.getFullName());
-    clientNode.put("limitIp", tariff.getMaxDevices());
-
-    // 3x-ui ожидает лимит трафика в байтах
-    clientNode.put("totalGB", tariff.getTrafficLimitGb() * BYTES_IN_GIGABYTE);
-    clientNode.put("expiryTime", subscription.getEndDate().toInstant().toEpochMilli());
-    clientNode.put("enable", true);
-    clientNode.put("subId", String.valueOf(user.getXuiSubscription()));
-    clientNode.put("comment", comment);
-    clientNode.put("reset", reset);
-    return clientNode;
-  }
-
-  private String wrapClientPayload(ObjectNode clientNode) throws JsonProcessingException {
-    ObjectNode clientsWrapper = objectMapper.createObjectNode();
-    clientsWrapper.set("clients", objectMapper.createArrayNode().add(clientNode));
-    return objectMapper.writeValueAsString(clientsWrapper);
-  }
 
   private String findVlessConfigInInbounds(
       XuiInboundsResponse inboundsResponse,
@@ -401,11 +236,11 @@ public class XuiPanelServiceImpl implements XuiPanelService {
 
     return inboundsResponse.getObj().stream()
         .filter(inbound -> "vless".equalsIgnoreCase(inbound.getProtocol()))
-        .flatMap(inbound -> findClientInInbound(inbound, user)
+        .flatMap(inbound -> inboundMutator.findClientInInbound(inbound, user)
             .stream()
             .map(client -> Pair.of(inbound, client)))
         .map(pair ->
-            generateVlessLink(pair.getSecond(), serverIp, countryEmoji, pair.getFirst()))
+            vlessLinkBuilder.generateVlessLink(pair.getSecond(), serverIp, countryEmoji, pair.getFirst()))
         .filter(java.util.Objects::nonNull)
         .findFirst()
         .orElseThrow(() -> new NotFoundException("VLESS config for user " + user.getFullName()));
@@ -420,174 +255,15 @@ public class XuiPanelServiceImpl implements XuiPanelService {
         .findFirst();
   }
 
-  private Optional<XuiClient> findClientInInbound(XuiInboundsResponse.Inbound inbound, User user) {
-    try {
-      JsonNode settings = objectMapper.readTree(inbound.getSettings());
-      JsonNode clients = settings.get("clients");
-      if (clients != null && clients.isArray()) {
-        String expectedXuiId = String.valueOf(user.getXuiId());
-        Optional<XuiClient> byEmail = Optional.empty();
-        for (JsonNode clientNode : clients) {
-          XuiClient client = objectMapper.treeToValue(clientNode, XuiClient.class);
-          if (expectedXuiId.equals(client.getId())) {
-            return Optional.of(client);
-          }
-          if (user.getFullName().equals(client.getEmail())) {
-            byEmail = Optional.of(client);
-          }
-        }
-        if (byEmail.isPresent()) {
-          log.warn(
-              "XUI client matched by email fallback. inboundId={}, userId={}, xuiId={}, email={}",
-              inbound.getId(),
-              user.getId(),
-              user.getXuiId(),
-              user.getFullName());
-          return byEmail;
-        }
-      }
-    } catch (JsonProcessingException e) {
-      throw new XuiUnavailableException("Failed to parse inbound settings", e);
-    }
-    return Optional.empty();
-  }
-
-  private String generateVlessLink(
-      XuiClient client, String address, String countryEmoji, XuiInboundsResponse.Inbound inbound) {
-    try {
-      JsonNode settings = objectMapper.readTree(inbound.getSettings());
-      JsonNode streamSettings = objectMapper.readTree(inbound.getStreamSettings());
-
-      JsonNode clientSettings = null;
-      for (JsonNode c : settings.get("clients")) {
-        if (client.getId().equals(c.get("id").asText())) {
-          clientSettings = c;
-          break;
-        }
-      }
-
-      if (clientSettings == null || !clientSettings.get("enable").asBoolean()) {
-        log.info("XUI client is disabled or missing in inbound settings. inboundId={}, xuiId={}",
-            inbound.getId(), client.getId());
-        return null;
-      }
-
-      if (clientSettings.has("expiryTime")) {
-        long expiryTime = clientSettings.get("expiryTime").asLong(0L);
-        if (expiryTime > 0 && expiryTime < Instant.now().toEpochMilli()) {
-          log.info("XUI client is expired. inboundId={}, xuiId={}, expiryTime={}",
-              inbound.getId(), client.getId(), expiryTime);
-          return null;
-        }
-      }
-
-      if (!clientSettings.has("id") || !clientSettings.has("email")) {
-        log.warn("XUI client payload has missing fields. inboundId={}, xuiId={}",
-            inbound.getId(), client.getId());
-        return null;
-      }
-
-      String uuid = clientSettings.get("id").asText();
-      String flow = clientSettings.has("flow") ? clientSettings.get("flow").asText() : "";
-
-      String network = streamSettings.get("network").asText();
-      String security = streamSettings.get("security").asText();
-
-      StringBuilder queryParams = new StringBuilder();
-      queryParams.append("type=").append(network);
-      queryParams.append("&encryption=none");
-
-      if ("reality".equalsIgnoreCase(security)) {
-        JsonNode realitySettings = streamSettings.get("realitySettings");
-        if (realitySettings != null) {
-          queryParams.append("&security=reality");
-
-          JsonNode nestedRealitySettings = realitySettings.get("settings");
-          if (nestedRealitySettings != null) {
-            if (nestedRealitySettings.has("publicKey")) {
-              queryParams.append("&pbk=").append(nestedRealitySettings.get("publicKey").asText());
-            }
-            if (nestedRealitySettings.has("fingerprint")) {
-              queryParams.append("&fp=").append(nestedRealitySettings.get("fingerprint").asText());
-            }
-            if (nestedRealitySettings.has("spiderX")) {
-              String spx = nestedRealitySettings.get("spiderX").asText();
-              queryParams.append("&spx=").append(URLEncoder.encode(spx, StandardCharsets.UTF_8));
-            }
-          }
-
-          if (realitySettings.has("serverNames")
-              && !realitySettings.get("serverNames").isEmpty()) {
-            queryParams.append("&sni=").append(realitySettings.get("serverNames").get(0).asText());
-          }
-          if (realitySettings.has("shortIds")
-              && !realitySettings.get("shortIds").isEmpty()) {
-            queryParams.append("&sid=").append(realitySettings.get("shortIds").get(0).asText());
-          }
-        }
-      } else if ("tls".equalsIgnoreCase(security)) {
-        JsonNode tlsSettings = streamSettings.get("tlsSettings");
-        if (tlsSettings != null) {
-          queryParams.append("&security=tls");
-          if (tlsSettings.has("fingerprint")) {
-            queryParams.append("&fp=").append(tlsSettings.get("fingerprint").asText());
-          }
-          if (tlsSettings.has("serverName")) {
-            queryParams.append("&sni=").append(tlsSettings.get("serverName").asText());
-          }
-        }
-      }
-      switch (network) {
-        case "ws":
-          JsonNode wsSettings = streamSettings.get("wsSettings");
-          if (wsSettings != null && wsSettings.has("path")
-              && wsSettings.has("headers")) {
-            String path = wsSettings.get("path").asText();
-            String host = wsSettings.get("headers").get("Host").asText();
-            queryParams.append("&path=").append(URLEncoder.encode(path, StandardCharsets.UTF_8));
-            queryParams.append("&host=").append(URLEncoder.encode(host, StandardCharsets.UTF_8));
-          }
-          break;
-        case "grpc":
-          JsonNode grpcSettings = streamSettings.get("grpcSettings");
-          if (grpcSettings != null && grpcSettings.has("serviceName")) {
-            queryParams
-                .append("&serviceName=")
-                .append(URLEncoder.encode(
-                    grpcSettings.get("serviceName").asText(), StandardCharsets.UTF_8));
-          }
-          break;
-        default:
-          break;
-      }
-
-      if (flow != null && !flow.isEmpty()) {
-        queryParams.append("&flow=").append(flow);
-      }
-
-      String remark = inbound.getRemark() != null && !inbound.getRemark().isEmpty()
-          ? inbound.getRemark() : inbound.getTag();
-      if (countryEmoji != null && !countryEmoji.isEmpty()) {
-        remark += countryEmoji;
-      }
-      String finalRemark = UriUtils.encodeFragment(remark, StandardCharsets.UTF_8);
-
-      return String.format("vless://%s@%s:%d?%s#%s",
-          uuid, address, inbound.getPort(), queryParams, finalRemark);
-
-    } catch (Exception e) {
-      log.error("Unexpected error generating VLESS link for inbound ID: {}", inbound.getId(), e);
-      throw new XuiUnavailableException("Failed to generate VLESS link due to unexpected error");
-    }
-  }
-
+  /**
+   * Разбирает traffic-ответ XUI. Если obj пустой, возвращает "нулевой" трафик.
+   */
   @Override
   public XuiClientTraffic getClientTraffic(Server server, String clientId) {
-    String baseUrl = buildBaseUrl(server);
-    RestClient restClient = restClientBuilder.baseUrl(baseUrl).build();
+    RestClient restClient = sessionClient.buildPanelClient(server);
 
     try {
-      String sessionCookie = login(restClient, server.getXuiLogin(), server.getXuiPassword());
+      String sessionCookie = sessionClient.login(restClient, server);
 
       String encodedClientId = UriUtils.encodePathSegment(clientId, StandardCharsets.UTF_8);
       String uri = "/panel/api/inbounds/getClientTrafficsById/" + encodedClientId;
@@ -598,26 +274,8 @@ public class XuiPanelServiceImpl implements XuiPanelService {
           .retrieve()
           .body(String.class);
 
-      JsonNode response = null;
-      if (responseBody != null && !responseBody.isBlank()) {
-        response = objectMapper.readTree(responseBody);
-      }
+      return trafficMapper.mapTrafficResponse(responseBody, server, clientId);
 
-      if (response == null || !response.path("success").asBoolean(false)) {
-        throw new XuiUnavailableException(
-            "XUI returned invalid traffic response for server: " + server.getName());
-      }
-
-      JsonNode objArray = response.path("obj");
-      if (!objArray.isArray() || objArray.isEmpty()) {
-        log.warn("No traffic data found for clientId {} on server {}",
-            clientId, server.getId());
-        return new XuiClientTraffic(null, null, false, null, 0L, 0L, 0L, 0L, 0L, 0, 0L);
-      }
-
-      JsonNode trafficNode = objArray.get(0);
-      return objectMapper.treeToValue(trafficNode, XuiClientTraffic.class);
-      
     } catch (XuiUnavailableException e) {
       throw e;
     } catch (RestClientException e) {
