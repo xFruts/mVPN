@@ -36,7 +36,7 @@
         <jackson-bom.version>3.1.1</jackson-bom.version>
         <jackson-2-bom.version>2.21.1</jackson-2-bom.version>
         <lz4-java.version>1.10.4</lz4-java.version>
-        <grizzly-http.version>5.0.0</grizzly-http.version>
+        <grizzly-http.version>5.0.1</grizzly-http.version>
         <assertj.version>3.27.7</assertj.version>
         <commons-beanutils.version>1.11.0</commons-beanutils.version>
         <rhino.version>1.9.1</rhino.version>
@@ -166,6 +166,21 @@
             </dependency>
         </dependencies>
     </dependencyManagement>
+
+    <repositories>
+        <repository>
+            <id>sonatype-oss-snapshots</id>
+            <name>Sonatype OSS Snapshots</name>
+            <url>https://oss.sonatype.org/content/repositories/snapshots/</url>
+            <releases>
+                <enabled>false</enabled>
+            </releases>
+            <snapshots>
+                <enabled>true</enabled>
+            </snapshots>
+        </repository>
+    </repositories>
+
 
     <dependencies>
         <!-- === Spring Boot Starters === -->
