@@ -97,9 +97,8 @@ class XuiInboundMutator {
       }
 
       inbound.setSettings(objectMapper.writeValueAsString(settings));
-    } catch (Exception e) {
+    } catch (JsonProcessingException e) {
       throw new XuiUnavailableException("Failed to update inbound settings after client sync", e);
     }
   }
 }
-
