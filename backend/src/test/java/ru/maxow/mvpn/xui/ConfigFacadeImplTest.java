@@ -6,6 +6,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.ArgumentCaptor;
 import org.mockito.junit.jupiter.MockitoExtension;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import ru.maxow.mvpn.model.ServerStatus;
@@ -295,6 +296,88 @@ class ConfigFacadeImplTest {
     assertThatThrownBy(() -> configFacade.getSubscriptionConfig(code))
         .isInstanceOf(BadRequestException.class)
         .hasMessageContaining("Mixed subscription formats");
+  }
+
+  @Test
+  @DisplayName("Должен вернуть кэшированный payload и не обращаться к XUI")
+  void shouldReturnCachedPayloadWithoutCallingXui() {
+    UUID code = UUID.randomUUID();
+    User user = user(900L, "cached-user");
+    Server server = server(1L, "Moscow-1");
+    Subscription subscription = activeSubscription(user, Set.of(server));
+
+    SubscriptionConfigPayload cached = new SubscriptionConfigPayload(
+        "cached-body",
+        SubscriptionFormat.VLESS);
+
+    when(userRepository.findByVerificationCode(code)).thenReturn(Optional.of(user));
+    when(subscriptionRepository.findFirstByUser_IdOrderByStartDateDesc(user.getId()))
+        .thenReturn(Optional.of(subscription));
+    when(configCacheService.get(user.getId())).thenReturn(cached);
+
+    SubscriptionConfigPayload payload = configFacade.getSubscriptionConfig(code);
+
+    assertThat(payload).isEqualTo(cached);
+    verifyNoInteractions(xuiPanelService);
+    verify(configSyncService).asyncSyncSubscription(code);
+  }
+
+  @Test
+  @DisplayName("Должен положить payload в кэш и запустить async sync")
+  void shouldCachePayloadAndTriggerAsyncSync() {
+    UUID code = UUID.randomUUID();
+    User user = user(901L, "cache-put-user");
+    Server server = server(2L, "SPB-1");
+    Subscription subscription = activeSubscription(user, Set.of(server));
+
+    when(userRepository.findByVerificationCode(code)).thenReturn(Optional.of(user));
+    when(subscriptionRepository.findFirstByUser_IdOrderByStartDateDesc(user.getId()))
+        .thenReturn(Optional.of(subscription));
+    when(xuiPanelService.getVlessConfig(server, user)).thenReturn("vless://ok");
+
+    SubscriptionConfigPayload payload = configFacade.getSubscriptionConfig(code);
+
+    assertThat(payload.format()).isEqualTo(SubscriptionFormat.VLESS);
+
+    ArgumentCaptor<SubscriptionConfigPayload> payloadCaptor =
+        ArgumentCaptor.forClass(SubscriptionConfigPayload.class);
+    verify(configCacheService).put(eq(user.getId()), payloadCaptor.capture());
+    verify(configSyncService).asyncSyncSubscription(code);
+
+    SubscriptionConfigPayload cached = payloadCaptor.getValue();
+    assertThat(cached.format()).isEqualTo(SubscriptionFormat.VLESS);
+    assertThat(cached.body()).isNotBlank();
+  }
+
+  @Test
+  @DisplayName("После смены формата на JSON и обновления кэша отдается JSON payload")
+  void shouldReturnJsonPayloadAfterCacheUpdated() {
+    UUID code = UUID.randomUUID();
+    User user = user(902L, "format-change");
+    Server server = server(3L, "EU-1");
+    Subscription subscription = activeSubscription(user, Set.of(server));
+
+    SubscriptionConfigPayload cachedVless = new SubscriptionConfigPayload(
+        Base64.getEncoder().encodeToString("vless://old".getBytes(StandardCharsets.UTF_8)),
+        SubscriptionFormat.VLESS);
+    SubscriptionConfigPayload cachedJson = new SubscriptionConfigPayload(
+        "[{\"format\":\"json\"}]",
+        SubscriptionFormat.JSON);
+
+    when(userRepository.findByVerificationCode(code)).thenReturn(Optional.of(user));
+    when(subscriptionRepository.findFirstByUser_IdOrderByStartDateDesc(user.getId()))
+        .thenReturn(Optional.of(subscription));
+    when(configCacheService.get(user.getId())).thenReturn(cachedVless, cachedJson);
+
+    SubscriptionConfigPayload first = configFacade.getSubscriptionConfig(code);
+    assertThat(first.format()).isEqualTo(SubscriptionFormat.VLESS);
+
+    SubscriptionConfigPayload second = configFacade.getSubscriptionConfig(code);
+    assertThat(second.format()).isEqualTo(SubscriptionFormat.JSON);
+    assertThat(second.body()).contains("\"format\":\"json\"");
+
+    verify(configSyncService, times(2)).asyncSyncSubscription(code);
+    verifyNoInteractions(xuiPanelService);
   }
 
   private User user(Long id, String fullName) {

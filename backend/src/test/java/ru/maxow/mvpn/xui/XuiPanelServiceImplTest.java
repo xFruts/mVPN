@@ -17,7 +17,10 @@ import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.http.HttpHeaders;
+import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.web.client.RestClient;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
 import ru.maxow.mvpn.server.Server;
 import ru.maxow.mvpn.subscription.Subscription;
 import ru.maxow.mvpn.subscription.SubscriptionService;
@@ -219,39 +222,45 @@ class XuiPanelServiceImplTest {
     XuiInboundsResponse.Inbound inbound = inbound(1, 443, "vless");
     XuiClient client = new XuiClient();
 
-    // подготовим мок кэша и провайдера, чтобы сначала возвращался null, затем - значение из кэша
-    RequestScopedSubPortCache cache = mock(RequestScopedSubPortCache.class);
-    when(subPortCacheProvider.getIfAvailable()).thenReturn(cache);
-    when(cache.get(server.getId())).thenReturn(null, 2096);
+    RequestContextHolder.setRequestAttributes(
+        new ServletRequestAttributes(new MockHttpServletRequest()));
+    try {
+      // подготовим мок кэша и провайдера, чтобы сначала возвращался null, затем - значение из кэша
+      RequestScopedSubPortCache cache = mock(RequestScopedSubPortCache.class);
+      when(subPortCacheProvider.getIfAvailable()).thenReturn(cache);
+      when(cache.get(server.getId())).thenReturn(null, 2096);
 
-    when(sessionClient.login(eq(restClient), eq(server))).thenReturn("session=ok");
-    when(inboundClient.getInbounds(restClient, "session=ok"))
-        .thenReturn(inboundsResponse(List.of(inbound)));
-    when(subscriptionService.findLastSubscriptionEntityByUserId(user.getId())).thenReturn(sub);
-    when(inboundMutator.findClientInInbound(any(), eq(user))).thenReturn(Optional.of(client));
+      when(sessionClient.login(eq(restClient), eq(server))).thenReturn("session=ok");
+      when(inboundClient.getInbounds(restClient, "session=ok"))
+          .thenReturn(inboundsResponse(List.of(inbound)));
+      when(subscriptionService.findLastSubscriptionEntityByUserId(user.getId())).thenReturn(sub);
+      when(inboundMutator.findClientInInbound(any(), eq(user))).thenReturn(Optional.of(client));
 
-    ObjectNode payload = new ObjectMapper().createObjectNode();
-    when(payloadBuilder.buildClientPayload(any(), any(), any(), any())).thenReturn(payload);
-    when(payloadBuilder.wrapClientPayload(payload)).thenReturn("{}");
+      ObjectNode payload = new ObjectMapper().createObjectNode();
+      when(payloadBuilder.buildClientPayload(any(), any(), any(), any())).thenReturn(payload);
+      when(payloadBuilder.wrapClientPayload(payload)).thenReturn("{}");
 
-    when(jsonConfigClient.resolveSubscriptionPort(restClient, "session=ok", server)).thenReturn(2096);
-    when(jsonConfigClient.buildJsonSubscriptionUrl(eq(server), eq(user), eq(2096)))
-        .thenReturn("https://1.2.3.4:2096/json/id");
-    when(jsonConfigClient.fetchJsonConfigAtPath(restClient, "session=ok",
-        "https://1.2.3.4:2096/json/id", server)).thenReturn("{\"remarks\":\"old\"}");
-    when(jsonConfigClient.replaceRemarksWithServerName("{\"remarks\":\"old\"}", server))
-        .thenReturn("{\"remarks\":\"Moscow-1\"}");
+      when(jsonConfigClient.resolveSubscriptionPort(restClient, "session=ok", server)).thenReturn(2096);
+      when(jsonConfigClient.buildJsonSubscriptionUrl(eq(server), eq(user), eq(2096)))
+          .thenReturn("https://1.2.3.4:2096/json/id");
+      when(jsonConfigClient.fetchJsonConfigAtPath(restClient, "session=ok",
+          "https://1.2.3.4:2096/json/id", server)).thenReturn("{\"remarks\":\"old\"}");
+      when(jsonConfigClient.replaceRemarksWithServerName("{\"remarks\":\"old\"}", server))
+          .thenReturn("{\"remarks\":\"Moscow-1\"}");
 
-    // Первый вызов — должен вызвать resolveSubscriptionPort и положить значение в кэш
-    String first = service.getJsonConfig(server, user);
-    assertThat(first).contains("Moscow-1");
+      // Первый вызов — должен вызвать resolveSubscriptionPort и положить значение в кэш
+      String first = service.getJsonConfig(server, user);
+      assertThat(first).contains("Moscow-1");
 
-    // Второй вызов — кэш уже содержит значение, resolveSubscriptionPort вызываться не должен
-    String second = service.getJsonConfig(server, user);
-    assertThat(second).contains("Moscow-1");
+      // Второй вызов — кэш уже содержит значение, resolveSubscriptionPort вызываться не должен
+      String second = service.getJsonConfig(server, user);
+      assertThat(second).contains("Moscow-1");
 
-    verify(jsonConfigClient, times(1)).resolveSubscriptionPort(restClient, "session=ok", server);
-    verify(cache, times(1)).put(server.getId(), 2096);
+      verify(jsonConfigClient, times(1)).resolveSubscriptionPort(restClient, "session=ok", server);
+      verify(cache, times(1)).put(server.getId(), 2096);
+    } finally {
+      RequestContextHolder.resetRequestAttributes();
+    }
   }
 
   @Test
