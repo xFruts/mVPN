@@ -5,6 +5,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import ru.maxow.mvpn.server.Server;
 import ru.maxow.mvpn.subscription.Subscription;
@@ -27,7 +28,7 @@ public class SubscriptionTrafficStateServiceImpl implements SubscriptionTrafficS
   SubscriptionTrafficStateRepository trafficStateRepository;
 
   @Override
-  @Transactional
+  @Transactional(propagation = Propagation.REQUIRES_NEW)
   public SubscriptionTrafficState syncTrafficForSubscription(
       User user,
       Subscription subscription) throws XuiUnavailableException {
