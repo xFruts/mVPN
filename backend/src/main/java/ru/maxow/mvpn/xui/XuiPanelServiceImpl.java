@@ -268,9 +268,12 @@ public class XuiPanelServiceImpl implements XuiPanelService {
       String encodedClientId = UriUtils.encodePathSegment(clientId, StandardCharsets.UTF_8);
       String uri = "/panel/api/inbounds/getClientTrafficsById/" + encodedClientId;
 
-      String responseBody = restClient.get()
-          .uri(uri)
-          .header(HttpHeaders.COOKIE, sessionCookie)
+      RestClient.RequestHeadersSpec<?> request = restClient.get().uri(uri);
+      if (sessionCookie != null) {
+        request = request.header(HttpHeaders.COOKIE, sessionCookie);
+      }
+
+      String responseBody = request
           .retrieve()
           .body(String.class);
 

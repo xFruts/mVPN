@@ -31,9 +31,12 @@ class XuiJsonConfigClient {
 
   int resolveSubscriptionPort(RestClient panelRestClient, String sessionCookie, Server server) {
     try {
-      String settingsBody = panelRestClient.post()
-          .uri("/panel/setting/all")
-          .header(HttpHeaders.COOKIE, sessionCookie)
+      RestClient.RequestBodySpec request = panelRestClient.post().uri("/panel/setting/all");
+      if (sessionCookie != null) {
+        request = request.header(HttpHeaders.COOKIE, sessionCookie);
+      }
+
+      String settingsBody = request
           .contentType(MediaType.APPLICATION_FORM_URLENCODED)
           .body(new LinkedMultiValueMap<String, String>())
           .retrieve()
@@ -73,9 +76,12 @@ class XuiJsonConfigClient {
       String sessionCookie,
       String jsonPath,
       Server server) {
-    String response = jsonRestClient.get()
-        .uri(jsonPath)
-        .header(HttpHeaders.COOKIE, sessionCookie)
+    RestClient.RequestHeadersSpec<?> request = jsonRestClient.get().uri(jsonPath);
+    if (sessionCookie != null) {
+      request = request.header(HttpHeaders.COOKIE, sessionCookie);
+    }
+
+    String response = request
         .retrieve()
         .body(String.class);
 
@@ -101,4 +107,5 @@ class XuiJsonConfigClient {
       return jsonConfig;
     }
   }
+
 }

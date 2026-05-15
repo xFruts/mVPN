@@ -16,7 +16,6 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
 import org.springframework.beans.factory.ObjectProvider;
-import org.springframework.http.HttpHeaders;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.context.request.RequestContextHolder;
@@ -33,11 +32,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 @MockitoSettings(strictness = Strictness.LENIENT)
@@ -134,7 +129,9 @@ class XuiPanelServiceImplTest {
     when(subscriptionService.findLastSubscriptionEntityByUserId(user.getId())).thenReturn(sub);
     XuiClient client = new XuiClient();
     client.setId(user.getXuiId().toString());
-    when(inboundMutator.findClientInInbound(any(), eq(user))).thenReturn(Optional.empty(), Optional.of(client));
+    when(inboundMutator.findClientInInbound(any(), eq(user)))
+        .thenReturn(Optional.empty())
+        .thenReturn(Optional.of(client));
 
     ObjectNode payload = new ObjectMapper().createObjectNode();
     when(payloadBuilder.buildClientPayload(eq(user), eq(sub), any(), eq(null))).thenReturn(payload);
@@ -287,7 +284,11 @@ class XuiPanelServiceImplTest {
     doReturn(getUriSpec).when(restClient).get();
     // use doReturn to avoid generics mismatch in Mockito when(...).thenReturn(...) with wildcards
     doReturn(trafficHeadersSpec).when(getUriSpec).uri(anyString());
-    doReturn(trafficHeadersSpec).when(trafficHeadersSpec).header(eq(HttpHeaders.COOKIE), anyString());
+    // allow any header calls to return the same headers spec (covers Cookie and Authorization cases,
+    // including nullable token values). Use a generic varargs matcher to handle the String... parameter.
+    doAnswer(invocation -> trafficHeadersSpec)
+        .when(trafficHeadersSpec)
+        .header(anyString(), org.mockito.ArgumentMatchers.any(String[].class));
     doReturn(trafficResponseSpec).when(trafficHeadersSpec).retrieve();
   }
 

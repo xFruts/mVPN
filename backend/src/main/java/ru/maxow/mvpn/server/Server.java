@@ -72,6 +72,9 @@ public class Server {
   @Convert(converter = AttributeEncryptor.class)
   String xuiPassword;
 
+  @Convert(converter = AttributeEncryptor.class)
+  String xuiAuthToken = null;
+
   Integer port;
   String webBasePath;
 

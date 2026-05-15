@@ -6,12 +6,13 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
-import org.springframework.util.LinkedMultiValueMap;
-import org.springframework.util.MultiValueMap;
 import org.springframework.util.StringUtils;
 import org.springframework.web.client.RestClient;
 import ru.maxow.mvpn.server.Server;
 import ru.maxow.mvpn.util.exception.XuiUnavailableException;
+
+import java.util.HashMap;
+import java.util.Map;
 
 @Component
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
@@ -23,15 +24,26 @@ class XuiSessionClient {
   }
 
   RestClient buildPanelClient(Server server) {
-    return restClientBuilder.baseUrl(buildBaseUrl(server)).build();
+    return buildClient(server, buildBaseUrl(server));
   }
 
   RestClient buildRootClient(Server server) {
-    return restClientBuilder.baseUrl(buildRootBaseUrl(server)).build();
+    return buildClient(server, buildRootBaseUrl(server));
   }
 
   String login(RestClient restClient, Server server) {
+    if (StringUtils.hasText(server.getXuiAuthToken())) {
+      return null;
+    }
     return login(restClient, server.getXuiLogin(), server.getXuiPassword());
+  }
+
+  private RestClient buildClient(Server server, String baseUrl) {
+    RestClient.Builder builder = restClientBuilder.clone().baseUrl(baseUrl);
+    if (StringUtils.hasText(server.getXuiAuthToken())) {
+      builder.defaultHeader(HttpHeaders.AUTHORIZATION, "Bearer " + server.getXuiAuthToken());
+    }
+    return builder.build();
   }
 
   private String buildBaseUrl(Server server) {
@@ -47,14 +59,14 @@ class XuiSessionClient {
   }
 
   private String login(RestClient restClient, String username, String password) {
-    MultiValueMap<String, String> formData = new LinkedMultiValueMap<>();
-    formData.add("username", username);
-    formData.add("password", password);
+    Map<String, String> loginRequest = new HashMap<>();
+    loginRequest.put("username", username);
+    loginRequest.put("password", password);
 
     ResponseEntity<Void> response = restClient.post()
         .uri("/login")
-        .contentType(MediaType.APPLICATION_FORM_URLENCODED)
-        .body(formData)
+        .contentType(MediaType.APPLICATION_JSON)
+        .body(loginRequest)
         .retrieve()
         .toBodilessEntity();
 

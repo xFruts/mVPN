@@ -15,9 +15,11 @@ import ru.maxow.mvpn.util.exception.XuiUnavailableException;
 @Component
 class XuiInboundClient {
   XuiInboundsResponse getInbounds(RestClient restClient, String sessionCookie) {
-    return restClient.get()
-        .uri("/panel/api/inbounds/list")
-        .header(HttpHeaders.COOKIE, sessionCookie)
+    RestClient.RequestHeadersSpec<?> request = restClient.get().uri("/panel/api/inbounds/list");
+    if (sessionCookie != null) {
+      request = request.header(HttpHeaders.COOKIE, sessionCookie);
+    }
+    return request
         .retrieve()
         .body(XuiInboundsResponse.class);
   }
@@ -34,9 +36,12 @@ class XuiInboundClient {
       formData.add("id", String.valueOf(inbound.getId()));
       formData.add("settings", clientSettings);
 
-      String response = restClient.post()
-          .uri("/panel/api/inbounds/addClient")
-          .header(HttpHeaders.COOKIE, sessionCookie)
+      RestClient.RequestBodySpec request = restClient.post().uri("/panel/api/inbounds/addClient");
+      if (sessionCookie != null) {
+        request = request.header(HttpHeaders.COOKIE, sessionCookie);
+      }
+
+      String response = request
           .contentType(MediaType.APPLICATION_FORM_URLENCODED)
           .body(formData)
           .retrieve()
@@ -75,9 +80,12 @@ class XuiInboundClient {
       formData.add("id", String.valueOf(inbound.getId()));
       formData.add("settings", clientSettings);
 
-      String response = restClient.post()
-          .uri("/panel/api/inbounds/updateClient/" + existingClient.getId())
-          .header(HttpHeaders.COOKIE, sessionCookie)
+      RestClient.RequestBodySpec request = restClient.post().uri("/panel/api/inbounds/updateClient/" + existingClient.getId());
+      if (sessionCookie != null) {
+        request = request.header(HttpHeaders.COOKIE, sessionCookie);
+      }
+
+      String response = request
           .contentType(MediaType.APPLICATION_FORM_URLENCODED)
           .body(formData)
           .retrieve()
@@ -102,5 +110,6 @@ class XuiInboundClient {
       throw new XuiUnavailableException("Failed to edit client settings");
     }
   }
+
 }
 

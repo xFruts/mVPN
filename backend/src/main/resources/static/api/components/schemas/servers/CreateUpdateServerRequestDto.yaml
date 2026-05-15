@@ -64,6 +64,10 @@ properties:
     type: string
     format: password
     example: "GNWERcwm;"
+  xuiAuthToken:
+    type: string
+    description: Токен для доступа к API x-ui
+    example: "VCSEPWCIOUh3oiycbwocec"
   subscriptionFormat:
     $ref: './SubscriptionFormat.yaml'
     description: Формат выдачи конфигурации по серверу (VLESS или JSON)
