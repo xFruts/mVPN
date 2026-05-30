@@ -31,6 +31,18 @@ public class SubscriptionTrafficState {
   @Column(nullable = false)
   Long usedDownloadBytes;
 
+  @Column
+  Long periodStartTotalBytes;
+
+  @Column
+  Long periodStartUploadBytes;
+
+  @Column
+  Long periodStartDownloadBytes;
+
+  @Column
+  Instant periodStartAt;
+
   @Column(nullable = false)
   Instant lastSyncedAt;
 

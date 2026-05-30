@@ -16,6 +16,8 @@ import ru.maxow.mvpn.xui.XuiClientTraffic;
 import ru.maxow.mvpn.xui.XuiPanelService;
 
 import java.time.Instant;
+import java.time.YearMonth;
+import java.time.ZoneId;
 import java.util.Optional;
 
 @Slf4j
@@ -65,6 +67,7 @@ public class SubscriptionTrafficStateServiceImpl implements SubscriptionTrafficS
     }
 
     long totalUsedBytes = totalUploadBytes + totalDownloadBytes;
+    Instant now = Instant.now();
 
     if (successfulServers == 0) {
       log.warn("No servers responded with traffic data. userId={}, subscriptionId={}",
@@ -79,23 +82,59 @@ public class SubscriptionTrafficStateServiceImpl implements SubscriptionTrafficS
 
     if (previousOpt.isPresent()) {
       SubscriptionTrafficState previous = previousOpt.get();
-      if (!isTrafficDataValid(totalUsedBytes, previous.getUsedBytes())) {
-        log.warn(
-            "New traffic data looks invalid. subscriptionId={}, previous={} bytes, new={} bytes. Using fallback.",
-            subscription.getId(), previous.getUsedBytes(), totalUsedBytes
-        );
-        return previous;
+      Long previousPeriodStartTotal = previous.getPeriodStartTotalBytes();
+      if (previousPeriodStartTotal != null) {
+        long previousTotal = previousPeriodStartTotal + previous.getUsedBytes();
+        if (!isTrafficDataValid(totalUsedBytes, previousTotal)) {
+          log.warn(
+              "New traffic data looks invalid. subscriptionId={}, previous={} bytes, new={} bytes. Using fallback.",
+              subscription.getId(), previousTotal, totalUsedBytes
+          );
+          return previous;
+        }
       }
     }
 
     SubscriptionTrafficState state = previousOpt.orElse(
         new SubscriptionTrafficState()
     );
+
+    Long periodStartTotal = previousOpt.map(SubscriptionTrafficState::getPeriodStartTotalBytes).orElse(null);
+    Long periodStartUpload = previousOpt.map(SubscriptionTrafficState::getPeriodStartUploadBytes).orElse(null);
+    Long periodStartDownload = previousOpt.map(SubscriptionTrafficState::getPeriodStartDownloadBytes).orElse(null);
+    Instant periodStartAt = previousOpt.map(SubscriptionTrafficState::getPeriodStartAt).orElse(null);
+
+    boolean resetPeriod = shouldResetPeriod(periodStartAt, now);
+    if (resetPeriod || periodStartTotal == null || periodStartUpload == null || periodStartDownload == null) {
+      periodStartTotal = totalUsedBytes;
+      periodStartUpload = totalUploadBytes;
+      periodStartDownload = totalDownloadBytes;
+      periodStartAt = now;
+    }
+
+    long usedBytes = totalUsedBytes - periodStartTotal;
+    long usedUploadBytes = totalUploadBytes - periodStartUpload;
+    long usedDownloadBytes = totalDownloadBytes - periodStartDownload;
+
+    if (usedBytes < 0 || usedUploadBytes < 0 || usedDownloadBytes < 0) {
+      periodStartTotal = totalUsedBytes;
+      periodStartUpload = totalUploadBytes;
+      periodStartDownload = totalDownloadBytes;
+      periodStartAt = now;
+      usedBytes = 0L;
+      usedUploadBytes = 0L;
+      usedDownloadBytes = 0L;
+    }
+
     state.setSubscriptionId(subscription.getId());
-    state.setUsedBytes(totalUsedBytes);
-    state.setUsedUploadBytes(totalUploadBytes);
-    state.setUsedDownloadBytes(totalDownloadBytes);
-    state.setLastSyncedAt(Instant.now());
+    state.setUsedBytes(usedBytes);
+    state.setUsedUploadBytes(usedUploadBytes);
+    state.setUsedDownloadBytes(usedDownloadBytes);
+    state.setPeriodStartTotalBytes(periodStartTotal);
+    state.setPeriodStartUploadBytes(periodStartUpload);
+    state.setPeriodStartDownloadBytes(periodStartDownload);
+    state.setPeriodStartAt(periodStartAt);
+    state.setLastSyncedAt(now);
     state.setSource(source);
 
     SubscriptionTrafficState saved = trafficStateRepository.save(state);
@@ -116,7 +155,17 @@ public class SubscriptionTrafficStateServiceImpl implements SubscriptionTrafficS
   }
 
   private boolean isTrafficDataValid(long newBytes, long previousBytes) {
-    long tolerance = 100 * 1024 * 1024; // 100 МБ допуска
+    long tolerance = 100 * 1024 * 1024; // 100 MB tolerance
     return !(newBytes < (previousBytes - tolerance));
+  }
+
+  private boolean shouldResetPeriod(Instant periodStartAt, Instant now) {
+    if (periodStartAt == null) {
+      return true;
+    }
+    ZoneId zoneId = ZoneId.systemDefault();
+    YearMonth periodMonth = YearMonth.from(periodStartAt.atZone(zoneId));
+    YearMonth currentMonth = YearMonth.from(now.atZone(zoneId));
+    return currentMonth.isAfter(periodMonth);
   }
 }
