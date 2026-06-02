@@ -83,8 +83,12 @@ public class GlobalExceptionHandler {
         ex.getClass().getSimpleName(),
         extractPath(request));
     String errorCode = determineErrorCode(ex);
+    String message = ex instanceof BadRequestException && ex.getMessage() != null
+        && !ex.getMessage().isBlank()
+        ? ex.getMessage()
+        : MSG_INVALID_REQUEST;
     return new ErrorResponse(
-        MSG_INVALID_REQUEST,
+        message,
         System.currentTimeMillis(),
         errorCode,
         getOrGenerateCorrelationId());

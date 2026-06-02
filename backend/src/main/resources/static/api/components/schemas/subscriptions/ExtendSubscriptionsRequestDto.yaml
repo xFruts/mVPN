@@ -1,0 +1,11 @@
+type: object
+required:
+  - userIds
+properties:
+  userIds:
+    type: array
+    minItems: 1
+    items:
+      type: integer
+      format: int64
+

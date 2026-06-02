@@ -166,3 +166,32 @@ SubscriptionById:
         $ref: '../components/responses/error/Forbidden.yaml'
       '404':
         $ref: '../components/responses/error/NotFound.yaml'
+
+SubscriptionsExtend:
+  post:
+    operationId: extendSubscriptions
+    summary: Продлить подписки пользователей на 1 месяц
+    tags: [Subscriptions]
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '../components/schemas/subscriptions/ExtendSubscriptionsRequestDto.yaml'
+    responses:
+      '200':
+        description: Подписки продлены
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                $ref: '../components/schemas/subscriptions/SubscriptionResponseDto.yaml'
+      '400':
+        $ref: '../components/responses/error/BadRequest.yaml'
+      401:
+        $ref: '../components/responses/error/Unauthorized.yaml'
+      403:
+        $ref: '../components/responses/error/Forbidden.yaml'
+      '404':
+        $ref: '../components/responses/error/NotFound.yaml'

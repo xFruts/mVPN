@@ -8,6 +8,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.RestController;
 import ru.maxow.mvpn.api.SubscriptionsApi;
 import ru.maxow.mvpn.model.CreateUpdateSubscriptionDto;
+import ru.maxow.mvpn.model.ExtendSubscriptionsRequestDto;
 import ru.maxow.mvpn.model.SubscriptionResponseDto;
 
 @Slf4j
@@ -50,5 +51,12 @@ public class SubscriptionController implements SubscriptionsApi {
   @Override
   public SubscriptionResponseDto getLastSubscription(Long userId) {
     return subscriptionService.getLastSubscriptionByUserId(userId);
+  }
+
+  @Override
+  public List<SubscriptionResponseDto> extendSubscriptions(
+      ExtendSubscriptionsRequestDto extendSubscriptionsRequestDto) {
+    return subscriptionService.extendSubscriptionsByUserIds(
+        extendSubscriptionsRequestDto.getUserIds());
   }
 }

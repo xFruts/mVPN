@@ -617,5 +617,59 @@ class SubscriptionServiceImplTest {
       verify(subscriptionRepository).save(testSubscription);
     }
   }
-}
 
+  @Nested
+  @DisplayName("Продление подписки на 1 месяц (bulk)")
+  class ExtendSubscriptionsByUserIdsTests {
+
+    @Test
+    @DisplayName("Должен продлить endDate на месяц для всех пользователей")
+    void shouldExtendSubscriptionsForUsers() {
+      Long userId = 1L;
+      OffsetDateTime endDate = OffsetDateTime.now(ZoneOffset.UTC).plusDays(10);
+      testSubscription.setEndDate(endDate);
+
+      when(subscriptionRepository.findFirstByUser_IdOrderByStartDateDesc(userId))
+          .thenReturn(Optional.of(testSubscription));
+      when(subscriptionRepository.saveAll(any())).thenAnswer(invocation -> invocation.getArgument(0));
+      when(subscriptionMapper.toSubscriptionResponseDto(testSubscription)).thenReturn(testSubscriptionDto);
+
+      List<SubscriptionResponseDto> result =
+          subscriptionService.extendSubscriptionsByUserIds(List.of(userId));
+
+      assertThat(result).containsExactly(testSubscriptionDto);
+
+      @SuppressWarnings("unchecked")
+      ArgumentCaptor<List<Subscription>> captor = ArgumentCaptor.forClass(List.class);
+      verify(subscriptionRepository).saveAll(captor.capture());
+
+      Subscription saved = captor.getValue().getFirst();
+      assertThat(saved.getEndDate()).isEqualTo(endDate.plusMonths(1));
+      assertThat(saved.getStatus()).isEqualTo(SubscriptionStatus.ACTIVE);
+    }
+
+    @Test
+    @DisplayName("Должен выбросить BadRequestException если список пользователей пустой")
+    void shouldThrowWhenUserIdsEmpty() {
+      assertThatThrownBy(() -> subscriptionService.extendSubscriptionsByUserIds(List.of()))
+          .isInstanceOf(BadRequestException.class)
+          .hasMessageContaining("User IDs list cannot be empty");
+
+      verifyNoInteractions(subscriptionRepository);
+    }
+
+    @Test
+    @DisplayName("Должен выбросить BadRequestException если подписка не найдена")
+    void shouldThrowWhenSubscriptionMissing() {
+      Long userId = 2L;
+      when(subscriptionRepository.findFirstByUser_IdOrderByStartDateDesc(userId))
+          .thenReturn(Optional.empty());
+
+      assertThatThrownBy(() -> subscriptionService.extendSubscriptionsByUserIds(List.of(userId)))
+          .isInstanceOf(BadRequestException.class)
+          .hasMessageContaining("No subscription found");
+
+      verify(subscriptionRepository, never()).saveAll(any());
+    }
+  }
+}

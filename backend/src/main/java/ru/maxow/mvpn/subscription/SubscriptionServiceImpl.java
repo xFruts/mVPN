@@ -5,6 +5,8 @@ import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
+import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.UUID;
 
@@ -196,5 +198,45 @@ public class SubscriptionServiceImpl implements SubscriptionService {
   @Transactional(readOnly = true)
   public SubscriptionResponseDto getLastSubscriptionByUserId(Long userId) {
     return subscriptionMapper.toSubscriptionResponseDto(findLastSubscriptionEntityByUserId(userId));
+  }
+
+  @Override
+  @Transactional
+  public List<SubscriptionResponseDto> extendSubscriptionsByUserIds(List<Long> userIds) {
+    if (userIds == null || userIds.isEmpty()) {
+      throw new BadRequestException("User IDs list cannot be empty");
+    }
+
+    LinkedHashSet<Long> uniqueUserIds = new LinkedHashSet<>(userIds);
+    List<Subscription> subscriptions = new ArrayList<>(uniqueUserIds.size());
+    List<Long> missingUserIds = new ArrayList<>();
+
+    for (Long userId : uniqueUserIds) {
+      if (userId == null) {
+        throw new BadRequestException("User ID cannot be null");
+      }
+      subscriptionRepository.findFirstByUser_IdOrderByStartDateDesc(userId)
+          .ifPresentOrElse(subscriptions::add, () -> missingUserIds.add(userId));
+    }
+
+    if (!missingUserIds.isEmpty()) {
+      throw new BadRequestException("No subscription found for user(s): " + missingUserIds);
+    }
+
+    OffsetDateTime now = OffsetDateTime.now(ZoneOffset.UTC);
+    for (Subscription subscription : subscriptions) {
+      subscription.setStatus(SubscriptionStatus.ACTIVE);
+      OffsetDateTime baseEndDate = subscription.getEndDate();
+      if (baseEndDate == null || baseEndDate.isBefore(now)) {
+        baseEndDate = now;
+      }
+      subscription.setEndDate(baseEndDate.plusMonths(1));
+    }
+
+    subscriptionRepository.saveAll(subscriptions);
+
+    return subscriptions.stream()
+        .map(subscriptionMapper::toSubscriptionResponseDto)
+        .toList();
   }
 }

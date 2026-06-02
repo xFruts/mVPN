@@ -28,4 +28,6 @@ public interface SubscriptionService {
   Subscription findLastSubscriptionEntityByUserId(Long userId);
 
   SubscriptionResponseDto getLastSubscriptionByUserId(Long userId);
+
+  List<SubscriptionResponseDto> extendSubscriptionsByUserIds(List<Long> userIds);
 }
