@@ -18,11 +18,7 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
-import ru.maxow.mvpn.model.CreateUpdateServerRequestDto;
-import ru.maxow.mvpn.model.ListServerDto;
-import ru.maxow.mvpn.model.PageListServerDto;
-import ru.maxow.mvpn.model.ServerResponseDto;
-import ru.maxow.mvpn.model.ServerStatus;
+import ru.maxow.mvpn.model.*;
 import ru.maxow.mvpn.util.exception.NotFoundException;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -81,7 +77,7 @@ class ServerServiceTest {
 
       assertThat(result).isNotNull();
       assertThat(result.getContent()).hasSize(1);
-      assertThat(result.getContent().get(0).getName()).isEqualTo("Moscow-1");
+      assertThat(result.getContent().getFirst().getName()).isEqualTo("Moscow-1");
       assertThat(result.getTotalElements()).isEqualTo(1L);
       assertThat(result.getTotalPages()).isEqualTo(1);
       assertThat(result.getSize()).isEqualTo(10);
@@ -120,21 +116,21 @@ class ServerServiceTest {
     @Test
     @DisplayName("Должен вернуть сервер по id")
     void shouldReturnServerById() {
-      ServerResponseDto dto = new ServerResponseDto();
+      GetServerResponseDto dto = new GetServerResponseDto();
       dto.setId(1L);
       dto.setName("Moscow-1");
 
       when(serverRepository.findById(1L)).thenReturn(Optional.of(testServer));
-      when(serverMapper.toDto(testServer)).thenReturn(dto);
+      when(serverMapper.toGetDto(testServer)).thenReturn(dto);
 
-      ServerResponseDto result = serverService.getServer(1L);
+      GetServerResponseDto result = serverService.getServer(1L);
 
       assertThat(result).isNotNull();
       assertThat(result.getId()).isEqualTo(1L);
       assertThat(result.getName()).isEqualTo("Moscow-1");
 
       verify(serverRepository).findById(1L);
-      verify(serverMapper).toDto(testServer);
+      verify(serverMapper).toGetDto(testServer);
     }
 
     @Test

@@ -6,11 +6,7 @@ import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.RestController;
 import ru.maxow.mvpn.api.ServersApi;
-import ru.maxow.mvpn.model.CreateUpdateServerRequestDto;
-import ru.maxow.mvpn.model.PageListServerDto;
-import ru.maxow.mvpn.model.ServerResponseDto;
-import ru.maxow.mvpn.model.ServerStatus;
-import ru.maxow.mvpn.model.UploadSshKeyResponseDto;
+import ru.maxow.mvpn.model.*;
 
 import java.util.List;
 import org.springframework.web.multipart.MultipartFile;
@@ -53,7 +49,7 @@ public class ServerController implements ServersApi {
   }
 
   @Override
-  public ServerResponseDto getServerById(Long id) {
+  public GetServerResponseDto getServerById(Long id) {
     return serverService.getServer(id);
   }
 }

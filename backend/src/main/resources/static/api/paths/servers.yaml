@@ -77,7 +77,7 @@ ServerSingle:
         content:
           application/json:
             schema:
-              $ref: '../components/schemas/servers/ServerResponseDto.yaml'
+              $ref: '../components/schemas/servers/GetServerResponseDto.yaml'
       401:
         $ref: '../components/responses/error/Unauthorized.yaml'
       403:

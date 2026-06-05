@@ -6,12 +6,15 @@ import org.mapstruct.Mapping;
 import org.mapstruct.MappingTarget;
 import org.mapstruct.NullValuePropertyMappingStrategy;
 import ru.maxow.mvpn.model.CreateUpdateServerRequestDto;
+import ru.maxow.mvpn.model.GetServerResponseDto;
 import ru.maxow.mvpn.model.ListServerDto;
 import ru.maxow.mvpn.model.ServerResponseDto;
 
 @Mapper(componentModel = "spring")
 public interface ServerMapper {
   ServerResponseDto toDto(Server server);
+
+  GetServerResponseDto toGetDto(Server server);
 
   ListServerDto toListDto(Server servers);
 

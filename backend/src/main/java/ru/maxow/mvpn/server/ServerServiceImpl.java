@@ -12,11 +12,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 import ru.maxow.mvpn.minio.MinioService;
-import ru.maxow.mvpn.model.CreateUpdateServerRequestDto;
-import ru.maxow.mvpn.model.PageListServerDto;
-import ru.maxow.mvpn.model.ServerResponseDto;
-import ru.maxow.mvpn.model.ServerStatus;
-import ru.maxow.mvpn.model.UploadSshKeyResponseDto;
+import ru.maxow.mvpn.model.*;
 import ru.maxow.mvpn.util.exception.BadRequestException;
 import ru.maxow.mvpn.util.exception.NotFoundException;
 
@@ -55,10 +51,10 @@ public class ServerServiceImpl implements ServerService {
   }
 
   @Override
-  public ServerResponseDto getServer(Long id) {
+  public GetServerResponseDto getServer(Long id) {
     return serverRepository
         .findById(id)
-        .map(serverMapper::toDto)
+        .map(serverMapper::toGetDto)
         .orElseThrow(() -> new NotFoundException("Server", id));
   }
 

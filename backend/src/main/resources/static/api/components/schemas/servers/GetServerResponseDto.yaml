@@ -1,0 +1,38 @@
+type: object
+properties:
+  id:
+    type: integer
+    format: int64
+  name:
+    type: string
+    example: "Finland"
+  location:
+    type: string
+    description: Первые две буквы локации сервера КАПСОМ
+    example: "FI"
+  countryEmoji:
+    type: string
+    description: Эмодзи страны сервера
+    example: "🇫🇮"
+  ip:
+    type: string
+    format: ipv4
+  status:
+    $ref: './ServerStatus.yaml'
+  maxUsers:
+    type: integer
+    example: 100
+  maxTraffic:
+    type: integer
+    description: Максимальный трафик на пользователя в гигабайтах
+    example: 300
+  port:
+    type: integer
+    format: int32
+    minimum: 1
+    maximum: 65535
+    example: 2053
+  sshAuthType:
+    $ref: './SshAuthType.yaml'
+  subscriptionFormat:
+    $ref: './SubscriptionFormat.yaml'
