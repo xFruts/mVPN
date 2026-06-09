@@ -143,7 +143,7 @@ class ServerServiceTest {
           .satisfies(error -> {
             NotFoundException exception = (NotFoundException) error;
             assertThat(exception.getEntityName()).isEqualTo("Server");
-            assertThat(exception.getIdentifier()).isEqualTo(404L);
+            assertThat(exception.getIdentifier()).isEqualTo("404");
           });
 
       verify(serverRepository).findById(404L);
@@ -279,7 +279,7 @@ class ServerServiceTest {
           .satisfies(error -> {
             NotFoundException exception = (NotFoundException) error;
             assertThat(exception.getEntityName()).isEqualTo("Server");
-            assertThat(exception.getIdentifier()).isEqualTo(999L);
+            assertThat(exception.getIdentifier()).isEqualTo("999");
           });
 
       verify(serverRepository).findById(999L);
@@ -328,7 +328,7 @@ class ServerServiceTest {
           .satisfies(error -> {
             NotFoundException exception = (NotFoundException) error;
             assertThat(exception.getEntityName()).isEqualTo("Server");
-            assertThat(exception.getIdentifier()).isEqualTo(999L);
+            assertThat(exception.getIdentifier()).isEqualTo("999");
           });
 
       verify(serverRepository).findById(999L);
@@ -361,7 +361,7 @@ class ServerServiceTest {
           .satisfies(error -> {
             NotFoundException exception = (NotFoundException) error;
             assertThat(exception.getEntityName()).isEqualTo("Server");
-            assertThat(exception.getIdentifier()).isEqualTo(999L);
+            assertThat(exception.getIdentifier()).isEqualTo("999");
           });
 
       verify(serverRepository).deleteById(999L);

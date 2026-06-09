@@ -113,7 +113,7 @@ class PaymentVerificationServiceTest {
           .satisfies(error -> {
             NotFoundException ex = (NotFoundException) error;
             assertThat(ex.getEntityName()).isEqualTo("User");
-            assertThat(ex.getIdentifier()).isEqualTo(404L);
+            assertThat(ex.getIdentifier()).isEqualTo("404");
           });
 
       verify(userRepository).findById(404L);
@@ -301,7 +301,7 @@ class PaymentVerificationServiceTest {
           .satisfies(error -> {
             NotFoundException ex = (NotFoundException) error;
             assertThat(ex.getEntityName()).isEqualTo("Payment verification");
-            assertThat(ex.getIdentifier()).isEqualTo(404L);
+            assertThat(ex.getIdentifier()).isEqualTo("404");
           });
 
       verify(repository).findById(404L);
@@ -381,7 +381,7 @@ class PaymentVerificationServiceTest {
           .satisfies(error -> {
             NotFoundException ex = (NotFoundException) error;
             assertThat(ex.getEntityName()).isEqualTo("Payment verification");
-            assertThat(ex.getIdentifier()).isEqualTo(405L);
+            assertThat(ex.getIdentifier()).isEqualTo("405");
           });
 
       verify(repository).findById(405L);

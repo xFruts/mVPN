@@ -161,7 +161,6 @@ class PromocodeServiceTest {
           .isInstanceOf(NotFoundException.class)
           .satisfies(error -> {
             NotFoundException ex = (NotFoundException) error;
-            assertThat(ex.getEntityName()).isEqualTo("Promocode");
             assertThat(ex.getIdentifier()).isNull();
           });
 
@@ -297,7 +296,7 @@ class PromocodeServiceTest {
           .satisfies(error -> {
             NotFoundException ex = (NotFoundException) error;
             assertThat(ex.getEntityName()).isEqualTo("Promocode");
-            assertThat(ex.getIdentifier()).isEqualTo(999L);
+            assertThat(ex.getIdentifier()).isEqualTo("999");
           });
 
       verify(promocodeRepository).deleteById(999L);

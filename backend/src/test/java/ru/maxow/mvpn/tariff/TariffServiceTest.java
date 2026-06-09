@@ -141,7 +141,7 @@ class TariffServiceTest {
           .satisfies(error -> {
             NotFoundException exception = (NotFoundException) error;
             assertThat(exception.getEntityName()).isEqualTo("Server");
-            assertThat(exception.getIdentifier()).isEqualTo(100L);
+            assertThat(exception.getIdentifier()).isEqualTo("100");
           });
 
       verify(tariffMapper).updateFromDto(eq(request), any(Tariff.class));
