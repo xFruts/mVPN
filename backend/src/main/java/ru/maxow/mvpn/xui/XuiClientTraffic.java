@@ -1,51 +1,35 @@
 package ru.maxow.mvpn.xui;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
+/**
+ * Данные о трафике клиента, получаемые из 3X-UI.
+ * В новом API трафик приходит как часть {@code GET /panel/api/clients/get/{email}},
+ * но также может быть построен вручную при агрегации.
+ */
 @JsonIgnoreProperties(ignoreUnknown = true)
-@Getter
-@Setter
-@NoArgsConstructor
-@AllArgsConstructor
-public class XuiClientTraffic {
+public record XuiClientTraffic(
+    @JsonProperty("email")
+    String email,
 
-  @JsonProperty("id")
-  private Long id;
+    @JsonProperty("up")
+    long upload,
 
-  @JsonProperty("inboundId")
-  private Long inboundId;
+    @JsonProperty("down")
+    long download,
 
-  @JsonProperty("enable")
-  private Boolean enable;
+    @JsonProperty("total")
+    long total,
 
-  @JsonProperty("email")
-  private String email;
+    @JsonProperty("expiryTime")
+    long expiryTime
+) {
 
-  @JsonProperty("up")
-  private Long upload;
-
-  @JsonProperty("down")
-  private Long download;
-
-  @JsonProperty("allTime")
-  private Long allTime;
-
-  @JsonProperty("total")
-  private Long total;
-
-  @JsonProperty("expiryTime")
-  private Long expiryTime;
-
-  @JsonProperty("reset")
-  private Integer reset;
-
-  @JsonProperty("lastOnline")
-  private Long lastOnline;
+  /**
+   * Создаёт «нулевой» трафик для случаев, когда данные недоступны.
+   */
+  public static XuiClientTraffic zero(String email) {
+    return new XuiClientTraffic(email, 0L, 0L, 0L, 0L);
+  }
 }
-
-

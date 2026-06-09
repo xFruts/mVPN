@@ -1,4 +1,4 @@
-package ru.maxow.mvpn.xui;
+package ru.maxow.mvpn.xui.dto;
 
 /**
  * Источник данных для трафика подписки.

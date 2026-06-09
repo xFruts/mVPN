@@ -11,9 +11,20 @@ import org.springframework.web.client.RestClient;
 import ru.maxow.mvpn.server.Server;
 import ru.maxow.mvpn.util.exception.XuiUnavailableException;
 
-import java.util.HashMap;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
+/**
+ * Управление HTTP-сессиями с 3X-UI Panel.
+ * <p>
+ * Поддерживает два режима аутентификации:
+ * <ul>
+ *   <li><b>Cookie</b> — логин через {@code POST /login}, session cookie для дальнейших запросов</li>
+ *   <li><b>Bearer token</b> — токен из настроек панели, подставляется в {@code Authorization} header</li>
+ * </ul>
+ * При наличии {@code xuiAuthToken} на сервере логин не выполняется.
+ */
 @Component
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 class XuiSessionClient {
@@ -23,20 +34,33 @@ class XuiSessionClient {
     this.restClientBuilder = restClientBuilder;
   }
 
+  /**
+   * Создаёт {@link RestClient} с base URL, включающим {@code webBasePath}.
+   */
   RestClient buildPanelClient(Server server) {
     return buildClient(server, buildBaseUrl(server));
   }
 
+  /**
+   * Создаёт {@link RestClient} с корневым base URL (без webBasePath).
+   */
   RestClient buildRootClient(Server server) {
     return buildClient(server, buildRootBaseUrl(server));
   }
 
+  /**
+   * Выполняет логин или возвращает {@code null}, если сервер использует Bearer-аутентификацию.
+   *
+   * @return строка cookie для подстановки в {@code Cookie} header, или {@code null} при Bearer-auth
+   */
   String login(RestClient restClient, Server server) {
     if (StringUtils.hasText(server.getXuiAuthToken())) {
       return null;
     }
-    return login(restClient, server.getXuiLogin(), server.getXuiPassword());
+    return doLogin(restClient, server.getXuiLogin(), server.getXuiPassword());
   }
+
+  // ── internal ──────────────────────────────────────────────────────────────
 
   private RestClient buildClient(Server server, String baseUrl) {
     RestClient.Builder builder = restClientBuilder.clone().baseUrl(baseUrl);
@@ -58,23 +82,27 @@ class XuiSessionClient {
     return String.format("https://%s:%d", server.getIp(), server.getPort());
   }
 
-  private String login(RestClient restClient, String username, String password) {
-    Map<String, String> loginRequest = new HashMap<>();
-    loginRequest.put("username", username);
-    loginRequest.put("password", password);
-
+  private String doLogin(RestClient restClient, String username, String password) {
     ResponseEntity<Void> response = restClient.post()
         .uri("/login")
         .contentType(MediaType.APPLICATION_JSON)
-        .body(loginRequest)
+        .body(Map.of("username", username, "password", password))
         .retrieve()
         .toBodilessEntity();
 
-    String cookie = response.getHeaders().getFirst(HttpHeaders.SET_COOKIE);
-    if (cookie == null) {
-      throw new XuiUnavailableException("Login failed: No session cookie");
+    List<String> setCookieHeaders = response.getHeaders().get(HttpHeaders.SET_COOKIE);
+    if (setCookieHeaders == null || setCookieHeaders.isEmpty()) {
+      throw new XuiUnavailableException("Login failed: no session cookie returned");
     }
-    return cookie;
+
+    List<String> cookiePairs = new ArrayList<>();
+    for (String header : setCookieHeaders) {
+      String pair = header.split(";")[0].trim();
+      if (!pair.isEmpty()) {
+        cookiePairs.add(pair);
+      }
+    }
+
+    return String.join("; ", cookiePairs);
   }
 }
-

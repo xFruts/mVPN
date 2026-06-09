@@ -5,7 +5,7 @@ import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.experimental.FieldDefaults;
-import ru.maxow.mvpn.xui.TrafficSyncSource;
+import ru.maxow.mvpn.xui.dto.TrafficSyncSource;
 
 import java.time.Instant;
 
