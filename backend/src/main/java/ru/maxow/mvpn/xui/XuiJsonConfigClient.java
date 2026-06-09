@@ -1,14 +1,13 @@
 package ru.maxow.mvpn.xui;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ObjectNode;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.node.ObjectNode;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
-import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.StringUtils;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.util.UriUtils;
@@ -31,25 +30,20 @@ class XuiJsonConfigClient {
 
   int resolveSubscriptionPort(RestClient panelRestClient, String sessionCookie, Server server) {
     try {
-      RestClient.RequestBodySpec request = panelRestClient.post().uri("/panel/setting/all");
+      RestClient.RequestBodySpec request = panelRestClient.post().uri("/panel/api/setting/all");
       if (sessionCookie != null) {
         request = request.header(HttpHeaders.COOKIE, sessionCookie);
       }
 
-      String settingsBody = request
-          .contentType(MediaType.APPLICATION_FORM_URLENCODED)
-          .body(new LinkedMultiValueMap<String, String>())
+      JsonNode settingsResponse = request
+          .contentType(MediaType.APPLICATION_JSON)
           .retrieve()
-          .body(String.class);
-
-      JsonNode settingsResponse = null;
-      if (settingsBody != null && !settingsBody.isBlank()) {
-        settingsResponse = objectMapper.readTree(settingsBody);
-      }
+          .body(JsonNode.class);
 
       int subPort = settingsResponse == null
           ? DEFAULT_SUBSCRIPTION_PORT
-          : settingsResponse.path("obj").path("subPort").asInt(DEFAULT_SUBSCRIPTION_PORT);
+          : settingsResponse.path("obj").path("subPort")
+          .asInt(DEFAULT_SUBSCRIPTION_PORT);
 
       if (subPort <= 0) {
         log.warn("Invalid subPort from XUI settings. serverId={}, subPort={}, fallback={}",
@@ -97,11 +91,12 @@ class XuiJsonConfigClient {
     try {
       JsonNode root = objectMapper.readTree(jsonConfig);
       if (root.isObject()) {
-        ((ObjectNode) root).put("remarks", server.getName() + server.getCountryEmoji());
+        ((ObjectNode) root).put("remarks",
+            server.getName() + server.getCountryEmoji());
         return objectMapper.writeValueAsString(root);
       }
       return jsonConfig;
-    } catch (JsonProcessingException e) {
+    } catch (JacksonException e) {
       log.warn("Failed to replace remarks in JSON config for server {}: {}",
           server.getId(), e.getMessage());
       return jsonConfig;

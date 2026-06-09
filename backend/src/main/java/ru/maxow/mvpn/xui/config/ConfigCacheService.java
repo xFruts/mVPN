@@ -1,17 +1,17 @@
 package ru.maxow.mvpn.xui.config;
 
 import org.springframework.stereotype.Service;
-
+import ru.maxow.mvpn.xui.dto.SubscriptionConfigPayload;
 import java.time.Instant;
 import java.util.concurrent.ConcurrentHashMap;
 
 @Service
 public class ConfigCacheService {
   private static class Entry {
-    final ru.maxow.mvpn.xui.SubscriptionConfigPayload payload;
+    final SubscriptionConfigPayload payload;
     final Instant created;
 
-    Entry(ru.maxow.mvpn.xui.SubscriptionConfigPayload payload) {
+    Entry(SubscriptionConfigPayload payload) {
       this.payload = payload;
       this.created = Instant.now();
     }
@@ -21,7 +21,7 @@ public class ConfigCacheService {
   // default TTL 16 hours
   private static final long TTL_SECONDS = 16L * 60L * 60L;
 
-  public ru.maxow.mvpn.xui.SubscriptionConfigPayload get(Long userId) {
+  public SubscriptionConfigPayload get(Long userId) {
     Entry e = cache.get(userId);
     if (e == null) return null;
     if (Instant.now().isAfter(e.created.plusSeconds(TTL_SECONDS))) {
@@ -31,7 +31,7 @@ public class ConfigCacheService {
     return e.payload;
   }
 
-  public void put(Long userId, ru.maxow.mvpn.xui.SubscriptionConfigPayload payload) {
+  public void put(Long userId, SubscriptionConfigPayload payload) {
     evict(userId);
     cache.put(userId, new Entry(payload));
   }

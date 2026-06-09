@@ -19,15 +19,16 @@ import ru.maxow.mvpn.user.UserRepository;
 import ru.maxow.mvpn.util.exception.BadRequestException;
 import ru.maxow.mvpn.util.exception.NotFoundException;
 import ru.maxow.mvpn.util.exception.XuiUnavailableException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ArrayNode;
-import ru.maxow.mvpn.xui.SubscriptionConfigPayload;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.node.ArrayNode;
+import ru.maxow.mvpn.xui.dto.SubscriptionConfigPayload;
 import ru.maxow.mvpn.xui.XuiPanelService;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import java.util.List;
-import java.util.UUID;
 import java.util.Set;
+import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -44,7 +45,7 @@ public class ConfigFacadeImpl implements ConfigFacade {
   ConfigSyncService configSyncService;
 
   @Override
-  @Transactional(readOnly = true)
+  @Transactional
   public SubscriptionConfigPayload getSubscriptionConfig(UUID verificationCode) {
     User user = userRepository.findByVerificationCode(verificationCode)
         .orElseThrow(() -> new NotFoundException("User by verification code"));
@@ -81,6 +82,8 @@ public class ConfigFacadeImpl implements ConfigFacade {
     List<ResolvedServerConfig> configs = getActiveServersByUserSubscription(subscription).stream()
         .map(server -> {
           try {
+            xuiPanelService.createOrUpdateClient(server, user, subscription);
+
             SubscriptionFormat format = resolveSubscriptionFormat(server);
             String config = format == SubscriptionFormat.JSON
                 ? xuiPanelService.getJsonConfig(server, user)
@@ -103,7 +106,6 @@ public class ConfigFacadeImpl implements ConfigFacade {
     }
 
     SubscriptionConfigPayload payload = resolvePayload(configs);
-    // store into cache and trigger background sync to ensure clients exist on XUI
     try {
       configCacheService.put(user.getId(), payload);
       configSyncService.asyncSyncSubscription(verificationCode);
@@ -121,52 +123,52 @@ public class ConfigFacadeImpl implements ConfigFacade {
         .toList();
   }
 
-          private SubscriptionConfigPayload resolvePayload(List<ResolvedServerConfig> configs) {
-      Set<SubscriptionFormat> formats = configs.stream()
-          .map(ResolvedServerConfig::format)
-          .collect(java.util.stream.Collectors.toSet());
+  private SubscriptionConfigPayload resolvePayload(List<ResolvedServerConfig> configs) {
+    Set<SubscriptionFormat> formats = configs.stream()
+        .map(ResolvedServerConfig::format)
+        .collect(Collectors.toSet());
 
-      if (formats.size() > 1) {
-        throw new BadRequestException(
-            "Mixed subscription formats are not supported for a single subscription");
-      }
-
-      SubscriptionFormat format = formats.iterator().next();
-
-      if (format == SubscriptionFormat.JSON) {
-        try {
-          ArrayNode jsonArray = objectMapper.createArrayNode();
-          for (ResolvedServerConfig cfg : configs) {
-            try {
-              jsonArray.add(objectMapper.readTree(cfg.config()));
-            } catch (Exception e) {
-              log.warn("Failed to parse JSON config for server {}, skipping. Error: {}",
-                  cfg.server().getId(), e.getMessage());
-            }
-          }
-
-          if (jsonArray.isEmpty()) {
-            throw new BadRequestException("No valid JSON configs found to combine");
-          }
-
-          String combinedConfigs = objectMapper.writeValueAsString(jsonArray);
-          log.debug("Combined {} JSON configs into array", jsonArray.size());
-          return new SubscriptionConfigPayload(combinedConfigs, SubscriptionFormat.JSON);
-        } catch (BadRequestException e) {
-          throw e;
-        } catch (Exception e) {
-          log.error("Failed to combine JSON configs", e);
-          throw new BadRequestException("Failed to combine JSON configs: " + e.getMessage());
-        }
-      }
-
-      String combinedConfigs = String.join("\n", configs.stream()
-          .map(ResolvedServerConfig::config)
-          .toList());
-      String encoded = Base64.getEncoder().encodeToString(
-          combinedConfigs.getBytes(StandardCharsets.UTF_8));
-      return new SubscriptionConfigPayload(encoded, SubscriptionFormat.VLESS);
+    if (formats.size() > 1) {
+      throw new BadRequestException(
+          "Mixed subscription formats are not supported for a single subscription");
     }
+
+    SubscriptionFormat format = formats.iterator().next();
+
+    if (format == SubscriptionFormat.JSON) {
+      try {
+        ArrayNode jsonArray = objectMapper.createArrayNode();
+        for (ResolvedServerConfig cfg : configs) {
+          try {
+            jsonArray.add(objectMapper.readTree(cfg.config()));
+          } catch (Exception e) {
+            log.warn("Failed to parse JSON config for server {}, skipping. Error: {}",
+                cfg.server().getId(), e.getMessage());
+          }
+        }
+
+        if (jsonArray.isEmpty()) {
+          throw new BadRequestException("No valid JSON configs found to combine");
+        }
+
+        String combinedConfigs = objectMapper.writeValueAsString(jsonArray);
+        log.debug("Combined {} JSON configs into array", jsonArray.size());
+        return new SubscriptionConfigPayload(combinedConfigs, SubscriptionFormat.JSON);
+      } catch (BadRequestException e) {
+        throw e;
+      } catch (Exception e) {
+        log.error("Failed to combine JSON configs", e);
+        throw new BadRequestException("Failed to combine JSON configs: " + e.getMessage());
+      }
+    }
+
+    String combinedConfigs = configs.stream()
+        .map(ResolvedServerConfig::config)
+        .collect(Collectors.joining("\n"));
+    String encoded = Base64.getEncoder().encodeToString(
+        combinedConfigs.getBytes(StandardCharsets.UTF_8));
+    return new SubscriptionConfigPayload(encoded, SubscriptionFormat.VLESS);
+  }
 
   private SubscriptionFormat resolveSubscriptionFormat(Server server) {
     return server.getSubscriptionFormat() == null

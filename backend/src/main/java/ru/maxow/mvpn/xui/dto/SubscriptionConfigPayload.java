@@ -1,4 +1,4 @@
-package ru.maxow.mvpn.xui;
+package ru.maxow.mvpn.xui.dto;
 
 import org.springframework.http.MediaType;
 import ru.maxow.mvpn.server.SubscriptionFormat;

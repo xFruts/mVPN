@@ -11,7 +11,7 @@ import ru.maxow.mvpn.subscription.Subscription;
 import ru.maxow.mvpn.subscription.SubscriptionRepository;
 import ru.maxow.mvpn.user.User;
 import ru.maxow.mvpn.user.UserRepository;
-import ru.maxow.mvpn.xui.SubscriptionConfigPayload;
+import ru.maxow.mvpn.xui.dto.SubscriptionConfigPayload;
 import ru.maxow.mvpn.xui.XuiPanelService;
 
 import java.util.ArrayList;
@@ -54,7 +54,7 @@ public class ConfigSyncService {
       Set<Server> servers = subscription.getTariff().getServers();
       for (Server server : servers) {
         try {
-          xuiPanelService.createClient(server, user);
+          xuiPanelService.createOrUpdateClient(server, user, subscription);
         } catch (Exception e) {
           log.warn("asyncSync: failed to create/sync client on server {} for user {}: {}",
               server.getId(), user.getId(), e.getMessage());
@@ -109,4 +109,3 @@ public class ConfigSyncService {
     }
   }
 }
-
