@@ -1,9 +1,19 @@
-import { User, Star, Crown, X, Ticket, Package, Gem } from "lucide-react";
+import { User, Star, Crown } from "lucide-react";
 
-export const USER_ROLES = ["BASIC", "SPECIAL", "ADMIN"] as const;
+export const KEYCLOAK_CONFIG = {
+    url: import.meta.env.VITE_KEYCLOAK_URL,
+    realm: import.meta.env.VITE_KEYCLOAK_REALM,
+    clientId: import.meta.env.VITE_KEYCLOAK_CLIENT_ID,
+};
+
+export const API_BASE_URL = import.meta.env.VITE_API_URL;
+
+export const FRONTEND_URL = import.meta.env.VITE_FRONTEND_URL;
+
+export const USER_ROLES = ["REGULAR", "SPECIAL", "ADMIN"] as const;
 
 export const ROLE_CONFIG = {
-    BASIC: {
+    REGULAR: {
         description: "Базовые возможности",
         icon: User,
     },
@@ -17,36 +27,9 @@ export const ROLE_CONFIG = {
     },
 } as const;
 
-export const USER_TYPES = ["NONE", "TRIAL", "BASIC", "VIP"] as const;
+export const USER_STATUS = ["ACTIVE", "EXPIRED", "CANCELLED", "NONE"] as const;
 
-export const TYPE_CONFIG = {
-    NONE: {
-        description: "Без подписки",
-        priceClass: "none",
-        icon: X,
-        features: ["-", "-"],
-    },
-    TRIAL: {
-        description: "Бесплатно",
-        priceClass: "trial",
-        icon: Ticket,
-        features: ["7 дней", "50 ГБ"],
-    },
-    BASIC: {
-        description: "299 ₽",
-        priceClass: "basic",
-        icon: Package,
-        features: ["30 дней", "300 ГБ"],
-    },
-    VIP: {
-        description: "2999 ₽",
-        priceClass: "vip",
-        icon: Gem,
-        features: ["365 дней", "Безлимит"],
-    },
-} as const;
-
-export const SERVER_STATUS = ['ONLINE', 'MAINTENANCE', 'OFFLINE'] as const;
+export const SERVER_STATUS = ["ACTIVE", "INACTIVE", "MAINTENANCE"] as const;
 
 export const SERVER_LOCATION = {
     FI: {
@@ -103,3 +86,7 @@ export const SAMPLES = [
         description: "Отличные новости! Мы добавили новый сервер в [ЛОКАЦИЯ], чтобы сделать ваше подключение еще быстрее и стабильнее."
     }
 ]
+
+export const AUTH_TYPE = ["PASSWORD", "KEY"]
+
+export const SUBSCRIPTION_FORMAT = ["VLESS", "JSON"]

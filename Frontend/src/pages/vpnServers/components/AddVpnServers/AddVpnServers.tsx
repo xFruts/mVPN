@@ -50,7 +50,7 @@ export function AddVpnServers() {
             IP: "",
             port: "51820",
             maxUsers: "100",
-            status: "ONLINE",
+            status: "ACTIVE",
             login: "",
             password: ""
         },

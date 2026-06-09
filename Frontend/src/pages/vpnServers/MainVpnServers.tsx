@@ -1,10 +1,17 @@
-import { NavLink } from "react-router";
 import { Plus } from "lucide-react";
 import FilterVpnServers from "./components/FilterVpnServers/FilterVpnServers.tsx";
 import TableVpnServers from "./components/TableVpnServers/TableVpnServers.tsx";
 import styles from "./MainVpnServers.module.css";
+import { useEffect } from "react";
+import useServersStore from "@store/useServersStore.ts";
+import ChangeVpnServers from "@pages/vpnServers/components/ChangeVpnServers/ChangeVpnServers.tsx";
 
 export default function MainVpnServers() {
+    const { fetchServers, setIsChangeOpen, isChangeOpen, setIsOpen } =
+        useServersStore();
+    useEffect(() => {
+        fetchServers({});
+    }, [fetchServers]);
     return (
         <div className={styles.vpnserversContent}>
             <div className={`${styles.vpnserversHeader} ${styles.padding}`}>
@@ -15,16 +22,21 @@ export default function MainVpnServers() {
                     </p>
                 </div>
                 <div className={styles.vpnserversButton}>
-                    <NavLink to={"/servers/add"} className={"navLink"}>
-                        <div className={styles.vpnserversButtonBorder}>
-                            <Plus size={20} />
-                            <span>Добавить сервер</span>
-                        </div>
-                    </NavLink>
+                    <div
+                        className={styles.vpnserversButtonBorder}
+                        onClick={() => {
+                            setIsChangeOpen()
+                            setIsOpen(-1)
+                        }}
+                    >
+                        <Plus size={20} />
+                        <span>Добавить сервер</span>
+                    </div>
                 </div>
             </div>
             <FilterVpnServers />
             <TableVpnServers />
+            {isChangeOpen && <ChangeVpnServers />}
         </div>
     );
 }

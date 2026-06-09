@@ -1,22 +1,63 @@
 import apiClient from "../index";
 import type { ApiResponse } from "../types";
-import type { User } from "@/types/user.ts";
+import type {
+    UserCreate,
+    UserGet,
+    UsersGet,
+    UserUpdate,
+    UserServerResponse,
+    UserRole,
+    UserStatus,
+} from "@/types/user.ts";
+import type {GetData, PageResponse } from "@/types/general.ts";
 
 const url: string = "/users";
 
 export const UserService = {
-    async getUsers(): Promise<User[]> {
-        const response = await apiClient.get<ApiResponse<User[]>>(url);
-        return response.data.data;
+    async getUsers(getData: Partial<GetData>): Promise<PageResponse<UsersGet>> {
+        const response = await apiClient.get<PageResponse<UsersGet>>(url, {
+            params: getData,
+        });
+        return response.data;
     },
 
-    async getUserById(id: number): Promise<User> {
-        const response = await apiClient.get<ApiResponse<User>>(url + `/${id}`);
-        return response.data.data;
+    async getUserById(id: number): Promise<UserGet> {
+        const response = await apiClient.get<UserServerResponse>(
+            url + `/${id}`,
+        );
+        const raw = response.data;
+        return {
+            fullName: raw.fullName,
+            userTelegramId: raw.userTelegramId,
+            role: raw.role as UserRole,
+            startDate: raw.subscription?.startDate || "",
+            subscriptionEndDate: raw.subscription?.endDate || "",
+            subscriptionStatus:
+                (raw.subscription?.status as UserStatus) || "INACTIVE",
+            tariffName: raw.subscription?.tariff?.name || "Нет тарифа",
+        };
     },
 
-    async createUser(userData: Partial<User>): Promise<User> {
-        const response = await apiClient.post<ApiResponse<User>>(url, userData);
-        return response.data.data;
+    async createUser(userData: Partial<UserCreate>): Promise<UserCreate> {
+        const response = await apiClient.post<ApiResponse<UserCreate>>(
+            url,
+            userData,
+        );
+        return response.data.content;
+    },
+
+    async updateUser(id: number, userData: Partial<UserUpdate>): Promise<void> {
+        await apiClient.put<ApiResponse<UserUpdate>>(url + `/${id}`, userData);
+    },
+
+    async deleteUser(id: number): Promise<void> {
+        await apiClient.delete<ApiResponse<UserGet>>(url + `/${id}`);
+    },
+
+    async updateCodeUser(id: number): Promise<UserGet> {
+        const response = await apiClient.post<ApiResponse<UserGet>>(
+            url + `/${id}/code`,
+        );
+        return response.data.content;
     },
 };

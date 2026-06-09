@@ -35,7 +35,21 @@ services:
     restart: unless-stopped
     networks:
       - internal
-
+  frontend:
+    build:
+      context: ./Frontend
+      args:
+        - VITE_API_URL=${VITE_API_URL}
+        - VITE_KEYCLOAK_URL=${KEYCLOAK_URL}
+        - VITE_KEYCLOAK_REALM=${VITE_KEYCLOAK_REALM}
+        - VITE_KEYCLOAK_CLIENT_ID=${KEYCLOAK_CLIENT_ID}
+    ports:
+      - "3000:80"
+    restart: unless-stopped
+    networks:
+      - internal
+    depends_on:
+      - backend
   db:
     image: postgres:15
     restart: unless-stopped

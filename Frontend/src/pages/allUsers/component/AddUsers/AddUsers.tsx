@@ -1,29 +1,26 @@
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { MoveLeft, UserPlus, Lightbulb } from "lucide-react";
-import { NavLink } from "react-router";
+import {MoveLeft, UserPlus, Lightbulb} from "lucide-react";
+import {NavLink, useNavigate} from "react-router";
 import styles from "./AddUsers.module.css";
 import {
     USER_ROLES,
-    ROLE_CONFIG,
-    USER_TYPES,
-    TYPE_CONFIG,
+    ROLE_CONFIG
 } from "@/constant.ts";
+import { UserService } from "@api/services/userService.ts";
 
 const schema = z.object({
-    firstName: z.string(),
-    lastName: z.string(),
-    telegramId: z.string().optional(),
+    fullName: z.string(),
+    userTelegramId: z.number().optional(),
     role: z.enum(USER_ROLES),
-    type: z.enum(USER_TYPES),
 });
 
 type FormData = z.infer<typeof schema>;
 type UserRole = z.infer<typeof schema>["role"];
-type UserType = z.infer<typeof schema>["type"];
 
 export default function AddUsers() {
+    const navigate = useNavigate();
     const {
         register,
         watch,
@@ -32,23 +29,26 @@ export default function AddUsers() {
         formState: { errors },
     } = useForm<FormData>({
         resolver: zodResolver(schema),
-        defaultValues: {
-            firstName: "",
-            lastName: "",
-            telegramId: undefined,
-            role: "BASIC",
-            type: "NONE",
+        values: {
+            fullName: "",
+            userTelegramId: 0,
+            role: "REGULAR",
         },
     });
 
-    const onSubmit = (data: FormData) => {
-        console.log(data);
-    };
-
-    const getFutureDate = (days: number) => {
-        const d = new Date();
-        d.setDate(d.getDate() + days);
-        return d.toLocaleDateString();
+    const onSubmit = async () => {
+        try {
+            const createUser = {
+                fullName: watch("fullName"),
+                userTelegramId: watch("userTelegramId") || 0,
+                role: watch("role")
+            }
+            await UserService.createUser(createUser);
+            navigate("/users");
+        }
+        catch (error) {
+            console.error(error);
+        }
     };
 
     return (
@@ -77,33 +77,17 @@ export default function AddUsers() {
                             <div className={styles.addusersPersonNameSurname}>
                                 <div className={styles.addusersPersonName}>
                                     <span>
-                                        Имя <span style={{ color: "red" }}>*</span>
+                                        Ник <span style={{ color: "red" }}>*</span>
                                     </span>
                                     <input
                                         type="text"
                                         className={styles.addusersPersonInput}
-                                        placeholder="Введите имя"
-                                        {...register("firstName")}
+                                        placeholder="Введите ник"
+                                        {...register("fullName")}
                                     />
-                                    {errors.firstName && (
+                                    {errors.fullName && (
                                         <span style={{ color: "red" }}>
-                                            {errors.firstName.message}
-                                        </span>
-                                    )}
-                                </div>
-                                <div className={styles.addusersPersonSurname}>
-                                    <span>
-                                        Фамилия <span style={{ color: "red" }}>*</span>
-                                    </span>
-                                    <input
-                                        type="text"
-                                        className={styles.addusersPersonInput}
-                                        placeholder="Введите фамилию"
-                                        {...register("lastName")}
-                                    />
-                                    {errors.lastName && (
-                                        <span style={{ color: "red" }}>
-                                            {errors.lastName.message}
+                                            {errors.fullName.message}
                                         </span>
                                     )}
                                 </div>
@@ -114,11 +98,11 @@ export default function AddUsers() {
                                     type="text"
                                     className={styles.addusersPersonInput}
                                     placeholder="Введите ID"
-                                    {...register("telegramId")}
+                                    {...register("userTelegramId", { valueAsNumber: true })}
                                 />
-                                {errors.telegramId && (
+                                {errors.userTelegramId && (
                                     <span style={{ color: "red" }}>
-                                        {errors.telegramId.message}
+                                        {errors.userTelegramId.message}
                                     </span>
                                 )}
                                 <span style={{ color: "gray" }}>
@@ -155,35 +139,6 @@ export default function AddUsers() {
                             })}
                         </div>
                     </div>
-                    <div className={styles.addusersType}>
-                        <div className={styles.addusersTypeHeader}>Тип подписки</div>
-                        <div className={styles.addusersTypeContent}>
-                            {Object.entries(TYPE_CONFIG).map(([typeKey, config]) => {
-                                const IconComponent = config.icon;
-                                return (
-                                    <div
-                                        key={typeKey}
-                                        className={`${styles.addusersTypeSpecific} ${
-                                            watch("type") === typeKey ? styles.roleActive : ""
-                                        }`}
-                                        onClick={() => setValue("type", typeKey as UserType)}
-                                    >
-                                        <span>
-                                            <IconComponent size={20} />
-                                        </span>
-                                        <span>{typeKey as UserType}</span>
-                                        <span className={`${styles.price} ${styles[config.priceClass]}`}>
-                                            {config.description}
-                                        </span>
-                                        <div className={styles.addusersTypeSpecificInfo}>
-                                            <span>{config.features[0]}</span>
-                                            <span>{config.features[1]}</span>
-                                        </div>
-                                    </div>
-                                );
-                            })}
-                        </div>
-                    </div>
                 </div>
                 <div className={styles.addusersSearchInfo}>
                     <div className={styles.addusersSearch}>
@@ -193,8 +148,7 @@ export default function AddUsers() {
                         <div className={styles.addusersSearchDetails}>
                             <span style={{ color: "gray", fontSize: "15px" }}>Пользователь</span>
                             <span>
-                                {watch("firstName") === "" ? "Имя" : watch("firstName")}{" "}
-                                {watch("lastName") === "" ? "Фамилия" : watch("lastName")}
+                                {watch("fullName") === "" ? "Ник" : watch("fullName")}{" "}
                             </span>
                         </div>
                         <div className={styles.addusersSearchDetails}>
@@ -203,28 +157,10 @@ export default function AddUsers() {
                                 {watch("role")}
                             </span>
                         </div>
-                        <div className={styles.addusersSearchDetails}>
-                            <span style={{ color: "gray", fontSize: "15px" }}>Подписка</span>
-                            <span className={`${styles.userRole} ${styles[watch("type").toLowerCase()]}`}>
-                                {watch("type")}
-                            </span>
-                        </div>
-                        <div className={styles.addusersSearchDate} style={{ color: "gray", fontSize: "15px" }}>
-                            <span>
-                                <span>До:</span>
-                                {watch("type") === "TRIAL"
-                                    ? getFutureDate(7)
-                                    : watch("type") === "BASIC"
-                                        ? getFutureDate(30)
-                                        : watch("type") === "VIP"
-                                            ? getFutureDate(365)
-                                            : "-"}
-                            </span>
-                        </div>
-                        {watch("telegramId") && (
+                        {watch("userTelegramId") && (
                             <div className={styles.addusersSearchDetails}>
                                 <span style={{ color: "gray", fontSize: "15px" }}>Telegram ID</span>
-                                <span>{watch("telegramId")}</span>
+                                <span>{watch("userTelegramId")}</span>
                             </div>
                         )}
                     </div>
@@ -245,7 +181,7 @@ export default function AddUsers() {
                 <button form="add-user-form" className={"buttonCreate"}>
                     <UserPlus size={20} /> Создать пользователя
                 </button>
-                <button className={"buttonCancel"}>Отмена</button>
+                <button className={"buttonCancel"} onClick={() => {navigate("/users");}}>Отмена</button>
             </div>
         </div>
     );

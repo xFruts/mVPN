@@ -1,19 +1,25 @@
-import axios from "axios";
 import type { AxiosInstance } from "axios";
+import axios from "axios";
+import { API_BASE_URL } from "./../constant.ts";
 
-const BASE_URL = import.meta.env.VITE_API_URL || "https://api.example.com";
 
 const apiClient: AxiosInstance = axios.create({
-    baseURL: BASE_URL,
+    baseURL: API_BASE_URL,
     timeout: 10000,
     headers: {
         "Content-Type": "application/json",
     },
 });
 
+let getToken: () => string | undefined = () => undefined;
+
+export const setTokenGetter = (fn: () => string | undefined) => {
+    getToken = fn;
+};
+
 apiClient.interceptors.request.use(
     (config) => {
-        const token = localStorage.getItem("authToken");
+        const token = getToken();
         if (token) {
             config.headers.Authorization = `Bearer ${token}`;
         }
