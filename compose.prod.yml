@@ -86,7 +86,26 @@ services:
       - "traefik.http.routers.mvpn-backend.tls.certresolver=le"
       - "traefik.http.routers.mvpn-backend.middlewares=mvpn-security-headers@docker"
       - "traefik.http.services.mvpn-backend.loadbalancer.server.port=8080"
-
+  frontend:
+    build:
+      context: ./Frontend
+      args:
+        - VITE_API_URL=${VITE_API_URL}
+        - VITE_KEYCLOAK_URL=${KEYCLOAK_URL}
+        - VITE_KEYCLOAK_REALM=${VITE_KEYCLOAK_REALM}
+        - VITE_KEYCLOAK_CLIENT_ID=${KEYCLOAK_CLIENT_ID}
+    restart: always
+    depends_on:
+      - backend
+    networks:
+      - internal
+      - web_proxy
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.frontend.rule=Host(`${FRONTEND_DOMAIN}`)"
+      - "traefik.http.routers.frontend.entrypoints=websecure"
+      - "traefik.http.routers.frontend.tls.certresolver=le"
+      - "traefik.http.services.frontend.loadbalancer.server.port=80"
   db:
     image: postgres:15
     restart: always

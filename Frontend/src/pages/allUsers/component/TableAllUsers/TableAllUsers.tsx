@@ -9,55 +9,80 @@ import {
 } from "lucide-react";
 import { ArrowUp, ArrowDown } from "react-feather";
 import styles from "./TableAllUsers.module.css";
-import ReactDOM from "react-dom";
 import { NavLink } from "react-router";
-import Countries from "../Countries/Countries.tsx";
 import useUsersStore from "../../../../store/useUsersStore.ts";
+import type { SortFields, SortDirection} from "@/types/general.ts";
+import {UserService} from "@api/services/userService.ts";
 
 const ApiKey = "tg_api_1_570528";
 
-const titles = [
-    "ID",
-    "Пользователь",
-    "Роль",
-    "Тип подписки",
-    "Статус",
-    "Страна",
-    "Срок действия",
+interface Titles {
+    name: string;
+    api: SortFields;
+}
+
+const titles: Titles[] = [
+    {
+        name: "ID",
+        api: "id"
+    },
+    {
+        name: "ПОЛЬЗОВАТЕЛЬ",
+        api: "fullName"
+    },
+    {
+        name: "РОЛЬ",
+        api: "role"
+    },
+    {
+        name: "ТАРИФ",
+        api: "tariff"
+    },
+    {
+        name: "СТАТУС",
+        api: "subscriptionStatus"
+    },
+    {
+        name: "СРОК ДЕЙСТВИЯ",
+        api: "endDate"
+    }
 ];
 
 export default function TableAllUsers() {
     const {
         users,
-        sort,
-        selectedUser,
+        filters,
         apiOpen,
+        fetchUsers,
+        selectedIds,
         isOpen,
-        setSort,
-        setSelectedUser,
         setApiOpen,
+        toggleSelectId,
+        toggleAll,
         toggleMenu,
         resetMenu,
     } = useUsersStore();
-
+    const [currentField, currentDir] = (filters.sort || "id,desc").split(
+        ",",
+    ) as [SortFields, SortDirection];
+    const allUserIds = users.map((u) => u.id);
     const menuRef = useRef<HTMLDivElement>(null);
 
-    const handleOpen = (userId: number, country: string) => {
-        setSelectedUser({ id: userId, country });
-    };
+    /*const handleSort = (title: SortFields) => {
+        // 1. Достаем текущее состояние из фильтров
 
-    const handleClose = () => resetMenu();
+        let newSort: SortData;
 
-    const handleSort = (title: string) => {
-        let newDirection: "up" | "down" | "" = "";
-        if (sort.field === title) {
-            if (sort.direction === "down") newDirection = "up";
-            else if (sort.direction === "up") newDirection = "";
+        if (currentField !== title) {
+            newSort = `${title},desc`;
+        } else if (currentDir === "desc") {
+            newSort = `${title},asc`;
         } else {
-            newDirection = "down";
+            newSort = "id,desc";
         }
-        setSort(title, newDirection);
-    };
+
+        fetchUsers({ sort: newSort, page: 0 });
+    };*/
 
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
@@ -71,231 +96,241 @@ export default function TableAllUsers() {
             document.removeEventListener("mousedown", handleClickOutside);
     }, [resetMenu]);
 
-    const sortedUsers = [...users].sort((a, b) => {
-        if (!sort.field) return 0;
-
-        const aValue = a[sort.field as keyof typeof a];
-        const bValue = b[sort.field as keyof typeof b];
-
-        if (sort.direction === "up") {
-            return String(aValue).localeCompare(String(bValue));
-        } else if (sort.direction === "down") {
-            return String(bValue).localeCompare(String(aValue));
+    const handleDeleteUser = async () => {
+        try {
+            await UserService.deleteUser(isOpen)
+            await fetchUsers({})
         }
-        return 0;
-    });
+        catch (error) {
+            console.error(error);
+        }
+    }
+
 
     return (
         <div className={styles.allusersTable}>
             <table className={styles.tableUsers}>
                 <tbody>
-                <tr>
-                    {titles.map((title) => (
-                        <td key={title}>
-                            <div className={`${styles.tableTitle} ${styles[title]}`}>
-                                <span>{title}</span>
-                                <div onClick={() => handleSort(title)}>
-                                    {sort.field === title ? (
-                                        sort.direction === "down" ? (
-                                            <ArrowDown size={20} />
-                                        ) : sort.direction === "up" ? (
-                                            <ArrowUp size={20} />
+                    <tr>
+                        <td>
+                            <input
+                                type={"checkbox"}
+                                checked={
+                                    selectedIds.length === allUserIds.length
+                                }
+                                onChange={toggleAll}
+                                className={styles.usersCheckbox}
+                            />
+                        </td>
+                        {titles.map((title) => (
+                            <td key={title.api}>
+                                <div
+                                    className={`${styles.tableTitle} ${styles[title.name]}`}
+                                >
+                                    <span>{title.name}</span>
+                                    <div /*onClick={() => handleSort(title.api)}*/
+                                    >
+                                        {currentField === title.api ? (
+                                            currentDir === "desc" ? (
+                                                <ArrowDown size={20} />
+                                            ) : currentDir === "asc" ? (
+                                                <ArrowUp size={20} />
+                                            ) : (
+                                                <MoveVertical size={20} />
+                                            )
                                         ) : (
                                             <MoveVertical size={20} />
-                                        )
-                                    ) : (
-                                        <MoveVertical size={20} />
-                                    )}
+                                        )}
+                                    </div>
                                 </div>
-                            </div>
-                        </td>
-                    ))}
-                </tr>
+                            </td>
+                        ))}
+                    </tr>
 
-                {sortedUsers.map((user) => (
-                    <tr key={user.id}>
-                        <td>
-                            <div className={`${styles.role} ${styles.basic} ${styles.ID}`}>
-                                {user.id}
-                            </div>
-                        </td>
-                        <td>
-                            <div className={styles.name}>
-                                    <span>
-                                        {user.firstname} {user.lastname}
-                                    </span>
-                            </div>
-                        </td>
-                        <td>
-                            <div
-                                className={`${styles.role} ${
-                                    user.role === "ADMIN"
-                                        ? styles.admin
-                                        : user.role === "SPECIAL"
-                                            ? styles.special
-                                            : styles.basic
-                                }`}
-                            >
-                                {user.role}
-                            </div>
-                        </td>
-                        <td>
-                            <div
-                                className={`${styles.role} ${
-                                    user.type === "PREMIUM"
-                                        ? styles.special
-                                        : user.type === "TRIAL"
-                                            ? styles.dynamic
-                                            : user.type === "BASIC"
-                                                ? styles.basic
-                                                : styles.none
-                                }`}
-                            >
-                                {user.type}
-                            </div>
-                        </td>
-                        <td>
-                            <div
-                                className={`${styles.role} ${
-                                    user.status === "ACTIVE"
-                                        ? styles.dynamic
-                                        : user.status === "EXPIRED"
-                                            ? styles.expired
-                                            : user.status === "CANCELLED"
-                                                ? styles.basic
-                                                : styles.none
-                                }`}
-                            >
-                                {user.status}
-                            </div>
-                        </td>
-
-                        <td>
-                            <div className={"countries"}>
-                                {user.countries.map((country) => (
-                                    <span
-                                        key={`${user.id}-${country}`}
-                                        onClick={() => handleOpen(user.id, country)}
-                                        style={{ cursor: "pointer" }}
-                                    >
-                                            {country}
-                                        </span>
-                                ))}
-                            </div>
-                        </td>
-
-                        <td>
-                            <div className={styles.date}>
-                                    <span style={{ color: "gray" }}>
-                                        {user.dateFinish}
-                                    </span>
-                                <EllipsisVertical
-                                    className={styles.ellipsis}
-                                    size={20}
-                                    onClick={() => toggleMenu(user.id)}
+                    {users.map((user) => (
+                        <tr key={user.id}>
+                            <td>
+                                <input
+                                    type={"checkbox"}
+                                    checked={selectedIds.includes(user.id)}
+                                    onChange={() => toggleSelectId(user.id)}
+                                    className={styles.usersCheckbox}
                                 />
-                            </div>
+                            </td>
+                            <td>
+                                <div
+                                    className={`${styles.role} ${styles.basic} ${styles.ID}`}
+                                >
+                                    {user.id}
+                                </div>
+                            </td>
+                            <td>
+                                <div className={styles.name}>
+                                    <span>{user.fullName}</span>
+                                </div>
+                            </td>
+                            <td>
+                                <div
+                                    className={`${styles.role} ${
+                                        user.role === "ADMIN"
+                                            ? styles.admin
+                                            : user.role === "SPECIAL"
+                                              ? styles.special
+                                              : styles.basic
+                                    }`}
+                                >
+                                    {user.role}
+                                </div>
+                            </td>
+                            <td>
+                                <div
+                                    className={`${styles.role} ${
+                                        user.tariffName === "PREMIUM"
+                                            ? styles.special
+                                            : user.tariffName === "TRIAL"
+                                              ? styles.dynamic
+                                              : user.tariffName === "BASIC"
+                                                ? styles.basic
+                                                : styles.none
+                                    }`}
+                                >
+                                    {user.tariffName}
+                                </div>
+                            </td>
+                            <td>
+                                <div
+                                    className={`${styles.role} ${
+                                        user.subscriptionStatus === "ACTIVE"
+                                            ? styles.dynamic
+                                            : user.subscriptionStatus ===
+                                                "EXPIRED"
+                                              ? styles.expired
+                                              : user.subscriptionStatus ===
+                                                  "CANCELLED"
+                                                ? styles.basic
+                                                : styles.none
+                                    }`}
+                                >
+                                    {user.subscriptionStatus}
+                                </div>
+                            </td>
+                            <td>
+                                <div className={styles.date}>
+                                    <span style={{ color: "gray" }}>
+                                        {user.endDate?.toString().slice(0, 10)}
+                                    </span>
+                                    <EllipsisVertical
+                                        className={styles.ellipsis}
+                                        size={20}
+                                        onClick={() => toggleMenu(user.id)}
+                                    />
+                                </div>
 
-                            {isOpen === user.id && (
-                                <div className={styles.modal} ref={menuRef}>
-                                    <div className={styles.modalName}>
-                                            <span>
-                                                {user.firstname} {user.lastname}
-                                            </span>
-                                        <span style={{ color: "gray" }}>
+                                {isOpen === user.id && (
+                                    <div className={styles.modal} ref={menuRef}>
+                                        <div className={styles.modalName}>
+                                            <span>{user.fullName}</span>
+                                            <span style={{ color: "gray" }}>
                                                 ID: {user.id}
                                             </span>
-                                    </div>
-                                    <div className={styles.modalChange}>
-                                        {apiOpen ? (
-                                            <>
-                                                <div className={styles.modalChangeHeader}>
-                                                        <span style={{ color: "gray" }}>
-                                                            API ключ для Telegram:
-                                                        </span>
-                                                    <div style={{ color: "orange" }}>
-                                                        <Timer size={20} />
-                                                        <span>Действителен 30 минут</span>
-                                                    </div>
-                                                </div>
-                                                <div className={styles.apiKey}>
-                                                    <span>{ApiKey}</span>
-                                                </div>
-                                                <div className={styles.apiButton}>
-                                                    <button
-                                                        onClick={() =>
-                                                            navigator.clipboard.writeText(ApiKey)
+                                        </div>
+                                        <div className={styles.modalChange}>
+                                            {apiOpen ? (
+                                                <>
+                                                    <div
+                                                        className={
+                                                            styles.modalChangeHeader
                                                         }
-                                                        className="copy"
                                                     >
-                                                        Копировать
-                                                    </button>
-                                                    <button
-                                                        className="hide"
-                                                        onClick={() => setApiOpen(false)}
+                                                        <span
+                                                            style={{
+                                                                color: "gray",
+                                                            }}
+                                                        >
+                                                            API ключ для
+                                                            Telegram:
+                                                        </span>
+                                                        <div
+                                                            style={{
+                                                                color: "orange",
+                                                            }}
+                                                        >
+                                                            <Timer size={20} />
+                                                            <span>
+                                                                Действителен 30
+                                                                минут
+                                                            </span>
+                                                        </div>
+                                                    </div>
+                                                    <div
+                                                        className={
+                                                            styles.apiKey
+                                                        }
                                                     >
-                                                        Скрыть
-                                                    </button>
+                                                        <span>{ApiKey}</span>
+                                                    </div>
+                                                    <div
+                                                        className={
+                                                            styles.apiButton
+                                                        }
+                                                    >
+                                                        <button
+                                                            onClick={() =>
+                                                                navigator.clipboard.writeText(
+                                                                    ApiKey,
+                                                                )
+                                                            }
+                                                            className="copy"
+                                                        >
+                                                            Копировать
+                                                        </button>
+                                                        <button
+                                                            className="hide"
+                                                            onClick={() =>
+                                                                setApiOpen(
+                                                                    false,
+                                                                )
+                                                            }
+                                                        >
+                                                            Скрыть
+                                                        </button>
+                                                    </div>
+                                                </>
+                                            ) : (
+                                                <div
+                                                    onClick={() =>
+                                                        setApiOpen(true)
+                                                    }
+                                                >
+                                                    <Key size={17} />
+                                                    Получить API ключ
                                                 </div>
-                                            </>
-                                        ) : (
-                                            <div onClick={() => setApiOpen(true)}>
-                                                <Key size={17} />
-                                                Получить API ключ
+                                            )}
+                                            <NavLink
+                                                className="navLink"
+                                                to={`/users/edit/${user.id}`}
+                                            >
+                                                <div>
+                                                    <Pencil size={17} />
+                                                    Редактировать
+                                                </div>
+                                            </NavLink>
+                                            <div
+                                                onClick={() =>
+                                                    handleDeleteUser()
+                                                }
+                                            >
+                                                <Trash2 size={17} />
+                                                Удалить
                                             </div>
-                                        )}
-                                        <NavLink
-                                            className="navLink"
-                                            to="/users/edit"
-                                            state={{
-                                                props: {
-                                                    id: user.id,
-                                                    firstname: user.firstname,
-                                                    lastname: user.lastname,
-                                                    role: user.role,
-                                                    type: user.type,
-                                                    telegramId: user.telegramId,
-                                                    dateFinish: user.dateFinish,
-                                                    countries: user.countries,
-                                                    status: user.status,
-                                                    dateStart: user.dateStart,
-                                                },
-                                            }}
-                                        >
-                                            <div>
-                                                <Pencil size={17} />
-                                                Редактировать
-                                            </div>
-                                        </NavLink>
-                                        <div>
-                                            <Trash2 size={17} />
-                                            Удалить
                                         </div>
                                     </div>
-                                </div>
-                            )}
-                        </td>
-                    </tr>
-                ))}
+                                )}
+                            </td>
+                        </tr>
+                    ))}
                 </tbody>
             </table>
-
-            {selectedUser &&
-                (() => {
-                    const user = sortedUsers.find((u) => u.id === selectedUser.id);
-                    if (!user) return null;
-                    return ReactDOM.createPortal(
-                        <Countries
-                            userId={selectedUser.id}
-                            specificCountry={selectedUser.country}
-                            firstName={user.firstname}
-                            lastName={user.lastname}
-                            countries={user.countries}
-                            onClose={handleClose}
-                        />,
-                        document.body,
-                    );
-                })()}
         </div>
     );
 }

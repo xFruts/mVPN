@@ -4,9 +4,25 @@ import styles from "./AllUsers.module.css";
 import { Plus } from "lucide-react";
 import { NavLink } from "react-router";
 import useUsersStore from "../../store/useUsersStore.ts";
+import {useEffect} from "react";
+import {SubscriptionService} from "@api/services/subscriptionService.ts";
 
 export default function MainAllUsers() {
-    const { users } = useUsersStore();
+    const { users, fetchUsers, selectedIds } = useUsersStore();
+    useEffect(() => {
+        fetchUsers({});
+    }, [fetchUsers]);
+
+    const handleExtendSubscription = async () => {
+        try {
+            await SubscriptionService.extendSubscription(selectedIds)
+            await fetchUsers({})
+        }
+        catch (error)  {
+            console.error(error);
+        }
+    }
+
     return (
         <div className={styles.allusersContent}>
             <div className={`${styles.allusersHeader} padding`}>
@@ -17,12 +33,20 @@ export default function MainAllUsers() {
                         {users.length > 5 || users.length === 0
                             ? "ей"
                             : users.length === 1
-                                ? "ь"
-                                : "я"}{" "}
+                              ? "ь"
+                              : "я"}{" "}
                         найдено
                     </p>
                 </div>
                 <div className={styles.addusersButton}>
+                    {selectedIds.length > 0 && (
+                        <button
+                            className={styles.extendButton}
+                            onClick={handleExtendSubscription}
+                        >
+                            Продлить ({selectedIds.length})
+                        </button>
+                    )}
                     <NavLink to={"/users/add"} className="navLink">
                         <div className={styles.addusersButtonBorder}>
                             <Plus size={20} />

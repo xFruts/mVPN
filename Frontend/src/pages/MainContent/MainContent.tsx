@@ -36,7 +36,7 @@ export default function MainContent() {
                 <Route path="/analytics" Component={MainAnalytics} />
                 <Route path="/settings" Component={MainSettings} />
                 <Route path="/users/add" Component={AddUsers} />
-                <Route path="/users/edit" Component={ChangeUsers} />
+                <Route path="/users/edit/:id" Component={ChangeUsers} />
                 <Route path="/servers/add" Component={AddVpnServers} />
                 <Route path="/servers/edit" Component={SettingsVpnServers} />
                 <Route path="/servers/log" Component={ViewingLogs} />
