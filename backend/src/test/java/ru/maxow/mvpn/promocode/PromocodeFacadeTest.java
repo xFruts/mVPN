@@ -57,7 +57,7 @@ class PromocodeFacadeTest {
           .satisfies(error -> {
             NotFoundException ex = (NotFoundException) error;
             assertThat(ex.getEntityName()).isEqualTo("User");
-            assertThat(ex.getIdentifier()).isEqualTo(77L);
+            assertThat(ex.getIdentifier()).isEqualTo("77");
           });
 
       verify(userRepository).existsById(77L);

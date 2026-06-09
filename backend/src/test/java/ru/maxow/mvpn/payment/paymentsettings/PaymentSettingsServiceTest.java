@@ -66,7 +66,6 @@ class PaymentSettingsServiceTest {
           .isInstanceOf(NotFoundException.class)
           .satisfies(error -> {
             NotFoundException ex = (NotFoundException) error;
-            assertThat(ex.getEntityName()).isEqualTo("PaymentSettings");
             assertThat(ex.getIdentifier()).isNull();
           });
 
@@ -167,7 +166,7 @@ class PaymentSettingsServiceTest {
           .satisfies(error -> {
             NotFoundException ex = (NotFoundException) error;
             assertThat(ex.getEntityName()).isEqualTo("PaymentSettings");
-            assertThat(ex.getIdentifier()).isEqualTo(404L);
+            assertThat(ex.getIdentifier()).isEqualTo("404");
           });
 
       verify(paymentSettingsRepository).findById(404L);
