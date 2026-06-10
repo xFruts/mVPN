@@ -5,8 +5,10 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.slf4j.MDC;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.http.MediaType;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.FieldError;
+import org.springframework.web.HttpMediaTypeNotSupportedException;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.context.request.WebRequest;
@@ -18,6 +20,9 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
+import static org.springframework.http.RequestEntity.post;
+import static org.springframework.test.web.client.match.MockRestRequestMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @DisplayName("GlobalExceptionHandler - unit tests")
 class GlobalExceptionHandlerTest {
@@ -151,6 +156,24 @@ class GlobalExceptionHandlerTest {
 
     assertThat(response.getErrorCode()).isEqualTo("DATA_CONFLICT");
     assertThat(response.getMessage()).isEqualTo("Data conflict occurred");
+  }
+
+  @Test
+  @DisplayName("Given HttpMediaTypeNotSupportedException When handle Then return MEDIA_TYPE_NOT_SUPPORTED with existing correlation id")
+  void givenMediaTypeNotSupportedWhenHandleThenUnsupportedMediaTypeResponse() {
+    MDC.put("correlation-id", "cid-1");
+    WebRequest request = webRequest("uri=/v1/servers/ssh-keys");
+
+    HttpMediaTypeNotSupportedException ex = new HttpMediaTypeNotSupportedException(
+        MediaType.APPLICATION_XML,
+        List.of(MediaType.APPLICATION_JSON)
+    );
+
+    ErrorResponse response = handler.handleHttpMediaTypeNotSupported(ex, request);
+
+    assertThat(response.getErrorCode()).isEqualTo("MEDIA_TYPE_NOT_SUPPORTED");
+    assertThat(response.getMessage()).contains("application/xml");
+    assertThat(response.getCorrelationId()).isEqualTo("cid-1");
   }
 
   private WebRequest webRequest(String description) {
