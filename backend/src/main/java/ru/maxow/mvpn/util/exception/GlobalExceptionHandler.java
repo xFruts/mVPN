@@ -6,6 +6,7 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.validation.FieldError;
+import org.springframework.web.HttpMediaTypeNotSupportedException;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -160,6 +161,22 @@ public class GlobalExceptionHandler {
     );
   }
 
+  @ResponseStatus(HttpStatus.UNSUPPORTED_MEDIA_TYPE)
+  @ExceptionHandler(HttpMediaTypeNotSupportedException.class)
+  public ErrorResponse handleHttpMediaTypeNotSupported(HttpMediaTypeNotSupportedException ex, WebRequest request) {
+    log.warn("Media type not supported: path={}, actual={}, supported={}",
+             extractPath(request), ex.getContentType(), ex.getSupportedMediaTypes());
+
+    String message = String.format("Media type '%s' is not supported. Supported types: %s",
+        ex.getContentType(), ex.getSupportedMediaTypes());
+    return new ErrorResponse(
+        message,
+        System.currentTimeMillis(),
+        "MEDIA_TYPE_NOT_SUPPORTED",
+        getOrGenerateCorrelationId()
+    );
+  }
+
   @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
   @ExceptionHandler(Exception.class)
   public ErrorResponse handleGlobalException(Exception ex, WebRequest request) {
@@ -177,7 +194,6 @@ public class GlobalExceptionHandler {
   private String determineErrorCode(Exception ex) {
     if (ex instanceof BadRequestException) return "BAD_REQUEST";
     if (ex instanceof MultipartException) return "INVALID_FILE_UPLOAD";
-    if (ex instanceof IllegalArgumentException) return "BAD_REQUEST";
     return "BAD_REQUEST";
   }
 
@@ -192,7 +208,6 @@ public class GlobalExceptionHandler {
 
   private String extractPath(WebRequest request) {
     String description = request.getDescription(false); // uri=/path?query
-    if (description == null) return "unknown";
     String path = description.startsWith("uri=") ? description.substring(4) : description;
     int queryIndex = path.indexOf('?');
     return queryIndex >= 0 ? path.substring(0, queryIndex) : path;
