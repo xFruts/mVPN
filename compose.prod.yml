@@ -1,6 +1,6 @@
 services:
   traefik:
-    image: traefik:v3.1
+    image: traefik:v3.6
     container_name: mvpn-traefik
     restart: unless-stopped
     command:
@@ -102,6 +102,7 @@ services:
       - web_proxy
     labels:
       - "traefik.enable=true"
+      - "traefik.docker.network=web_proxy"
       - "traefik.http.routers.frontend.rule=Host(`${FRONTEND_DOMAIN}`)"
       - "traefik.http.routers.frontend.entrypoints=websecure"
       - "traefik.http.routers.frontend.tls.certresolver=le"
