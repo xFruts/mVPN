@@ -29,5 +29,5 @@ public interface SubscriptionService {
 
   SubscriptionResponseDto getLastSubscriptionByUserId(Long userId);
 
-  List<SubscriptionResponseDto> extendSubscriptionsByUserIds(List<Long> userIds);
+  void extendSubscriptionsByUserIds(List<Long> userIds);
 }

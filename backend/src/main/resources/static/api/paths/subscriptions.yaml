@@ -181,12 +181,6 @@ SubscriptionsExtend:
     responses:
       '200':
         description: Подписки продлены
-        content:
-          application/json:
-            schema:
-              type: array
-              items:
-                $ref: '../components/schemas/subscriptions/SubscriptionResponseDto.yaml'
       '400':
         $ref: '../components/responses/error/BadRequest.yaml'
       401:

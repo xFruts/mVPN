@@ -202,7 +202,7 @@ public class SubscriptionServiceImpl implements SubscriptionService {
 
   @Override
   @Transactional
-  public List<SubscriptionResponseDto> extendSubscriptionsByUserIds(List<Long> userIds) {
+  public void extendSubscriptionsByUserIds(List<Long> userIds) {
     if (userIds == null || userIds.isEmpty()) {
       throw new BadRequestException("User IDs list cannot be empty");
     }
@@ -220,7 +220,7 @@ public class SubscriptionServiceImpl implements SubscriptionService {
     }
 
     if (!missingUserIds.isEmpty()) {
-      throw new BadRequestException("No subscription found for user(s): " + missingUserIds);
+      throw new NotFoundException("No subscription found for user(s): " + missingUserIds);
     }
 
     OffsetDateTime now = OffsetDateTime.now(ZoneOffset.UTC);
@@ -234,9 +234,5 @@ public class SubscriptionServiceImpl implements SubscriptionService {
     }
 
     subscriptionRepository.saveAll(subscriptions);
-
-    return subscriptions.stream()
-        .map(subscriptionMapper::toSubscriptionResponseDto)
-        .toList();
   }
 }
