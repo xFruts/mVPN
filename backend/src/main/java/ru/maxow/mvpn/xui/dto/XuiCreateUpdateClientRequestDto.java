@@ -10,4 +10,13 @@ public record XuiCreateUpdateClientRequestDto(
     XuiClientDto client,
     List<Integer> inboundIds
 ) {
+
+  public XuiCreateUpdateClientRequestDto {
+    inboundIds = inboundIds == null ? null : List.copyOf(inboundIds);
+  }
+
+  @Override
+  public List<Integer> inboundIds() {
+    return inboundIds == null ? null : List.copyOf(inboundIds);
+  }
 }

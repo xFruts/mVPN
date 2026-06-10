@@ -15,6 +15,15 @@ public record XuiInboundsResponse(
     List<Inbound> obj
 ) {
 
+  public XuiInboundsResponse {
+    obj = obj == null ? null : List.copyOf(obj);
+  }
+
+  @Override
+  public List<Inbound> obj() {
+    return obj == null ? null : List.copyOf(obj);
+  }
+
   @JsonIgnoreProperties(ignoreUnknown = true)
   public record Inbound(
       int id,

@@ -3,7 +3,6 @@ package ru.maxow.mvpn.xui.dto;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
-
 import java.util.List;
 
 /**
@@ -33,6 +32,15 @@ public record XuiClientDto(
     TrafficInfo traffic
 ) {
 
+  public XuiClientDto {
+    inboundIds = inboundIds == null ? null : List.copyOf(inboundIds);
+  }
+
+  @Override
+  public List<Integer> inboundIds() {
+    return inboundIds == null ? null : List.copyOf(inboundIds);
+  }
+
   /**
    * Вложенная структура трафика, приходящая из {@code /panel/api/clients/get/{email}}.
    */
@@ -41,6 +49,5 @@ public record XuiClientDto(
       Long up,
       Long down,
       Boolean enable
-  ) {
-  }
+  ) {}
 }
