@@ -54,9 +54,9 @@ public class SubscriptionController implements SubscriptionsApi {
   }
 
   @Override
-  public List<SubscriptionResponseDto> extendSubscriptions(
+  public void extendSubscriptions(
       ExtendSubscriptionsRequestDto extendSubscriptionsRequestDto) {
-    return subscriptionService.extendSubscriptionsByUserIds(
+    subscriptionService.extendSubscriptionsByUserIds(
         extendSubscriptionsRequestDto.getUserIds());
   }
 }

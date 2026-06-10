@@ -101,7 +101,6 @@ class SubscriptionServiceImplTest {
       OffsetDateTime endDate = OffsetDateTime.of(2026, 4, 30, 0, 0, 0, 0, ZoneOffset.UTC);
       testSubscription.setEndDate(endDate);
 
-      // Mock traffic state
       SubscriptionTrafficState trafficState = new SubscriptionTrafficState();
       trafficState.setUsedUploadBytes(1000L);
       trafficState.setUsedDownloadBytes(2000L);
@@ -166,7 +165,6 @@ class SubscriptionServiceImplTest {
     @Test
     @DisplayName("Должен успешно создать подписку с валидными данными")
     void shouldCreateSubscriptionSuccessfully() {
-      // Arrange
       Long userId = 1L;
       Long tariffId = 1L;
       CreateUpdateSubscriptionDto requestDto = new CreateUpdateSubscriptionDto();
@@ -183,10 +181,8 @@ class SubscriptionServiceImplTest {
       when(subscriptionRepository.save(any(Subscription.class))).thenReturn(testSubscription);
       when(subscriptionMapper.toSubscriptionResponseDto(testSubscription)).thenReturn(testSubscriptionDto);
 
-      // Act
       SubscriptionResponseDto result = subscriptionService.createSubscription(userId, requestDto);
 
-      // Assert
       assertThat(result).isNotNull().isEqualTo(testSubscriptionDto);
       verify(userRepository).findById(userId);
       verify(tariffRepository).findById(tariffId);
@@ -202,14 +198,12 @@ class SubscriptionServiceImplTest {
     @Test
     @DisplayName("Должен выбросить NotFoundException для несуществующего пользователя")
     void shouldThrowNotFoundExceptionForNonExistentUser() {
-      // Arrange
       Long nonExistentUserId = 999L;
       CreateUpdateSubscriptionDto requestDto = new CreateUpdateSubscriptionDto();
       requestDto.setStartDate(OffsetDateTime.now());
 
       when(userRepository.findById(nonExistentUserId)).thenReturn(Optional.empty());
 
-      // Act & Assert
       assertThatThrownBy(() -> subscriptionService.createSubscription(nonExistentUserId, requestDto))
           .isInstanceOf(NotFoundException.class)
           .hasMessageContaining("User");
@@ -254,7 +248,6 @@ class SubscriptionServiceImplTest {
     @Test
     @DisplayName("Должен успешно обновить подписку")
     void shouldUpdateSubscriptionSuccessfully() {
-      // Arrange
       Long subscriptionId = 1L;
       Long tariffId = 1L;
       CreateUpdateSubscriptionDto updateDto = new CreateUpdateSubscriptionDto();
@@ -276,10 +269,8 @@ class SubscriptionServiceImplTest {
       when(subscriptionMapper.toSubscriptionResponseDto(updatedSubscription)).thenReturn(testSubscriptionDto);
       doNothing().when(subscriptionMapper).updateSubscriptionFromDto(updateDto, testSubscription);
 
-      // Act
       SubscriptionResponseDto result = subscriptionService.updateSubscription(subscriptionId, updateDto);
 
-      // Assert
       assertThat(result).isNotNull();
       verify(subscriptionRepository).findById(subscriptionId);
       verify(subscriptionRepository).save(any(Subscription.class));
@@ -289,13 +280,11 @@ class SubscriptionServiceImplTest {
     @Test
     @DisplayName("Должен выбросить NotFoundException для несуществующей подписки при обновлении")
     void shouldThrowNotFoundExceptionWhenUpdatingNonExistentSubscription() {
-      // Arrange
       Long nonExistentSubscriptionId = 999L;
       CreateUpdateSubscriptionDto updateDto = new CreateUpdateSubscriptionDto();
 
       when(subscriptionRepository.findById(nonExistentSubscriptionId)).thenReturn(Optional.empty());
 
-      // Act & Assert
       assertThatThrownBy(() -> subscriptionService.updateSubscription(nonExistentSubscriptionId, updateDto))
           .isInstanceOf(NotFoundException.class)
           .hasMessageContaining("Subscription");
@@ -311,15 +300,12 @@ class SubscriptionServiceImplTest {
     @Test
     @DisplayName("Должен успешно удалить подписку")
     void shouldDeleteSubscriptionSuccessfully() {
-      // Arrange
       Long subscriptionId = 1L;
       when(subscriptionRepository.existsById(subscriptionId)).thenReturn(true);
       doNothing().when(subscriptionRepository).deleteById(subscriptionId);
 
-      // Act
       subscriptionService.deleteSubscription(subscriptionId);
 
-      // Assert
       verify(subscriptionRepository).existsById(subscriptionId);
       verify(subscriptionRepository).deleteById(subscriptionId);
     }
@@ -327,11 +313,9 @@ class SubscriptionServiceImplTest {
     @Test
     @DisplayName("Должен выбросить NotFoundException при удалении несуществующей подписки")
     void shouldThrowNotFoundExceptionWhenDeletingNonExistentSubscription() {
-      // Arrange
       Long nonExistentSubscriptionId = 999L;
       when(subscriptionRepository.existsById(nonExistentSubscriptionId)).thenReturn(false);
 
-      // Act & Assert
       assertThatThrownBy(() -> subscriptionService.deleteSubscription(nonExistentSubscriptionId))
           .isInstanceOf(NotFoundException.class)
           .hasMessageContaining("Subscription");
@@ -347,15 +331,12 @@ class SubscriptionServiceImplTest {
     @Test
     @DisplayName("Должен успешно получить подписку по id")
     void shouldGetSubscriptionByIdSuccessfully() {
-      // Arrange
       Long subscriptionId = 1L;
       when(subscriptionRepository.findById(subscriptionId)).thenReturn(Optional.of(testSubscription));
       when(subscriptionMapper.toSubscriptionResponseDto(testSubscription)).thenReturn(testSubscriptionDto);
 
-      // Act
       SubscriptionResponseDto result = subscriptionService.findSubscriptionById(subscriptionId);
 
-      // Assert
       assertThat(result).isNotNull().isEqualTo(testSubscriptionDto);
       verify(subscriptionRepository).findById(subscriptionId);
       verify(subscriptionMapper).toSubscriptionResponseDto(testSubscription);
@@ -364,11 +345,9 @@ class SubscriptionServiceImplTest {
     @Test
     @DisplayName("Должен выбросить NotFoundException при получении несуществующей подписки")
     void shouldThrowNotFoundExceptionWhenGettingNonExistentSubscription() {
-      // Arrange
       Long nonExistentSubscriptionId = 999L;
       when(subscriptionRepository.findById(nonExistentSubscriptionId)).thenReturn(Optional.empty());
 
-      // Act & Assert
       assertThatThrownBy(() -> subscriptionService.findSubscriptionById(nonExistentSubscriptionId))
           .isInstanceOf(NotFoundException.class)
           .hasMessageContaining("Subscription");
@@ -380,7 +359,6 @@ class SubscriptionServiceImplTest {
     @Test
     @DisplayName("Должен получить все подписки пользователя")
     void shouldGetAllSubscriptionsByUserId() {
-      // Arrange
       Long userId = 1L;
       Subscription subscription2 = new Subscription();
       subscription2.setId(2L);
@@ -393,10 +371,8 @@ class SubscriptionServiceImplTest {
       when(subscriptionMapper.toSubscriptionResponseDto(testSubscription)).thenReturn(testSubscriptionDto);
       when(subscriptionMapper.toSubscriptionResponseDto(subscription2)).thenReturn(dto2);
 
-      // Act
       List<SubscriptionResponseDto> result = subscriptionService.findSubscriptionsByUserId(userId);
 
-      // Assert
       assertThat(result).hasSize(2).containsExactly(testSubscriptionDto, dto2);
       verify(subscriptionRepository).findByUser_Id(userId);
       verify(subscriptionMapper, times(2)).toSubscriptionResponseDto(any(Subscription.class));
@@ -405,14 +381,11 @@ class SubscriptionServiceImplTest {
     @Test
     @DisplayName("Должен вернуть пустой список если у пользователя нет подписок")
     void shouldReturnEmptyListWhenUserHasNoSubscriptions() {
-      // Arrange
       Long userId = 1L;
       when(subscriptionRepository.findByUser_Id(userId)).thenReturn(List.of());
 
-      // Act
       List<SubscriptionResponseDto> result = subscriptionService.findSubscriptionsByUserId(userId);
 
-      // Assert
       assertThat(result).isEmpty();
       verify(subscriptionRepository).findByUser_Id(userId);
       verify(subscriptionMapper, never()).toSubscriptionResponseDto(any());
@@ -426,7 +399,6 @@ class SubscriptionServiceImplTest {
     @Test
     @DisplayName("Должен успешно продлить подписку для текущего месяца")
     void shouldExtendSubscriptionSuccessfully() {
-      // Arrange
       Long userId = 1L;
       String billingDate = futureBillingDate;
       OffsetDateTime originalEndDate = OffsetDateTime.now().minusDays(10);
@@ -441,10 +413,8 @@ class SubscriptionServiceImplTest {
           .thenReturn(Optional.of(testSubscription));
       when(subscriptionRepository.save(any(Subscription.class))).thenReturn(testSubscription);
 
-      // Act
       subscriptionService.extendSubscription(userId, billingDate);
 
-      // Assert
       assertThat(testSubscription.getStatus()).isEqualTo(SubscriptionStatus.ACTIVE);
       assertThat(testSubscription.getEndDate()).isEqualTo(expectedEndDate);
       verify(subscriptionRepository).findFirstByUser_IdOrderByStartDateDesc(userId);
@@ -454,14 +424,12 @@ class SubscriptionServiceImplTest {
     @Test
     @DisplayName("Должен выбросить BadRequestException если у пользователя нет подписок")
     void shouldThrowBadRequestExceptionWhenUserHasNoSubscriptions() {
-      // Arrange
       Long userId = 1L;
       String billingDate = futureBillingDate;
 
       when(subscriptionRepository.findFirstByUser_IdOrderByStartDateDesc(userId))
           .thenReturn(Optional.empty());
 
-      // Act & Assert
       assertThatThrownBy(() -> subscriptionService.extendSubscription(userId, billingDate))
           .isInstanceOf(BadRequestException.class)
           .hasMessageContaining("User has no active subscriptions");
@@ -473,11 +441,9 @@ class SubscriptionServiceImplTest {
     @Test
     @DisplayName("Должен выбросить BadRequestException для некорректного формата billingMonth")
     void shouldThrowBadRequestExceptionForInvalidBillingMonthFormat() {
-      // Arrange
       Long userId = 1L;
       String invalidBillingMonth = "invalid-date";
 
-      // Act & Assert
       assertThatThrownBy(() -> subscriptionService.extendSubscription(userId, invalidBillingMonth))
           .isInstanceOf(BadRequestException.class)
           .hasMessageContaining("Invalid billing date format");
@@ -489,11 +455,9 @@ class SubscriptionServiceImplTest {
     @Test
     @DisplayName("Должен выбросить BadRequestException если billingMonth в прошлом")
     void shouldThrowBadRequestExceptionWhenBillingMonthIsInPast() {
-      // Arrange
       Long userId = 1L;
       String pastBillingMonth = pastBillingDate;
 
-      // Act & Assert
       assertThatThrownBy(() -> subscriptionService.extendSubscription(userId, pastBillingMonth))
           .isInstanceOf(BadRequestException.class)
           .hasMessageContaining("Billing month cannot be in the past");
@@ -505,7 +469,6 @@ class SubscriptionServiceImplTest {
     @Test
     @DisplayName("Должен переводить подписку в ACTIVE при продлении из CANCELED")
     void shouldSwitchStatusToActiveWhenExtendingCanceledSubscription() {
-      // Arrange
       Long userId = 1L;
       String billingMonth = futureBillingDate;
       testSubscription.setStatus(SubscriptionStatus.CANCELED);
@@ -515,10 +478,8 @@ class SubscriptionServiceImplTest {
           .thenReturn(Optional.of(testSubscription));
       when(subscriptionRepository.save(any(Subscription.class))).thenReturn(testSubscription);
 
-      // Act
       subscriptionService.extendSubscription(userId, billingMonth);
 
-      // Assert
       assertThat(testSubscription.getStatus()).isEqualTo(SubscriptionStatus.ACTIVE);
       verify(subscriptionRepository).save(testSubscription);
     }
@@ -526,7 +487,6 @@ class SubscriptionServiceImplTest {
     @Test
     @DisplayName("Должен корректно продлять дату окончания на границе месяца")
     void shouldExtendEndDateOnMonthBoundary() {
-      // Arrange
       Long userId = 1L;
       String billingMonth = java.time.LocalDate.now().plusDays(10)
           .format(DateTimeFormatter.ISO_LOCAL_DATE);
@@ -538,10 +498,8 @@ class SubscriptionServiceImplTest {
           .thenReturn(Optional.of(testSubscription));
       when(subscriptionRepository.save(any(Subscription.class))).thenReturn(testSubscription);
 
-      // Act
       subscriptionService.extendSubscription(userId, billingMonth);
 
-      // Assert
       assertThat(testSubscription.getEndDate()).isEqualTo(
           java.time.LocalDate.parse(billingMonth).atStartOfDay().atOffset(ZoneOffset.UTC));
       verify(subscriptionRepository).save(testSubscription);
@@ -550,7 +508,6 @@ class SubscriptionServiceImplTest {
     @Test
     @DisplayName("Должен продлить истекшую и отмененную подписку по текущей логике")
     void shouldExtendSubscriptionWhenSubscriptionIsExpiredAndCanceled() {
-      // Arrange
       Long userId = 1L;
       String billingMonth = futureBillingDate;
       testSubscription.setStatus(SubscriptionStatus.CANCELED);
@@ -560,10 +517,8 @@ class SubscriptionServiceImplTest {
           .thenReturn(Optional.of(testSubscription));
       when(subscriptionRepository.save(any(Subscription.class))).thenReturn(testSubscription);
 
-      // Act
       subscriptionService.extendSubscription(userId, billingMonth);
 
-      // Assert
       assertThat(testSubscription.getStatus()).isEqualTo(SubscriptionStatus.ACTIVE);
       assertThat(testSubscription.getEndDate()).isEqualTo(
           java.time.LocalDate.parse(billingMonth).atStartOfDay().atOffset(ZoneOffset.UTC));
@@ -573,7 +528,6 @@ class SubscriptionServiceImplTest {
     @Test
     @DisplayName("Должен успешно продлить подписку для будущего месяца")
     void shouldExtendSubscriptionForFutureMonth() {
-      // Arrange
       Long userId = 1L;
       String futureBillingMonth = java.time.LocalDate.now().plusDays(45)
           .format(DateTimeFormatter.ISO_LOCAL_DATE);
@@ -584,10 +538,8 @@ class SubscriptionServiceImplTest {
           .thenReturn(Optional.of(testSubscription));
       when(subscriptionRepository.save(any(Subscription.class))).thenReturn(testSubscription);
 
-      // Act
       subscriptionService.extendSubscription(userId, futureBillingMonth);
 
-      // Assert
       assertThat(testSubscription.getStatus()).isEqualTo(SubscriptionStatus.ACTIVE);
       assertThat(testSubscription.getEndDate()).isEqualTo(
           java.time.LocalDate.parse(futureBillingMonth).atStartOfDay().atOffset(ZoneOffset.UTC));
@@ -597,7 +549,6 @@ class SubscriptionServiceImplTest {
     @Test
     @DisplayName("Должен сохранить текущую endDate если она позже paidUntilDate")
     void shouldKeepCurrentEndDateWhenItIsAfterPaidUntilDate() {
-      // Arrange
       Long userId = 1L;
       String billingMonth = java.time.LocalDate.now().plusDays(5)
           .format(DateTimeFormatter.ISO_LOCAL_DATE);
@@ -609,10 +560,8 @@ class SubscriptionServiceImplTest {
           .thenReturn(Optional.of(testSubscription));
       when(subscriptionRepository.save(any(Subscription.class))).thenReturn(testSubscription);
 
-      // Act
       subscriptionService.extendSubscription(userId, billingMonth);
 
-      // Assert
       assertThat(testSubscription.getEndDate()).isEqualTo(currentEndDate);
       verify(subscriptionRepository).save(testSubscription);
     }
@@ -622,7 +571,7 @@ class SubscriptionServiceImplTest {
   @DisplayName("Продление подписки на 1 месяц (bulk)")
   class ExtendSubscriptionsByUserIdsTests {
 
-    @Test
+@Test
     @DisplayName("Должен продлить endDate на месяц для всех пользователей")
     void shouldExtendSubscriptionsForUsers() {
       Long userId = 1L;
@@ -631,13 +580,8 @@ class SubscriptionServiceImplTest {
 
       when(subscriptionRepository.findFirstByUser_IdOrderByStartDateDesc(userId))
           .thenReturn(Optional.of(testSubscription));
-      when(subscriptionRepository.saveAll(any())).thenAnswer(invocation -> invocation.getArgument(0));
-      when(subscriptionMapper.toSubscriptionResponseDto(testSubscription)).thenReturn(testSubscriptionDto);
 
-      List<SubscriptionResponseDto> result =
-          subscriptionService.extendSubscriptionsByUserIds(List.of(userId));
-
-      assertThat(result).containsExactly(testSubscriptionDto);
+      subscriptionService.extendSubscriptionsByUserIds(List.of(userId));
 
       @SuppressWarnings("unchecked")
       ArgumentCaptor<List<Subscription>> captor = ArgumentCaptor.forClass(List.class);
@@ -659,14 +603,14 @@ class SubscriptionServiceImplTest {
     }
 
     @Test
-    @DisplayName("Должен выбросить BadRequestException если подписка не найдена")
+    @DisplayName("Должен выбросить NotFoundException если подписка не найдена")
     void shouldThrowWhenSubscriptionMissing() {
       Long userId = 2L;
       when(subscriptionRepository.findFirstByUser_IdOrderByStartDateDesc(userId))
           .thenReturn(Optional.empty());
 
       assertThatThrownBy(() -> subscriptionService.extendSubscriptionsByUserIds(List.of(userId)))
-          .isInstanceOf(BadRequestException.class)
+          .isInstanceOf(NotFoundException.class)
           .hasMessageContaining("No subscription found");
 
       verify(subscriptionRepository, never()).saveAll(any());
