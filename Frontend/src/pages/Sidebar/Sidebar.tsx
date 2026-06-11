@@ -1,121 +1,124 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { NavLink } from "react-router";
 import styles from "./Sidebar.module.css";
 import Logo from "../../assets/images/Logo.png";
 import {
-    LayoutDashboard,
+    LayoutGrid,
     ShieldCheck,
-    Ticket,
-    LineChart,
+    Tag,
+    CreditCard,
+    Wallet,
     MessageSquare,
     Users,
     Settings,
+    ChevronLeft,
+    ChevronRight,
+    X
 } from "lucide-react";
 
-export default function Sidebar() {
+const serviceItems = [
+    { state: "payment", icon: <LayoutGrid size={20} />, text: "Оплата" },
+    { state: "users", icon: <Users size={20} />, text: "Пользователи" },
+    {
+        state: "sendMessages",
+        icon: <MessageSquare size={20} />,
+        text: "Отправка сообщений",
+    },
+    { state: "servers", icon: <ShieldCheck size={20} />, text: "VPN серверы" },
+    { state: "promotional", icon: <Tag size={20} />, text: "Промокоды" },
+    { state: "tariffs", icon: <CreditCard size={20} />, text: "Тарифы" },
+    { state: "paying", icon: <Wallet size={20} />, text: "Платежи" },
+    { state: "settings", icon: <Settings size={20} />, text: "Настройки" },
+];
+
+interface SidebarProps {
+    isMobileOpen: boolean;
+    closeMobile: () => void;
+}
+
+export default function Sidebar({ isMobileOpen, closeMobile }: SidebarProps) {
     const [state, setState] = useState("panel");
+    const [hideBar, setHideBar] = useState(false);
 
     function handleStateChange(text: string) {
         setState(text);
     }
 
+    function handleHideBar() {
+        setHideBar(!hideBar);
+        console.log(hideBar);
+    }
+
+    useEffect(() => {
+        if (isMobileOpen) {
+            document.body.style.overflow = "hidden";
+        } else {
+            document.body.style.overflow = "unset";
+        }
+    }, [isMobileOpen]);
+
+    useEffect(() => {
+        const handleResize = () => {
+            if (window.innerWidth <= 768) {
+                setHideBar(false);
+            }
+        };
+        window.addEventListener("resize", handleResize);
+        handleResize();
+        return () => window.removeEventListener("resize", handleResize);
+    }, []);
+
     return (
-        <div className={`${styles.sidebarContent} ${styles.borderRight}`}>
-            <div className={styles.borderBottom}>
+        <>
+            <div
+                className={`${styles.backdrop} ${isMobileOpen ? styles.backdropVisible : ""}`}
+                onClick={closeMobile}
+            />
+
+            <aside
+                className={`${styles.sidebarContent} ${styles.borderRight} ${hideBar ? styles.hidden : ""} ${isMobileOpen ? styles.mobileOpen : ""}`}
+            >
                 <div className={styles.sidebarLogo}>
                     <div className={styles.logo}>
                         <img src={Logo} alt="Logo" />
-                        <label>mVPN</label>
+                        {!hideBar && <label>mVPN</label>}
+                        <div
+                            className={styles.mobileCloseBtn}
+                            onClick={closeMobile}
+                        >
+                            <X size={24} strokeWidth={1.5} />
+                        </div>
                     </div>
-                    <label>Панель управления</label>
+                    <div className={styles.collapse} onClick={handleHideBar}>
+                        {!hideBar ? (
+                            <ChevronLeft size={14} />
+                        ) : (
+                            <ChevronRight size={14} />
+                        )}
+                    </div>
                 </div>
-            </div>
-            <div className={styles.sidebarBody}>
-                <div className="padding">
-                    <NavLink
-                        to={"/"}
-                        className={`navLink ${styles.sidebarUsers} ${state === "panel" ? styles.active : ""}`}
-                        onClick={() => handleStateChange("panel")}
-                    >
-                        <div className={styles.users}>
-                            <LayoutDashboard size={20} />
-                            <label>Панель управления</label>
+                <div className={styles.sidebarBody}>
+                    {serviceItems.map((item) => (
+                        <div
+                            className={`${state === item.state ? styles.border : ""}`}
+                        >
+                            <NavLink
+                                to={`/${item.state}`}
+                                className={`navLink ${styles.sidebarUsers} ${state === item.state ? styles.active : ""}`}
+                                onClick={() => {
+                                    handleStateChange(item.state)
+                                    closeMobile()
+                                }}
+                            >
+                                <div className={styles.users}>
+                                    {item.icon}
+                                    {!hideBar && <span>{item.text}</span>}
+                                </div>
+                            </NavLink>
                         </div>
-                    </NavLink>
+                    ))}
                 </div>
-                <div className="padding">
-                    <NavLink
-                        to={"/users"}
-                        className={`navLink ${styles.sidebarUsers} ${state === "all" ? styles.active : ""}`}
-                        onClick={() => handleStateChange("all")}
-                    >
-                        <div className={styles.users}>
-                            <Users size={20} />
-                            <label>Пользователи</label>
-                        </div>
-                    </NavLink>
-                </div>
-                <div className="padding">
-                    <NavLink
-                        to={"/sendMessages"}
-                        className={`navLink ${styles.sidebarUsers} ${state === "send" ? styles.active : ""}`}
-                        onClick={() => handleStateChange("send")}
-                    >
-                        <div className={styles.users}>
-                            <MessageSquare size={20} />
-                            <label>Отправка сообщений</label>
-                        </div>
-                    </NavLink>
-                </div>
-                <div className="padding">
-                    <NavLink
-                        to={"/servers"}
-                        className={`navLink ${styles.sidebarUsers} ${state === "vpn" ? styles.active : ""}`}
-                        onClick={() => handleStateChange("vpn")}
-                    >
-                        <div className={styles.users}>
-                            <ShieldCheck size={20} />
-                            <label>VPN серверы</label>
-                        </div>
-                    </NavLink>
-                </div>
-                <div className="padding">
-                    <NavLink
-                        to={"/promotional"}
-                        className={`navLink ${styles.sidebarUsers} ${state === "promotional" ? styles.active : ""}`}
-                        onClick={() => handleStateChange("promotional")}
-                    >
-                        <div className={styles.users}>
-                            <Ticket size={20} />
-                            <label>Промокоды</label>
-                        </div>
-                    </NavLink>
-                </div>
-                <div className="padding">
-                    <NavLink
-                        to={"/analytics"}
-                        className={`navLink ${styles.sidebarUsers} ${state === "analytics" ? styles.active : ""}`}
-                        onClick={() => handleStateChange("analytics")}
-                    >
-                        <div className={styles.users}>
-                            <LineChart size={20} />
-                            <label>Аналитика</label>
-                        </div>
-                    </NavLink>
-                </div>
-                <div className="padding">
-                    <NavLink
-                        to={"/settings"}
-                        className={`navLink ${styles.sidebarUsers} ${state === "settings" ? styles.active : ""}`}
-                        onClick={() => handleStateChange("settings")}
-                    >
-                        <div className={styles.users}>
-                            <Settings size={20} />
-                            <label>Настройки</label>
-                        </div>
-                    </NavLink>
-                </div>
-            </div>
-        </div>
+            </aside>
+        </>
     );
 }
