@@ -1,40 +1,35 @@
-import { Route, Routes } from "react-router";
+import { Navigate, Route, Routes } from "react-router";
 import MainAllUsers from "../allUsers/MainAllUsers.tsx";
 import MainSendMessages from "../sendMessages/MainSendMessages.tsx";
-import { Bell, CircleUserRound, ChevronDown } from "lucide-react";
-import styles from "./MainContent.module.css";
 import MainVpnServers from "../vpnServers/MainVpnServers.tsx";
 import MainPromotional from "../promotional/MainPromotional.tsx";
-import MainAnalytics from "../analytics/MainAnalytics.tsx";
+import MainTariffs from "@pages/tariffs/MainTariffs.tsx";
 import MainSettings from "../settings/MainSettings.tsx";
-import MainControlPanel from "../controlPanel/MainControlPanel.tsx";
+import MainPayment from "@pages/payment/MainPayment.tsx";
 import AddUsers from "../allUsers/component/AddUsers/AddUsers.tsx";
 import ChangeUsers from "../allUsers/component/ChangeUsers/ChangeUsers.tsx";
 import { AddVpnServers } from "../vpnServers/components/AddVpnServers/AddVpnServers.tsx";
 import SettingsVpnServers from "../vpnServers/components/SettingsVpnServers/SettingVpnServers.tsx";
 import ViewingLogs from "../vpnServers/components/ViewingLogs/ViewingLogs.tsx";
+import MainPaying from "../paying/MainPaying.tsx"
+import MainSubscription from "@pages/subscription/MainSubscription.tsx";
+import MainLanding from "@pages/landing/MainLanding.tsx";
 
 export default function MainContent() {
     return (
         <div>
-            <div className={styles.header}>
-                <div>
-                    <Bell size={30} />
-                </div>
-                <div className={styles.account}>
-                    <CircleUserRound size={30} />
-                    <p>admin</p>
-                    <ChevronDown size={30} />
-                </div>
-            </div>
             <Routes>
-                <Route path="/" Component={MainControlPanel} />
+                <Route path="/" element={<Navigate to="/payment" replace />} />
+                <Route path="/payment" Component={MainPayment} />
                 <Route path="/users" Component={MainAllUsers} />
                 <Route path="/sendMessages" Component={MainSendMessages} />
                 <Route path="/servers" Component={MainVpnServers} />
                 <Route path="/promotional" Component={MainPromotional} />
-                <Route path="/analytics" Component={MainAnalytics} />
+                <Route path="/tariffs" Component={MainTariffs} />
+                <Route path="/paying" Component={MainPaying} />
                 <Route path="/settings" Component={MainSettings} />
+                <Route path="/subscription" Component={MainSubscription} />
+                <Route path="/landing" Component={MainLanding} />
                 <Route path="/users/add" Component={AddUsers} />
                 <Route path="/users/edit/:id" Component={ChangeUsers} />
                 <Route path="/servers/add" Component={AddVpnServers} />
