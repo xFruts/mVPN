@@ -1,0 +1,8 @@
+type: object
+required:
+  - theme
+properties:
+  theme:
+    type: string
+    enum: [ LIGHT, DARK, SYSTEM ]
+    example: DARK
