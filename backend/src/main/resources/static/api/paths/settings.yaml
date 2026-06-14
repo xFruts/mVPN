@@ -1,0 +1,33 @@
+ThemeSettings:
+  get:
+    summary: Получить текущую тему пользователя
+    operationId: getTheme
+    tags: [Settings]
+    responses:
+      200:
+        description: Успешное получение темы
+        content:
+          application/json:
+            schema:
+              $ref: '../components/schemas/settings/theme/ThemeDto.yaml'
+      401:
+        $ref: '../components/responses/error/Unauthorized.yaml'
+      403:
+        $ref: '../components/responses/error/Forbidden.yaml'
+  put:
+    summary: Сохранить/обновить тему пользователя
+    operationId: updateTheme
+    tags: [Settings]
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '../components/schemas/settings/theme/ThemeDto.yaml'
+    responses:
+      200:
+        description: Успешное обновление темы
+      401:
+        $ref: '../components/responses/error/Unauthorized.yaml'
+      403:
+        $ref: '../components/responses/error/Forbidden.yaml'

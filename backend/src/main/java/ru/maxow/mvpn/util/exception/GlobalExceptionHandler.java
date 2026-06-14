@@ -177,6 +177,18 @@ public class GlobalExceptionHandler {
     );
   }
 
+  @ResponseStatus(HttpStatus.UNAUTHORIZED)
+  @ExceptionHandler(UnauthorizedException.class)
+  public ErrorResponse handleUnauthorizedException(UnauthorizedException ex, WebRequest request) {
+    log.warn("Unauthorized: path={}", extractPath(request));
+    return new ErrorResponse(
+        ex.getMessage(),
+        System.currentTimeMillis(),
+        "UNAUTHORIZED",
+        getOrGenerateCorrelationId()
+    );
+  }
+
   @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
   @ExceptionHandler(Exception.class)
   public ErrorResponse handleGlobalException(Exception ex, WebRequest request) {
