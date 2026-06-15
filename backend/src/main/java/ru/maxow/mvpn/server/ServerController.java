@@ -19,8 +19,9 @@ public class ServerController implements ServersApi {
   ServerService serverService;
 
   @Override
-  public PageListServerDto getServers(Integer page, Integer size, List<String> sort) {
-    return serverService.getServers(page, size, sort);
+  public PageListServerDto getServers(Integer page, Integer size, List<String> sort,
+                                      String status, String search) {
+    return serverService.getServers(page, size, sort, status, search);
   }
 
   @Override

@@ -7,7 +7,7 @@ import java.util.List;
 import java.util.Set;
 
 public interface ServerService {
-  PageListServerDto getServers(Integer page, Integer size, List<String> sort);
+  PageListServerDto getServers(Integer page, Integer size, List<String> sort, String status, String search);
 
   GetServerResponseDto getServer(Long id);
 

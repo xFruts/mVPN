@@ -18,6 +18,7 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
 import ru.maxow.mvpn.model.*;
 import ru.maxow.mvpn.util.exception.NotFoundException;
 
@@ -70,10 +71,10 @@ class ServerServiceTest {
           1
       );
 
-      when(serverRepository.findAll(any(Pageable.class))).thenReturn(page);
+      when(serverRepository.findAll(any(Specification.class), any(Pageable.class))).thenReturn(page);
       when(serverMapper.toListDto(testServer)).thenReturn(listDto);
 
-      PageListServerDto result = serverService.getServers(0, 10, null);
+      PageListServerDto result = serverService.getServers(0, 10, null, null, null);
 
       assertThat(result).isNotNull();
       assertThat(result.getContent()).hasSize(1);
@@ -84,7 +85,7 @@ class ServerServiceTest {
       assertThat(result.getNumber()).isEqualTo(0);
 
       ArgumentCaptor<Pageable> pageableCaptor = ArgumentCaptor.forClass(Pageable.class);
-      verify(serverRepository).findAll(pageableCaptor.capture());
+      verify(serverRepository).findAll(any(Specification.class), pageableCaptor.capture());
       assertThat(pageableCaptor.getValue().getSort().isUnsorted()).isTrue();
       verify(serverMapper).toListDto(testServer);
     }
@@ -92,12 +93,12 @@ class ServerServiceTest {
     @Test
     @DisplayName("Должен применить sort-параметры с desc и asc")
     void shouldApplySortFromRequest() {
-      when(serverRepository.findAll(any(Pageable.class))).thenReturn(Page.empty());
+      when(serverRepository.findAll(any(Specification.class), any(Pageable.class))).thenReturn(Page.empty());
 
-      serverService.getServers(0, 20, List.of("name,desc", "location,asc"));
+      serverService.getServers(0, 20, List.of("name,desc", "location,asc"), null, null);
 
       ArgumentCaptor<Pageable> pageableCaptor = ArgumentCaptor.forClass(Pageable.class);
-      verify(serverRepository).findAll(pageableCaptor.capture());
+      verify(serverRepository).findAll(any(Specification.class), pageableCaptor.capture());
 
       Sort sort = pageableCaptor.getValue().getSort();
       assertThat(sort.getOrderFor("name")).isNotNull();
