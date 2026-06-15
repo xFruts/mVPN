@@ -23,6 +23,18 @@ ServersCollection:
           type: array
           items:
             type: string
+      - name: status
+        in: query
+        description: Фильтр по статусу сервера
+        required: false
+        schema:
+          type: string
+      - name: search
+        in: query
+        description: Поиск по имени сервера или IP-адресу (регистронезависимый)
+        required: false
+        schema:
+          type: string
     responses:
       '200':
         description: Успешный ответ

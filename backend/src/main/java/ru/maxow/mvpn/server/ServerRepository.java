@@ -1,15 +1,15 @@
 package ru.maxow.mvpn.server;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.stereotype.Repository;
-import ru.maxow.mvpn.model.ServerStatus;
 
 import java.util.List;
 import java.util.Set;
 
 @Repository
-public interface ServerRepository extends JpaRepository<Server, Long> {
-  List<Server> findAllByStatus(ServerStatus status);
+public interface ServerRepository
+    extends JpaRepository<Server, Long>, JpaSpecificationExecutor<Server> {
 
   Set<Server> findAllByIdIn(List<Long> ids);
 }

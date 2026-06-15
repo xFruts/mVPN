@@ -7,7 +7,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -15,9 +15,12 @@ import ru.maxow.mvpn.minio.MinioService;
 import ru.maxow.mvpn.model.*;
 import ru.maxow.mvpn.util.exception.BadRequestException;
 import ru.maxow.mvpn.util.exception.NotFoundException;
-
 import java.util.List;
 import java.util.Set;
+
+import static ru.maxow.mvpn.server.ServerSpecifications.hasStatus;
+import static ru.maxow.mvpn.server.ServerSpecifications.nameOrIpContains;
+import static ru.maxow.mvpn.util.PaginationUtils.parseSorting;
 
 @Slf4j
 @Service
@@ -30,17 +33,14 @@ public class ServerServiceImpl implements ServerService {
   MinioService minioService;
 
   @Override
-  public PageListServerDto getServers(Integer page, Integer size, List<String> sort) {
-    Sort sorting = (sort == null || sort.isEmpty())
-        ? Sort.unsorted()
-        : Sort.by(sort.stream().map(s -> {
-          String[] parts = s.split(",");
-          return parts.length == 2 && parts[1].equalsIgnoreCase("desc")
-              ? Sort.Order.desc(parts[0])
-              : Sort.Order.asc(parts[0]);
-        }).toList());
+  public PageListServerDto getServers(Integer page, Integer size, List<String> sort,
+                                      String status, String search) {
 
-    Page<Server> servers = serverRepository.findAll(PageRequest.of(page, size, sorting));
+    Specification<Server> spec = Specification.where(hasStatus(status))
+        .and(nameOrIpContains(search));
+
+    Page<Server> servers = serverRepository.findAll(spec, PageRequest.of(
+        page, size, parseSorting(sort)));
 
     return new PageListServerDto()
         .content(servers.getContent().stream().map(serverMapper::toListDto).toList())
