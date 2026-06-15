@@ -28,12 +28,6 @@ UsersCollection:
         schema:
           type: string
           enum: [ REGULAR, SPECIAL, ADMIN ]
-      - name: tariff
-        in: query
-        description: Фильтр по тарифному плану подписки
-        required: false
-        schema:
-          type: string
       - name: subStatus
         in: query
         description: Фильтр по статусу подписки

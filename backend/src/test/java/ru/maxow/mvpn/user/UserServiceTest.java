@@ -511,7 +511,7 @@ class UserServiceTest {
       mockRepositoryAndMapper();
 
       userService.findAllAsPage(0, 10,
-          null, null, null, null, null);
+          null, null, null, null);
 
       ArgumentCaptor<Pageable> captor = ArgumentCaptor.forClass(Pageable.class);
       verify(userRepository).findAll(any(Specification.class), captor.capture());
@@ -526,7 +526,7 @@ class UserServiceTest {
 
       // Стандартный сценарий: "поле,направление"
       userService.findAllAsPage(0, 10, List.of("fullName,desc", "role,invalid"),
-          null, null, null, null);
+          null, null, null);
 
       ArgumentCaptor<Pageable> captor = ArgumentCaptor.forClass(Pageable.class);
       verify(userRepository).findAll(any(Specification.class), captor.capture());
@@ -549,7 +549,7 @@ class UserServiceTest {
 
       // ТОТ САМЫЙ КЕЙС: Спринг разбил строку ?sort=id,desc на ["id", "desc"]
       userService.findAllAsPage(0, 10, List.of("id", "desc"),
-          null, null, null, null);
+          null, null, null);
 
       ArgumentCaptor<Pageable> captor = ArgumentCaptor.forClass(Pageable.class);
       verify(userRepository).findAll(any(Specification.class), captor.capture());
@@ -568,7 +568,7 @@ class UserServiceTest {
       mockRepositoryAndMapper();
 
       userService.findAllAsPage(0, 10, List.of("fullName,asc", "role", "desc"),
-          null, null, null, null);
+          null, null, null);
 
       ArgumentCaptor<Pageable> captor = ArgumentCaptor.forClass(Pageable.class);
       verify(userRepository).findAll(any(Specification.class), captor.capture());

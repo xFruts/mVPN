@@ -33,14 +33,12 @@ public class UserServiceImpl implements UserService {
 
   @Override
   @Transactional(readOnly = true)
-  public PageListUserDto findAllAsPage(Integer page, Integer size, List<String> sort, String role,
-                                       String tariff, String subStatus, String search) {
+  public PageListUserDto findAllAsPage(Integer page, Integer size, List<String> sort,
+                                       String role, String subStatus, String search) {
 
     Specification<User> spec = Specification.where(hasRole(role))
-            .and(hasTariff(tariff))
             .and(hasSubscriptionStatus(subStatus))
-            .and(nameContains(search))
-            .and(distinctIfSubscriptionSort(sort));
+            .and(nameContains(search));
 
     Page<User> users = userRepository.findAll(spec, PageRequest.of(page, size, parseSorting(sort)));
 
