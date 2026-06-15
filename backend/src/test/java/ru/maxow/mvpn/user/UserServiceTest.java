@@ -15,6 +15,9 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
 import ru.maxow.mvpn.model.CreateUserRequestDto;
 import ru.maxow.mvpn.model.ListUserDto;
 import ru.maxow.mvpn.model.SubscriptionStatus;
@@ -494,37 +497,91 @@ class UserServiceTest {
   @DisplayName("Пагинация и сортировка пользователей")
   class FindAllAsPageTests {
 
-    @Test
-    @DisplayName("Given sort is null When findAllAsPage Then repository called with unsorted pageable")
-    void givenSortNullWhenFindAllAsPageThenUseUnsorted() {
-      when(userRepository.findAll(any(PageRequest.class)))
-          .thenReturn(new PageImpl<>(List.of(testUser), PageRequest.of(0, 10), 1));
+    private void mockRepositoryAndMapper() {
+      when(userRepository.findAll(any(Specification.class), any(Pageable.class)))
+          .thenReturn(new PageImpl<>(List.of(testUser),
+              PageRequest.of(0, 10), 1));
+
       when(userMapper.toListUserDto(testUser)).thenReturn(new ListUserDto().id(1L));
+    }
 
-      userService.findAllAsPage(0, 10, null);
+    @Test
+    @DisplayName("Given sort is null When findAllAsPage Then use unsorted")
+    void givenSortNullWhenFindAllAsPageThenUseUnsorted() {
+      mockRepositoryAndMapper();
 
-      ArgumentCaptor<PageRequest> captor = ArgumentCaptor.forClass(PageRequest.class);
-      verify(userRepository).findAll(captor.capture());
+      userService.findAllAsPage(0, 10,
+          null, null, null, null, null);
+
+      ArgumentCaptor<Pageable> captor = ArgumentCaptor.forClass(Pageable.class);
+      verify(userRepository).findAll(any(Specification.class), captor.capture());
+
       assertThat(captor.getValue().getSort().isUnsorted()).isTrue();
     }
 
     @Test
-    @DisplayName("Given desc and invalid direction When findAllAsPage Then map to desc and asc fallback")
-    void givenMixedSortWhenFindAllAsPageThenApplyDescAndAscFallback() {
-      when(userRepository.findAll(any(PageRequest.class)))
-          .thenReturn(new PageImpl<>(List.of(testUser), PageRequest.of(0, 10), 1));
-      when(userMapper.toListUserDto(testUser)).thenReturn(new ListUserDto().id(1L));
+    @DisplayName("Given comma-separated sort strings When findAllAsPage Then parse correctly")
+    void givenCommaSeparatedSortWhenFindAllAsPageThenParseCorrectly() {
+      mockRepositoryAndMapper();
 
-      userService.findAllAsPage(0, 10, List.of("fullName,desc", "role,invalid"));
+      // Стандартный сценарий: "поле,направление"
+      userService.findAllAsPage(0, 10, List.of("fullName,desc", "role,invalid"),
+          null, null, null, null);
 
-      ArgumentCaptor<PageRequest> captor = ArgumentCaptor.forClass(PageRequest.class);
-      verify(userRepository).findAll(captor.capture());
+      ArgumentCaptor<Pageable> captor = ArgumentCaptor.forClass(Pageable.class);
+      verify(userRepository).findAll(any(Specification.class), captor.capture());
 
-      var sort = captor.getValue().getSort();
-      var fullNameOrder = java.util.Objects.requireNonNull(sort.getOrderFor("fullName"));
-      var roleOrder = java.util.Objects.requireNonNull(sort.getOrderFor("role"));
-      assertThat(fullNameOrder.getDirection().name()).isEqualTo("DESC");
-      assertThat(roleOrder.getDirection().name()).isEqualTo("ASC");
+      Sort sort = captor.getValue().getSort();
+
+      // AssertJ позволяет делать проверки очень лаконично
+      assertThat(sort.getOrderFor("fullName")).isNotNull();
+      assertThat(sort.getOrderFor("fullName").isDescending()).isTrue();
+
+      // Для 'invalid' fallback должен сработать на ASC
+      assertThat(sort.getOrderFor("role")).isNotNull();
+      assertThat(sort.getOrderFor("role").isAscending()).isTrue();
+    }
+
+    @Test
+    @DisplayName("Given Spring-splitted sort (field and direction as separate items) When findAllAsPage Then link them correctly")
+    void givenSpringSplittedSortWhenFindAllAsPageThenLinkThemCorrectly() {
+      mockRepositoryAndMapper();
+
+      // ТОТ САМЫЙ КЕЙС: Спринг разбил строку ?sort=id,desc на ["id", "desc"]
+      userService.findAllAsPage(0, 10, List.of("id", "desc"),
+          null, null, null, null);
+
+      ArgumentCaptor<Pageable> captor = ArgumentCaptor.forClass(Pageable.class);
+      verify(userRepository).findAll(any(Specification.class), captor.capture());
+
+      Sort sort = captor.getValue().getSort();
+
+      // Должен быть ровно один Order
+      assertThat(sort.toList()).hasSize(1);
+      assertThat(sort.getOrderFor("id")).isNotNull();
+      assertThat(sort.getOrderFor("id").isDescending()).isTrue();
+    }
+
+    @Test
+    @DisplayName("Given mixed sort arrays When findAllAsPage Then parse all fields correctly")
+    void givenMixedSortWhenFindAllAsPageThenParseAllFieldsCorrectly() {
+      mockRepositoryAndMapper();
+
+      userService.findAllAsPage(0, 10, List.of("fullName,asc", "role", "desc"),
+          null, null, null, null);
+
+      ArgumentCaptor<Pageable> captor = ArgumentCaptor.forClass(Pageable.class);
+      verify(userRepository).findAll(any(Specification.class), captor.capture());
+
+      Sort sort = captor.getValue().getSort();
+
+      assertThat(sort.toList()).hasSize(2);
+
+      assertThat(sort.getOrderFor("fullName")).isNotNull();
+      assertThat(sort.getOrderFor("fullName").isAscending()).isTrue();
+
+      assertThat(sort.getOrderFor("role")).isNotNull();
+      assertThat(sort.getOrderFor("role").isDescending()).isTrue();
     }
   }
 

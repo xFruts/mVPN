@@ -21,6 +21,31 @@ UsersCollection:
           type: array
           items:
             type: string
+      - name: role
+        in: query
+        description: Фильтр по роли пользователя
+        required: false
+        schema:
+          type: string
+          enum: [ REGULAR, SPECIAL, ADMIN ]
+      - name: tariff
+        in: query
+        description: Фильтр по тарифному плану подписки
+        required: false
+        schema:
+          type: string
+      - name: subStatus
+        in: query
+        description: Фильтр по статусу подписки
+        required: false
+        schema:
+          type: string
+      - name: search
+        in: query
+        description: Поиск по имени пользователя (fullName) - регистронезависимый
+        required: false
+        schema:
+          type: string
     responses:
       '200':
         description: Страница с пользователями

@@ -21,8 +21,9 @@ public class UserController implements UsersApi {
   UserService userService;
 
   @Override
-  public PageListUserDto getUsers(Integer page, Integer size, List<String> sort) {
-    return userService.findAllAsPage(page, size, sort);
+  public PageListUserDto getUsers(Integer page, Integer size, List<String> sort,
+                                  String role, String tariff, String subStatus, String search) {
+    return userService.findAllAsPage(page, size, sort, role, tariff, subStatus, search);
   }
 
   @Override

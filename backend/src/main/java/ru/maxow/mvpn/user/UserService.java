@@ -6,7 +6,8 @@ import ru.maxow.mvpn.model.*;
 
 public interface UserService {
 
-  PageListUserDto findAllAsPage(Integer page, Integer size, List<String> sort);
+  PageListUserDto findAllAsPage(Integer page, Integer size, List<String> sort, String role,
+                                       String tariff, String subStatus, String search);
 
   List<User> findAll();
 
