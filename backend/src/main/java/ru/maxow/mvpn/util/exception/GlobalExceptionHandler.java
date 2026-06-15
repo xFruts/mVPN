@@ -3,6 +3,7 @@ package ru.maxow.mvpn.util.exception;
 import lombok.extern.slf4j.Slf4j;
 import org.slf4j.MDC;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.data.core.PropertyReferenceException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.validation.FieldError;
@@ -22,6 +23,7 @@ import java.util.stream.Collectors;
 
 @Slf4j
 @RestControllerAdvice
+@SuppressWarnings("unused")
 public class GlobalExceptionHandler {
 
   private static final String CORRELATION_ID_KEY = "correlation-id";
@@ -185,6 +187,19 @@ public class GlobalExceptionHandler {
         ex.getMessage(),
         System.currentTimeMillis(),
         "UNAUTHORIZED",
+        getOrGenerateCorrelationId()
+    );
+  }
+
+  @ResponseStatus(HttpStatus.BAD_REQUEST)
+  @ExceptionHandler(PropertyReferenceException.class)
+  public ErrorResponse handlePropertyReferenceException(PropertyReferenceException ex) {
+    String message = String.format("Invalid property reference: '%s'." +
+        " Please check your request parameters.", ex.getPropertyName());
+    return new ErrorResponse(
+        message,
+        System.currentTimeMillis(),
+        "BAD_REQUEST",
         getOrGenerateCorrelationId()
     );
   }
