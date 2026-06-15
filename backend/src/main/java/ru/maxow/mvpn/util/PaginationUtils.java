@@ -13,7 +13,8 @@ public final class PaginationUtils {
 
   private static final Map<String, String> JPA_PATHS = Map.of(
       "subEndDate", "subscriptions.endDate",
-      "subStatus", "subscriptions.status"
+      "subStatus", "subscriptions.status",
+      "tariffName", "tariff.name"
   );
 
   public static Sort parseSorting(List<String> sort) {
