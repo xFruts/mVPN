@@ -9,15 +9,17 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ru.maxow.mvpn.model.*;
-import ru.maxow.mvpn.subscription.Subscription;
 import ru.maxow.mvpn.subscription.SubscriptionRepository;
 import ru.maxow.mvpn.util.exception.BadRequestException;
 import ru.maxow.mvpn.util.exception.NotFoundException;
 import ru.maxow.mvpn.util.exception.ResourceAlreadyExistsException;
+
+import static ru.maxow.mvpn.user.UserSpecifications.*;
+import static ru.maxow.mvpn.util.PaginationUtils.parseSorting;
 
 @Service
 @Slf4j
@@ -31,24 +33,23 @@ public class UserServiceImpl implements UserService {
 
   @Override
   @Transactional(readOnly = true)
-  public PageListUserDto findAllAsPage(Integer page, Integer size, List<String> sort) {
-    Sort sorting = (sort == null || sort.isEmpty())
-        ? Sort.unsorted()
-        : Sort.by(sort.stream().map(s -> {
-            String[] parts = s.split(",");
-            return parts.length == 2 && parts[1].equalsIgnoreCase("desc")
-                ? Sort.Order.desc(parts[0])
-                : Sort.Order.asc(parts[0]);
-          }).toList());
+  public PageListUserDto findAllAsPage(Integer page, Integer size, List<String> sort, String role,
+                                       String tariff, String subStatus, String search) {
 
-    Page<User> users = userRepository.findAll(PageRequest.of(page, size, sorting));
+    Specification<User> spec = Specification.where(hasRole(role))
+            .and(hasTariff(tariff))
+            .and(hasSubscriptionStatus(subStatus))
+            .and(nameContains(search))
+            .and(distinctIfSubscriptionSort(sort));
+
+    Page<User> users = userRepository.findAll(spec, PageRequest.of(page, size, parseSorting(sort)));
 
     return new PageListUserDto()
         .content(users.getContent().stream().map(userMapper::toListUserDto).toList())
         .totalElements(users.getTotalElements())
         .totalPages(users.getTotalPages())
-        .size(users.getSize())
-        .number(users.getNumber());
+        .number(users.getNumber())
+        .size(users.getSize());
   }
 
   @Override
