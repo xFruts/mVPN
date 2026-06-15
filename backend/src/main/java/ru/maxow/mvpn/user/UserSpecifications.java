@@ -13,7 +13,8 @@ public final class UserSpecifications {
 
   private UserSpecifications() {}
 
-  private static final Set<String> SUBSCRIPTION_SORT_FIELDS = Set.of("endDate", "subscriptionStatus");
+  private static final Set<String> SUBSCRIPTION_SORT_FIELDS = Set.of(
+      "endDate", "subscriptionStatus", "tariffName");
 
   public static Specification<User> hasRole(String roleStr) {
     return (root, query, cb) -> {
