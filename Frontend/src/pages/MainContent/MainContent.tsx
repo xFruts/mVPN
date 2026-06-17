@@ -1,4 +1,5 @@
 import { Navigate, Route, Routes } from "react-router";
+import styles from "./MainContent.module.css"
 import MainAllUsers from "../allUsers/MainAllUsers.tsx";
 import MainSendMessages from "../sendMessages/MainSendMessages.tsx";
 import MainVpnServers from "../vpnServers/MainVpnServers.tsx";
@@ -17,7 +18,7 @@ import MainLanding from "@pages/landing/MainLanding.tsx";
 
 export default function MainContent() {
     return (
-        <div>
+        <div className={styles.mainContent}>
             <Routes>
                 <Route path="/" element={<Navigate to="/payment" replace />} />
                 <Route path="/payment" Component={MainPayment} />

@@ -1,56 +1,56 @@
 import { Search } from "lucide-react";
+import { USER_ROLES, USER_STATUS } from "@/constant.ts";
 import styles from "./FilterAllUsers.module.css";
+import useUsersStore from "../../../../store/useUsersStore.ts";
 
 export default function FilterAllUsers() {
+    const { setParams } = useUsersStore();
     return (
         <div className={`${styles.allusersFilter} padding`}>
             <div className={styles.filterTable}>
                 <div className={styles.input}>
-                    <Search size={20} className={styles.searchInput} />
+                    <Search size={20} className={styles.search} />
                     <input
                         type="text"
                         name="search"
                         placeholder="Поиск по имени..."
+                        onChange={(e) => setParams({ search: e.target.value })}
                     />
                 </div>
                 <div className={styles.text}>
                     <select
-                        className={styles.searchInput}
+                        className={styles.filterInput}
                         onChange={(e) => {
                             e.target.blur();
+                            setParams({ role: e.target.value });
                         }}
                     >
-                        <option value="allRole">Все роли</option>
-                        <option value="user">USER</option>
-                        <option value="special">SPECIAL</option>
-                        <option value="admin">ADMIN</option>
+                        <option value="">Все роли</option>
+                        {USER_ROLES.map((role) => {
+                            return (
+                                <option key={role} value={role}>
+                                    {role}
+                                </option>
+                            );
+                        })}
                     </select>
                 </div>
                 <div className={styles.text}>
                     <select
-                        className={styles.searchInput}
+                        className={styles.filterInput}
                         onChange={(e) => {
                             e.target.blur();
+                            setParams({ subStatus: e.target.value });
                         }}
                     >
-                        <option value="allSubscription">Все подписки</option>
-                        <option value="basic">BASIC</option>
-                        <option value="family">FAMILY</option>
-                        <option value="premium">PREMIUM</option>
-                        <option value="admin">ADMIN</option>
-                    </select>
-                </div>
-                <div className={styles.text}>
-                    <select
-                        className={styles.searchInput}
-                        onChange={(e) => {
-                            e.target.blur();
-                        }}
-                    >
-                        <option value="allStatus">Все статусы</option>
-                        <option value="active">ACTIVE</option>
-                        <option value="expired">EXPIRED</option>
-                        <option value="canceled">CANCELED</option>
+                        <option value="">Все статусы</option>
+                        {USER_STATUS.map((status) => {
+                            return (
+                                <option key={status} value={status}>
+                                    {status}
+                                </option>
+                            );
+                        })}
                     </select>
                 </div>
             </div>

@@ -1,0 +1,30 @@
+.logo-wrapper {
+    display: flex;
+    align-items: flex-end;
+    gap: 3px;
+    width: fit-content;
+}
+
+.bar {
+    width: 4px;
+    border-radius: 2px;
+    background-color: #0891b2;
+    animation: colorWave 1.7s infinite ease-in-out;
+}
+
+.b1 { height: 12px; animation-delay: 0.0s; }
+.b2 { height: 20px; animation-delay: 0.2s; }
+.b3 { height: 24px; animation-delay: 0.4s; }
+.b4 { height: 16px; animation-delay: 0.6s; }
+.b5 { height: 8px;  animation-delay: 0.8s; }
+
+@keyframes colorWave {
+    0%, 100% {
+        background-color: #06b6d4;
+        box-shadow: none;
+    }
+    50% {
+        background-color: #67e8f9;
+        box-shadow: 0 0 10px rgba(34, 211, 238, 0.6);
+    }
+}

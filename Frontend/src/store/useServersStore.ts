@@ -22,7 +22,7 @@ const useServersStore = create<ServersState>()(
         filters: {
             page: 0,
             size: 12,
-            sort: "id",
+            sort: "id,asc",
         },
         fetchServers: async (newParams) => {
             set({ isLoading: true });

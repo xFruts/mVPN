@@ -11,15 +11,16 @@ const apiClient: AxiosInstance = axios.create({
     },
 });
 
-let getToken: () => string | undefined = () => undefined;
+let getToken: () => Promise<string | undefined> | string | undefined = () =>
+    undefined;
 
-export const setTokenGetter = (fn: () => string | undefined) => {
+export const setTokenGetter = (fn: () => Promise<string | undefined>) => {
     getToken = fn;
 };
 
 apiClient.interceptors.request.use(
-    (config) => {
-        const token = getToken();
+    async (config) => {
+        const token = await getToken();
         if (token) {
             config.headers.Authorization = `Bearer ${token}`;
         }

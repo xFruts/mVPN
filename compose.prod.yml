@@ -92,7 +92,7 @@ services:
       args:
         - VITE_API_URL=${VITE_API_URL}
         - VITE_KEYCLOAK_URL=${KEYCLOAK_URL}
-        - VITE_KEYCLOAK_REALM=${VITE_KEYCLOAK_REALM}
+        - VITE_KEYCLOAK_REALM=${KEYCLOAK_REALM}
         - VITE_KEYCLOAK_CLIENT_ID=${KEYCLOAK_CLIENT_ID}
     restart: always
     depends_on:

@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
-import { NavLink } from "react-router";
+import { NavLink, useLocation } from "react-router";
 import styles from "./Sidebar.module.css";
-import Logo from "../../assets/images/Logo.png";
+import Logo from "../../assets/images/Logo.tsx"
 import {
     LayoutGrid,
     ShieldCheck,
@@ -37,12 +37,10 @@ interface SidebarProps {
 }
 
 export default function Sidebar({ isMobileOpen, closeMobile }: SidebarProps) {
-    const [state, setState] = useState("panel");
-    const [hideBar, setHideBar] = useState(false);
+    const location = useLocation();
+    const currentPath = location.pathname.split("/").filter(Boolean)[0] || "";
 
-    function handleStateChange(text: string) {
-        setState(text);
-    }
+    const [hideBar, setHideBar] = useState(false);
 
     function handleHideBar() {
         setHideBar(!hideBar);
@@ -76,47 +74,52 @@ export default function Sidebar({ isMobileOpen, closeMobile }: SidebarProps) {
             />
 
             <aside
-                className={`${styles.sidebarContent} ${styles.borderRight} ${hideBar ? styles.hidden : ""} ${isMobileOpen ? styles.mobileOpen : ""}`}
+                className={`${styles.sidebarWrapper} ${hideBar ? styles.hidden : ""} ${isMobileOpen ? styles.mobileOpen : ""}`}
             >
-                <div className={styles.sidebarLogo}>
-                    <div className={styles.logo}>
-                        <img src={Logo} alt="Logo" />
-                        {!hideBar && <label>mVPN</label>}
-                        <div
-                            className={styles.mobileCloseBtn}
-                            onClick={closeMobile}
-                        >
-                            <X size={24} strokeWidth={1.5} />
-                        </div>
-                    </div>
-                    <div className={styles.collapse} onClick={handleHideBar}>
-                        {!hideBar ? (
-                            <ChevronLeft size={14} />
-                        ) : (
-                            <ChevronRight size={14} />
-                        )}
-                    </div>
-                </div>
-                <div className={styles.sidebarBody}>
-                    {serviceItems.map((item) => (
-                        <div
-                            className={`${state === item.state ? styles.border : ""}`}
-                        >
-                            <NavLink
-                                to={`/${item.state}`}
-                                className={`navLink ${styles.sidebarUsers} ${state === item.state ? styles.active : ""}`}
-                                onClick={() => {
-                                    handleStateChange(item.state)
-                                    closeMobile()
-                                }}
+                <div className={styles.sidebarContent}>
+                    <div className={styles.sidebarLogo}>
+                        <div className={styles.logo}>
+                            <Logo />
+                            {!hideBar && <label>mVPN</label>}
+                            <div
+                                className={styles.mobileCloseBtn}
+                                onClick={closeMobile}
                             >
-                                <div className={styles.users}>
-                                    {item.icon}
-                                    {!hideBar && <span>{item.text}</span>}
-                                </div>
-                            </NavLink>
+                                <X size={24} strokeWidth={1.5} />
+                            </div>
                         </div>
-                    ))}
+                        <div
+                            className={styles.collapse}
+                            onClick={handleHideBar}
+                        >
+                            {!hideBar ? (
+                                <ChevronLeft size={14} />
+                            ) : (
+                                <ChevronRight size={14} />
+                            )}
+                        </div>
+                    </div>
+                    <div className={styles.sidebarBody}>
+                        {serviceItems.map((item) => (
+                            <div
+                                key={item.state}
+                                className={`${currentPath === item.state ? styles.border : ""}`}
+                            >
+                                <NavLink
+                                    to={`/${item.state}`}
+                                    className={`navLink ${styles.sidebarUsers} ${currentPath === item.state ? styles.active : ""}`}
+                                    onClick={() => {
+                                        closeMobile();
+                                    }}
+                                >
+                                    <div className={styles.users}>
+                                        {item.icon}
+                                        {!hideBar && <span>{item.text}</span>}
+                                    </div>
+                                </NavLink>
+                            </div>
+                        ))}
+                    </div>
                 </div>
             </aside>
         </>
