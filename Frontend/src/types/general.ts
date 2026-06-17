@@ -1,18 +1,21 @@
 export type SortFields =
     | "id"
     | "fullName"
-    | "endDate"
+    | "subEndDate"
     | "role"
-    | "subscriptionStatus"
-    | "tariff";
+    | "subStatus"
+    | "tariffName";
 export type SortDirection = "asc" | "desc";
 
-export type SortData = `${SortFields}`;
+export type SortData = `${SortFields},${SortDirection}`;
 
 export interface GetData {
     page: number;
     size: number;
     sort: SortData;
+    role?: string;
+    subStatus?: string;
+    search?: string;
 }
 
 export interface PageResponse<T> {

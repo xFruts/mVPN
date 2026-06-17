@@ -1,18 +1,18 @@
 import FilterAllUsers from "./component/FilterAllUsers/FilterAllUsers.tsx";
 import TableAllUsers from "./component/TableAllUsers/TableAllUsers.tsx";
 import styles from "./AllUsers.module.css";
-import { Plus } from "lucide-react";
+import { Plus, RefreshCw } from "lucide-react";
 import { NavLink } from "react-router";
 import useUsersStore from "../../store/useUsersStore.ts";
 import {useEffect} from "react";
 import {SubscriptionService} from "@api/services/subscriptionService.ts";
 
 export default function MainAllUsers() {
-    const { users, fetchUsers, selectedIds } = useUsersStore();
+    const { totalElements, fetchUsers, selectedIds, isInitialized, error, isLoading } = useUsersStore();
     useEffect(() => {
         fetchUsers({});
     }, [fetchUsers]);
-
+    
     const handleExtendSubscription = async () => {
         try {
             await SubscriptionService.extendSubscription(selectedIds)
@@ -23,22 +23,32 @@ export default function MainAllUsers() {
         }
     }
 
+    const handleRefresh = () => {
+        fetchUsers({});
+    }
+
+    if (!isInitialized) {
+        return (
+            <div className={styles.loadingText}>Загрузка пользователей...</div>
+        );
+    }
+
+    if (error && error.statusCode >= 500) {
+        return (
+            <div className={styles.errorText}>
+                Ошибка сервера ({error.statusCode}): {error.message}
+            </div>
+        );
+    }
+
     return (
-        <div className={styles.allusersContent}>
-            <div className={`${styles.allusersHeader} padding`}>
-                <div className={styles.allusersHeaderText}>
-                    <p className={styles.usersText}>Пользователи</p>
-                    <p className={styles.countText}>
-                        {users.length} пользовател
-                        {users.length > 5 || users.length === 0
-                            ? "ей"
-                            : users.length === 1
-                              ? "ь"
-                              : "я"}{" "}
-                        найдено
-                    </p>
-                </div>
-                <div className={styles.addusersButton}>
+        <div className={styles.allUsersContent}>
+            <div className={`${styles.allUsersHeader} padding`}>
+                <span className={styles.countText}>Найдено: {totalElements}</span>
+                <div className={styles.usersButton}>
+                    <button className={styles.updateButton} onClick={handleRefresh}>
+                        <RefreshCw size={16} className={isLoading ? styles.spinning  : ""}/>
+                    </button>
                     {selectedIds.length > 0 && (
                         <button
                             className={styles.extendButton}
@@ -48,9 +58,11 @@ export default function MainAllUsers() {
                         </button>
                     )}
                     <NavLink to={"/users/add"} className="navLink">
-                        <div className={styles.addusersButtonBorder}>
-                            <Plus size={20} />
-                            <span>Добавить пользователя</span>
+                        <div className={styles.addButton}>
+                            <Plus size={16} />
+                            <span>
+                                Добавить <span className={"PC"}>пользователя</span>
+                            </span>
                         </div>
                     </NavLink>
                 </div>

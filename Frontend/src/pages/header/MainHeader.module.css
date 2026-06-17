@@ -31,6 +31,7 @@ body[data-theme="dark"] {
     padding: 18px 32px;
     border-bottom: 1px solid var(--border);
     background-color: var(--bg-sidebar);
+    transition: background-color 0.3s ease;
 }
 
 .headerText {

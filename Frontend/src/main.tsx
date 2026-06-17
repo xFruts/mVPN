@@ -16,7 +16,15 @@ keycloak
     })
     .then((authenticated) => {
         if (authenticated) {
-            setTokenGetter(() => keycloak.token);
+            setTokenGetter(async () => {
+                try {
+                    await keycloak.updateToken(30);
+                    return keycloak.token;
+                } catch (error) {
+                    console.error("Failed to refresh token", error);
+                    await keycloak.login();
+                }
+            });
             const adminData: AdminData = {
                 preferred_username:
                     keycloak.tokenParsed?.preferred_username || "",

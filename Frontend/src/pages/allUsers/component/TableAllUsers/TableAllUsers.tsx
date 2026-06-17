@@ -1,101 +1,113 @@
 import { useRef, useEffect } from "react";
 import {
-    MoveVertical,
     EllipsisVertical,
-    Key,
-    Pencil,
-    Trash2,
-    Timer,
+    ChevronsUpDown,
+    ChevronUp,
+    ChevronDown,
+    ChevronLeft,
+    ChevronRight,
 } from "lucide-react";
-import { ArrowUp, ArrowDown } from "react-feather";
 import styles from "./TableAllUsers.module.css";
 import { NavLink } from "react-router";
 import useUsersStore from "../../../../store/useUsersStore.ts";
-import type { SortFields, SortDirection} from "@/types/general.ts";
+import type { SortFields, SortDirection, SortData } from "@/types/general.ts";
 import {UserService} from "@api/services/userService.ts";
-
-const ApiKey = "tg_api_1_570528";
 
 interface Titles {
     name: string;
     api: SortFields;
+    side: "flex-end" | "flex-start" | "center";
 }
 
 const titles: Titles[] = [
     {
         name: "ID",
-        api: "id"
+        api: "id",
+        side: "flex-start",
     },
     {
         name: "ПОЛЬЗОВАТЕЛЬ",
-        api: "fullName"
+        api: "fullName",
+        side: "flex-start",
     },
     {
         name: "РОЛЬ",
-        api: "role"
+        api: "role",
+        side: "center",
     },
     {
         name: "ТАРИФ",
-        api: "tariff"
+        api: "tariffName",
+        side: "center",
     },
     {
         name: "СТАТУС",
-        api: "subscriptionStatus"
+        api: "subStatus",
+        side: "center",
     },
     {
         name: "СРОК ДЕЙСТВИЯ",
-        api: "endDate"
-    }
+        api: "subEndDate",
+        side: "flex-start",
+    },
 ];
 
 export default function TableAllUsers() {
     const {
         users,
+        totalPages,
+        totalElements,
         filters,
-        apiOpen,
+        setParams,
         fetchUsers,
         selectedIds,
         isOpen,
-        setApiOpen,
         toggleSelectId,
         toggleAll,
         toggleMenu,
         resetMenu,
+        error
     } = useUsersStore();
-    const [currentField, currentDir] = (filters.sort || "id,desc").split(
+    const [currentField, currentDir] = (filters.sort || "id,asc").split(
         ",",
     ) as [SortFields, SortDirection];
     const allUserIds = users.map((u) => u.id);
     const menuRef = useRef<HTMLDivElement>(null);
-
-    /*const handleSort = (title: SortFields) => {
-        // 1. Достаем текущее состояние из фильтров
+    const { page = 0, size = 20 } = filters;
+    const handleSort = (title: SortFields) => {
 
         let newSort: SortData;
 
         if (currentField !== title) {
-            newSort = `${title},desc`;
-        } else if (currentDir === "desc") {
             newSort = `${title},asc`;
+        } else if (currentDir === "asc") {
+            newSort = `${title},desc`;
         } else {
-            newSort = "id,desc";
+            newSort = "id,asc";
         }
 
-        fetchUsers({ sort: newSort, page: 0 });
-    };*/
+        setParams({sort: newSort});
+    };
 
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
-            if (!(event.target instanceof Node)) return;
-            if (menuRef.current && !menuRef.current.contains(event.target)) {
-                resetMenu();
+            const target = event.target as HTMLElement;
+
+            if (menuRef.current && menuRef.current.contains(target)) {
+                return;
             }
+
+            if (target.closest(`.${styles.ellipsis}`)) {
+                return;
+            }
+
+            resetMenu();
         };
+
         document.addEventListener("mousedown", handleClickOutside);
         return () =>
             document.removeEventListener("mousedown", handleClickOutside);
     }, [resetMenu]);
-
     const handleDeleteUser = async () => {
         try {
             await UserService.deleteUser(isOpen)
@@ -108,229 +120,276 @@ export default function TableAllUsers() {
 
 
     return (
-        <div className={styles.allusersTable}>
-            <table className={styles.tableUsers}>
+        <div className={styles.allUsersTable}>
+            <table className={`${styles.tableUsers} ${"PC"}`}>
                 <tbody>
-                    <tr>
-                        <td>
-                            <input
-                                type={"checkbox"}
-                                checked={
-                                    selectedIds.length === allUserIds.length
-                                }
-                                onChange={toggleAll}
-                                className={styles.usersCheckbox}
-                            />
-                        </td>
-                        {titles.map((title) => (
-                            <td key={title.api}>
-                                <div
-                                    className={`${styles.tableTitle} ${styles[title.name]}`}
-                                >
-                                    <span>{title.name}</span>
-                                    <div /*onClick={() => handleSort(title.api)}*/
-                                    >
-                                        {currentField === title.api ? (
-                                            currentDir === "desc" ? (
-                                                <ArrowDown size={20} />
-                                            ) : currentDir === "asc" ? (
-                                                <ArrowUp size={20} />
-                                            ) : (
-                                                <MoveVertical size={20} />
-                                            )
-                                        ) : (
-                                            <MoveVertical size={20} />
-                                        )}
-                                    </div>
-                                </div>
-                            </td>
-                        ))}
-                    </tr>
-
-                    {users.map((user) => (
-                        <tr key={user.id}>
+                    {totalPages > 0 && (
+                        <tr className={styles.trTitle}>
                             <td>
                                 <input
                                     type={"checkbox"}
-                                    checked={selectedIds.includes(user.id)}
-                                    onChange={() => toggleSelectId(user.id)}
+                                    checked={
+                                        selectedIds.length === allUserIds.length
+                                    }
+                                    onChange={toggleAll}
                                     className={styles.usersCheckbox}
                                 />
                             </td>
-                            <td>
-                                <div
-                                    className={`${styles.role} ${styles.basic} ${styles.ID}`}
-                                >
-                                    {user.id}
-                                </div>
-                            </td>
-                            <td>
-                                <div className={styles.name}>
-                                    <span>{user.fullName}</span>
-                                </div>
-                            </td>
-                            <td>
-                                <div
-                                    className={`${styles.role} ${
-                                        user.role === "ADMIN"
-                                            ? styles.admin
-                                            : user.role === "SPECIAL"
-                                              ? styles.special
-                                              : styles.basic
-                                    }`}
-                                >
-                                    {user.role}
-                                </div>
-                            </td>
-                            <td>
-                                <div
-                                    className={`${styles.role} ${
-                                        user.tariffName === "PREMIUM"
-                                            ? styles.special
-                                            : user.tariffName === "TRIAL"
-                                              ? styles.dynamic
-                                              : user.tariffName === "BASIC"
-                                                ? styles.basic
-                                                : styles.none
-                                    }`}
-                                >
-                                    {user.tariffName}
-                                </div>
-                            </td>
-                            <td>
-                                <div
-                                    className={`${styles.role} ${
-                                        user.subscriptionStatus === "ACTIVE"
-                                            ? styles.dynamic
-                                            : user.subscriptionStatus ===
-                                                "EXPIRED"
-                                              ? styles.expired
-                                              : user.subscriptionStatus ===
-                                                  "CANCELLED"
-                                                ? styles.basic
-                                                : styles.none
-                                    }`}
-                                >
-                                    {user.subscriptionStatus}
-                                </div>
-                            </td>
-                            <td>
-                                <div className={styles.date}>
-                                    <span style={{ color: "gray" }}>
-                                        {user.endDate?.toString().slice(0, 10)}
-                                    </span>
-                                    <EllipsisVertical
-                                        className={styles.ellipsis}
-                                        size={20}
-                                        onClick={() => toggleMenu(user.id)}
-                                    />
-                                </div>
-
-                                {isOpen === user.id && (
-                                    <div className={styles.modal} ref={menuRef}>
-                                        <div className={styles.modalName}>
-                                            <span>{user.fullName}</span>
-                                            <span style={{ color: "gray" }}>
-                                                ID: {user.id}
-                                            </span>
-                                        </div>
-                                        <div className={styles.modalChange}>
-                                            {apiOpen ? (
-                                                <>
-                                                    <div
-                                                        className={
-                                                            styles.modalChangeHeader
-                                                        }
-                                                    >
-                                                        <span
-                                                            style={{
-                                                                color: "gray",
-                                                            }}
-                                                        >
-                                                            API ключ для
-                                                            Telegram:
-                                                        </span>
-                                                        <div
-                                                            style={{
-                                                                color: "orange",
-                                                            }}
-                                                        >
-                                                            <Timer size={20} />
-                                                            <span>
-                                                                Действителен 30
-                                                                минут
-                                                            </span>
-                                                        </div>
-                                                    </div>
-                                                    <div
-                                                        className={
-                                                            styles.apiKey
-                                                        }
-                                                    >
-                                                        <span>{ApiKey}</span>
-                                                    </div>
-                                                    <div
-                                                        className={
-                                                            styles.apiButton
-                                                        }
-                                                    >
-                                                        <button
-                                                            onClick={() =>
-                                                                navigator.clipboard.writeText(
-                                                                    ApiKey,
-                                                                )
-                                                            }
-                                                            className="copy"
-                                                        >
-                                                            Копировать
-                                                        </button>
-                                                        <button
-                                                            className="hide"
-                                                            onClick={() =>
-                                                                setApiOpen(
-                                                                    false,
-                                                                )
-                                                            }
-                                                        >
-                                                            Скрыть
-                                                        </button>
-                                                    </div>
-                                                </>
+                            {titles.map((title) => (
+                                <td key={title.api}>
+                                    <div
+                                        className={`${styles.tableTitle}`}
+                                        onClick={() => handleSort(title.api)}
+                                        style={{ justifyContent: title.side }}
+                                    >
+                                        <span>{title.name}</span>
+                                        <div>
+                                            {currentField === title.api ? (
+                                                currentDir === "asc" ? (
+                                                    <ChevronDown size={12} />
+                                                ) : currentDir === "desc" ? (
+                                                    <ChevronUp size={12} />
+                                                ) : (
+                                                    <ChevronsUpDown size={12} />
+                                                )
                                             ) : (
-                                                <div
-                                                    onClick={() =>
-                                                        setApiOpen(true)
-                                                    }
-                                                >
-                                                    <Key size={17} />
-                                                    Получить API ключ
-                                                </div>
+                                                <ChevronsUpDown size={12} />
                                             )}
-                                            <NavLink
-                                                className="navLink"
-                                                to={`/users/edit/${user.id}`}
-                                            >
-                                                <div>
-                                                    <Pencil size={17} />
-                                                    Редактировать
-                                                </div>
-                                            </NavLink>
+                                        </div>
+                                    </div>
+                                </td>
+                            ))}
+                            <td></td>
+                        </tr>
+                    )}
+
+                    {totalElements > 0 ? (
+                        users.map((user) => (
+                            <tr
+                                key={user.id}
+                                className={`${styles.trLine} ${selectedIds.includes(user.id) ? styles.selectedRow : ""}`}
+                                onClick={() => toggleSelectId(user.id)}
+                            >
+                                <td>
+                                    <input
+                                        type={"checkbox"}
+                                        checked={selectedIds.includes(user.id)}
+                                        className={styles.usersCheckbox}
+                                        readOnly
+                                    />
+                                </td>
+                                <td>
+                                    <div className={`${styles.ID}`}>
+                                        <span>{user.id}</span>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div className={styles.name}>
+                                        <span>{user.fullName}</span>
+                                    </div>
+                                </td>
+                                <td className={styles.center}>
+                                    <div
+                                        className={`${styles.role} ${
+                                            user.role === "ADMIN"
+                                                ? styles.admin
+                                                : user.role === "SPECIAL"
+                                                  ? styles.special
+                                                  : styles.regular
+                                        } ${styles.center}`}
+                                    >
+                                        {user.role}
+                                    </div>
+                                </td>
+                                <td className={styles.center}>
+                                    <div
+                                        className={`${styles.role} ${styles.regular}`}
+                                    >
+                                        {user.tariffName}
+                                    </div>
+                                </td>
+                                <td className={styles.center}>
+                                    <div
+                                        className={`${styles.role} ${
+                                            user.subscriptionStatus === "ACTIVE"
+                                                ? styles.active
+                                                : user.subscriptionStatus ===
+                                                    "EXPIRED"
+                                                  ? styles.expired
+                                                  : user.subscriptionStatus ===
+                                                      "CANCELLED"
+                                                    ? styles.regular
+                                                    : styles.none
+                                        }`}
+                                    >
+                                        {user.subscriptionStatus}
+                                    </div>
+                                </td>
+                                <td>
+                                    <div className={styles.date}>
+                                        <span>
+                                            {user.endDate
+                                                ?.toString()
+                                                .slice(0, 10)}
+                                        </span>
+                                    </div>
+                                </td>
+                                <td className={styles.end}>
+                                    <div>
+                                        <EllipsisVertical
+                                            className={styles.ellipsis}
+                                            size={16}
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                toggleMenu(user.id);
+                                            }}
+                                        />
+                                    </div>
+                                    {isOpen === user.id && (
+                                        <div
+                                            className={styles.modal}
+                                            ref={menuRef}
+                                        >
+                                            <div>
+                                                <NavLink
+                                                    className={`${"navLink"}`}
+                                                    to={`/users/edit/${user.id}`}
+                                                >
+                                                    <span>Изменить</span>
+                                                </NavLink>
+                                            </div>
+                                            <div>
+                                                <span>Конфиг</span>
+                                            </div>
                                             <div
+                                                className={styles.delete}
                                                 onClick={() =>
                                                     handleDeleteUser()
                                                 }
                                             >
-                                                <Trash2 size={17} />
                                                 Удалить
                                             </div>
                                         </div>
-                                    </div>
-                                )}
+                                    )}
+                                </td>
+                            </tr>
+                        ))
+                    ) : (
+                        <tr className={styles.trMessage}>
+                            <td colSpan={10}>
+                                <div className={styles.tableMessage}>
+                                    {error ? (
+                                        <span className={styles.error}>
+                                            Ошибка {error.statusCode}:{" "}
+                                            {error.message}
+                                        </span>
+                                    ) : (
+                                        <span>Пользователи не найдены</span>
+                                    )}
+                                </div>
                             </td>
                         </tr>
-                    ))}
+                    )}
                 </tbody>
             </table>
+            <div className={`${styles.listUsers} ${"Mobile"}`}>
+                {users.map((user) => (
+                    <div className={styles.user} key={user.id}>
+                        <div className={styles.info}>
+                            <input
+                                type={"checkbox"}
+                                checked={selectedIds.includes(user.id)}
+                                className={styles.usersCheckbox}
+                                onChange={() => toggleSelectId(user.id)}
+                            />
+                            <div className={styles.name}>
+                                <span>{user.fullName}</span>
+                                <span className={styles.date}>
+                                    Тариф до:{" "}
+                                    {user.endDate?.toString().slice(0, 10)}
+                                </span>
+                            </div>
+                        </div>
+                        <div>
+                            <EllipsisVertical
+                                className={styles.ellipsis}
+                                size={16}
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    toggleMenu(user.id);
+                                }}
+                            />
+                        </div>
+                        {isOpen === user.id && (
+                            <div className={styles.modal} ref={menuRef}>
+                                <div>
+                                    <NavLink
+                                        className={`${"navLink"}`}
+                                        to={`/users/edit/${user.id}`}
+                                    >
+                                        <span>Изменить</span>
+                                    </NavLink>
+                                </div>
+                                <div>
+                                    <span>Конфиг</span>
+                                </div>
+                                <div
+                                    className={styles.delete}
+                                    onClick={() => handleDeleteUser()}
+                                >
+                                    Удалить
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                ))}
+            </div>
+            {totalElements > 0 && (
+                <div className={styles.changePage}>
+                    <div className={styles.size}>
+                        <span>
+                            <span className={"PC"}>Показывать</span> по:
+                        </span>
+                        <select
+                            value={filters.size}
+                            onChange={(e) => {
+                                setParams({ size: Number(e.target.value) });
+                            }}
+                        >
+                            <option value={10}>10</option>
+                            <option value={20}>20</option>
+                            <option value={50}>50</option>
+                            <option value={100}>100</option>
+                        </select>
+                        <span>
+                            ({page * size + 1} -{" "}
+                            {(page + 1) * size > totalElements
+                                ? totalElements
+                                : (page + 1) * size}{" "}
+                            из {totalElements})
+                        </span>
+                    </div>
+                    <div className={styles.page}>
+                        <button
+                            className={`${styles.chevron} ${page === 0 ? styles.disable : ""}`}
+                            disabled={page === 0}
+                            onClick={() => setParams({ page: page - 1 })}
+                        >
+                            <ChevronLeft size={16} />
+                        </button>
+                        <div className={styles.viewPage}>
+                            {page + 1} / {totalPages}
+                        </div>
+                        <button
+                            className={`${styles.chevron} ${page + 1 === totalPages ? styles.disable : ""}`}
+                            disabled={page + 1 === totalPages}
+                            onClick={() => setParams({ page: page + 1 })}
+                        >
+                            <ChevronRight size={16} />
+                        </button>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

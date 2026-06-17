@@ -14,7 +14,7 @@ body[data-theme="dark"] {
     --primary: #22d3ee;
     --bg-primary: #0d222b;
     --border-primary: #0b3f4d;
-    --bg-sidebar: #06090f;
+    --bg-sidebar: #0b1116;
     --bg-sidebar-hover: #1F2937;
     --bg-main: #061117;
     --text-primary: #9ca3af;
@@ -22,12 +22,6 @@ body[data-theme="dark"] {
     --border: #1f2937;
 }
 
-@font-face {
-    font-family: "Nunito Sans";
-    src: url("./assets/fonts/NunitoSans-SemiBold.ttf") format("truetype");
-    font-weight: normal;
-    font-style: normal;
-}
 
 html,
 body {
@@ -47,13 +41,11 @@ body {
 }
 
 .sidebar {
-    height: 99vh;
     width: 100%;
     flex: 1;
 }
 
 .main-content {
-    height: 100vh;
     width: 100%;
     flex: 6;
     background-color: var(--bg-main) ;
@@ -93,14 +85,25 @@ p {
     margin: 0;
 }
 
-:focus, :focus-visible, :active {
-    outline: none !important;
-    box-shadow: none !important;
-    -webkit-tap-highlight-color: transparent !important;
-}
-
-/* Конкретно для ссылок */
 a:focus, a:focus-visible, a:active {
     outline: none !important;
     box-shadow: none !important;
+}
+
+.Mobile {
+    display: none;
+}
+
+@media (max-width: 768px) {
+    .PC {
+        display: none;
+    }
+
+    .Mobile {
+        display: block;
+    }
+
+    .padding {
+        padding: 12px 0;
+    }
 }
