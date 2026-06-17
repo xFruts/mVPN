@@ -203,7 +203,7 @@ class XuiPanelServiceImpl implements XuiPanelService {
         true,
         null,
         tariff.getMaxDevices(),
-        existing != null ? existing.flow() : DEFAULT_FLOW ,
+        DEFAULT_FLOW ,
         existing != null ? existing.password() : null,
         existing != null ? existing.security() : null,
         null,
