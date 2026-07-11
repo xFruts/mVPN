@@ -28,9 +28,7 @@ export default function MainAllUsers() {
     }
 
     if (!isInitialized) {
-        return (
-            <div className={styles.loadingText}>Загрузка пользователей...</div>
-        );
+        return <div className={"loadingText"}>Загрузка пользователей...</div>;
     }
 
     if (error && error.statusCode >= 500) {

@@ -1,4 +1,4 @@
-import { useRef, useEffect } from "react";
+import { useEffect } from "react";
 import {
     EllipsisVertical,
     ChevronsUpDown,
@@ -12,6 +12,7 @@ import { NavLink } from "react-router";
 import useUsersStore from "../../../../store/useUsersStore.ts";
 import type { SortFields, SortDirection, SortData } from "@/types/general.ts";
 import {UserService} from "@api/services/userService.ts";
+import Configuration from "@pages/allUsers/component/Configuration/Configuration.tsx";
 
 interface Titles {
     name: string;
@@ -66,13 +67,14 @@ export default function TableAllUsers() {
         toggleAll,
         toggleMenu,
         resetMenu,
+        selectedConfigUserId,
+        setConfiguration,
         error
     } = useUsersStore();
     const [currentField, currentDir] = (filters.sort || "id,asc").split(
         ",",
     ) as [SortFields, SortDirection];
     const allUserIds = users.map((u) => u.id);
-    const menuRef = useRef<HTMLDivElement>(null);
     const { page = 0, size = 20 } = filters;
     const handleSort = (title: SortFields) => {
 
@@ -93,7 +95,7 @@ export default function TableAllUsers() {
         const handleClickOutside = (event: MouseEvent) => {
             const target = event.target as HTMLElement;
 
-            if (menuRef.current && menuRef.current.contains(target)) {
+            if (target.closest(`.${styles.modal}`)) {
                 return;
             }
 
@@ -104,9 +106,8 @@ export default function TableAllUsers() {
             resetMenu();
         };
 
-        document.addEventListener("mousedown", handleClickOutside);
-        return () =>
-            document.removeEventListener("mousedown", handleClickOutside);
+        document.addEventListener("click", handleClickOutside);
+        return () => document.removeEventListener("click", handleClickOutside);
     }, [resetMenu]);
     const handleDeleteUser = async () => {
         try {
@@ -117,7 +118,6 @@ export default function TableAllUsers() {
             console.error(error);
         }
     }
-
 
     return (
         <div className={styles.allUsersTable}>
@@ -216,10 +216,7 @@ export default function TableAllUsers() {
                                                 : user.subscriptionStatus ===
                                                     "EXPIRED"
                                                   ? styles.expired
-                                                  : user.subscriptionStatus ===
-                                                      "CANCELLED"
-                                                    ? styles.regular
-                                                    : styles.none
+                                                  : styles.regular
                                         }`}
                                     >
                                         {user.subscriptionStatus}
@@ -248,7 +245,7 @@ export default function TableAllUsers() {
                                     {isOpen === user.id && (
                                         <div
                                             className={styles.modal}
-                                            ref={menuRef}
+                                            onClick={(e) => e.stopPropagation()}
                                         >
                                             <div>
                                                 <NavLink
@@ -258,7 +255,11 @@ export default function TableAllUsers() {
                                                     <span>Изменить</span>
                                                 </NavLink>
                                             </div>
-                                            <div>
+                                            <div
+                                                onClick={() => {
+                                                    setConfiguration(user.id);
+                                                }}
+                                            >
                                                 <span>Конфиг</span>
                                             </div>
                                             <div
@@ -321,7 +322,10 @@ export default function TableAllUsers() {
                             />
                         </div>
                         {isOpen === user.id && (
-                            <div className={styles.modal} ref={menuRef}>
+                            <div
+                                className={styles.modal}
+                                onClick={(e) => e.stopPropagation()}
+                            >
                                 <div>
                                     <NavLink
                                         className={`${"navLink"}`}
@@ -330,7 +334,9 @@ export default function TableAllUsers() {
                                         <span>Изменить</span>
                                     </NavLink>
                                 </div>
-                                <div>
+                                <div onClick={() => {
+                                    setConfiguration(user.id);
+                                }}>
                                     <span>Конфиг</span>
                                 </div>
                                 <div
@@ -389,6 +395,9 @@ export default function TableAllUsers() {
                         </button>
                     </div>
                 </div>
+            )}
+            {selectedConfigUserId && (
+                <Configuration userId={selectedConfigUserId} />
             )}
         </div>
     );

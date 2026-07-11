@@ -8,6 +8,19 @@ body[data-theme="light"] {
     --text-primary: #4b5563;
     --text-secondary: #111827;
     --border: #e4e4e4;
+    --button-create-text: #0891b2;
+    --button-create-bg: #ecfeff;
+    --button-create-border: #a5f3fc;
+    --button-create-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    --button-create-hover-bg: #cffafe;
+    --button-create-hover-border: #a5f3fc;
+    --button-cancel-text: #4b5563;
+    --button-cancel-bg: #f3f4f6;
+    --button-cancel-border: #e5e7eb;
+    --button-cancel-hover-bg: #e5e7eb;
+    --card-bg: #ffffff;
+    --card-border: #e5e7eb;
+    --card-border-focus: #06b6d4;
 }
 
 body[data-theme="dark"] {
@@ -20,8 +33,20 @@ body[data-theme="dark"] {
     --text-primary: #9ca3af;
     --text-secondary: #ffffff;
     --border: #1f2937;
+    --button-create-text: #22d3ee;
+    --button-create-bg: #06b6d41a;
+    --button-create-border: #06b6d44d;
+    --button-create-shadow: 0 0 15px rgba(0, 240, 255, 0.1);
+    --button-create-hover-bg: #06b5d433;
+    --button-create-hover-border: #22d3ee;
+    --button-cancel-text: #d1d5db;
+    --button-cancel-bg: #1f293780;
+    --button-cancel-border: #374151;
+    --button-cancel-hover-bg: #1f2937;
+    --card-bg: #0c131f;
+    --card-border: #1f293780;
+    --card-border-focus: #06b6d480;
 }
-
 
 html,
 body {
@@ -61,11 +86,35 @@ body {
 }
 
 .buttonCreate {
-    background-color: var(--primary);
+    color: var(--button-create-text);
+    background-color: var(--button-create-bg);
+    border: 1px solid var(--button-create-border);
+    box-shadow: var(--button-create-shadow);
+    transition: all 0.3s;
+}
+
+.buttonCreate:hover {
+    background-color: var(--button-create-hover-bg);
+    border-color: var(--button-create-hover-border);
 }
 
 .buttonCancel {
-    background-color: #6c757d;
+    color: var(--button-cancel-text);
+    background-color: var(--button-cancel-bg);
+    border: 1px solid var(--button-cancel-border);
+    transition: all 0.3s;
+}
+
+.buttonCancel:hover {
+    background-color: var(--button-cancel-hover-bg);
+}
+
+.loadingText {
+    width: 100%;
+    text-align: center;
+    padding-top: 50px;
+    font-size: 18px;
+    color: #2fd5ef;
 }
 
 .countries {
@@ -95,6 +144,10 @@ a:focus, a:focus-visible, a:active {
 }
 
 @media (max-width: 768px) {
+    * {
+        -webkit-tap-highlight-color: transparent;
+    }
+
     .PC {
         display: none;
     }

@@ -21,6 +21,10 @@ interface UsersState {
     toggleAll: () => void;
     clearSelection: () => void;
     isOpen: number;
+    isConfiguration: boolean;
+    setIsConfiguration: () => void;
+    selectedConfigUserId: number | null;
+    setConfiguration: (id: number | null) => void;
     toggleMenu: (id: number) => void;
     resetMenu: () => void;
 }
@@ -154,6 +158,19 @@ const useUsersStore = create<UsersState>()(
 
         clearSelection: () => set({ selectedIds: [] }),
         isOpen: -1,
+        isConfiguration: false,
+        setIsConfiguration: () =>
+            set((state) => {
+                state.isConfiguration = !state.isConfiguration;
+            }),
+        selectedConfigUserId: null,
+        setConfiguration: (id) => {
+            set((state) => {
+                state.isConfiguration = id !== null;
+                state.selectedConfigUserId = id;
+                if (id !== null) state.isOpen = -1;
+            });
+        },
 
         toggleMenu: (id) =>
             set((state) => {
