@@ -7,7 +7,6 @@ import MainPromotional from "../promotional/MainPromotional.tsx";
 import MainTariffs from "@pages/tariffs/MainTariffs.tsx";
 import MainSettings from "../settings/MainSettings.tsx";
 import MainPayment from "@pages/payment/MainPayment.tsx";
-import AddUsers from "../allUsers/component/AddUsers/AddUsers.tsx";
 import ChangeUsers from "../allUsers/component/ChangeUsers/ChangeUsers.tsx";
 import { AddVpnServers } from "../vpnServers/components/AddVpnServers/AddVpnServers.tsx";
 import SettingsVpnServers from "../vpnServers/components/SettingsVpnServers/SettingVpnServers.tsx";
@@ -31,7 +30,7 @@ export default function MainContent() {
                 <Route path="/settings" Component={MainSettings} />
                 <Route path="/subscription" Component={MainSubscription} />
                 <Route path="/landing" Component={MainLanding} />
-                <Route path="/users/add" Component={AddUsers} />
+                <Route path="/users/add" Component={ChangeUsers} />
                 <Route path="/users/edit/:id" Component={ChangeUsers} />
                 <Route path="/servers/add" Component={AddVpnServers} />
                 <Route path="/servers/edit" Component={SettingsVpnServers} />

@@ -12,15 +12,6 @@ body[data-theme="light"] {
     --bg-id: #ecfeff;
     --border-id: #cffafe;
     --text-name: #1e293b;
-    --text-regular: #0e7490;
-    --bg-regular: #cffafe;
-    --border-regular: #a5f3fc;
-    --text-special: #7e22ce;
-    --bg-special: #f3e8ff;
-    --border-special: #e9d5ff;
-    --text-admin: #c2410c;
-    --bg-admin: #ffedd5;
-    --border-admin: #fed7aa;
     --text-active: #15803d;
     --bg-active: #dcfce7;
     --border-active: #bbf7d0;
@@ -57,15 +48,6 @@ body[data-theme="dark"] {
     --bg-id: #06b6d41a;
     --border-id: #06b6d433;
     --text-name: #e5e7eb;
-    --text-regular: #22d3ee;
-    --bg-regular: #06b6d41a;
-    --border-regular: #06b6d433;
-    --text-special: #c084fc;
-    --bg-special: #a855f71a;
-    --border-special: #a855f733;
-    --text-admin: #fb923c;
-    --bg-admin: #f973161a;
-    --border-admin: #f9731633;
     --text-active: #4ade80;
     --bg-active: #22c55e1a;
     --border-active: #22c55e33;
@@ -108,6 +90,15 @@ body[data-theme="dark"] {
 
 }
 
+.trTitle td:first-child {
+    border-top-left-radius: 16px;
+}
+
+/* Верхний правый угол */
+.trTitle td:last-child {
+    border-top-right-radius: 16px;
+}
+
 .trLine {
     background: var(--bg-table-line);
 }
@@ -136,6 +127,7 @@ body[data-theme="dark"] {
     cursor: pointer;
     transition: 0.3s;
     font-weight: 700;
+    border-top-left-radius: 16px;
 }
 
 .tableTitle:hover {
@@ -149,8 +141,9 @@ body[data-theme="dark"] {
 
 .tableUsers {
     width: 100%;
-    border-collapse: collapse;
+    border-collapse: separate;
     font-size: 18px;
+    border-spacing: 0;
 }
 
 .tableUsers tr + tr td {

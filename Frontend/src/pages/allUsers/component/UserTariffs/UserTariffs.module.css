@@ -1,0 +1,243 @@
+body[data-theme="light"] {
+    --add-text: #0891b2;
+    --add-bg: #ecfeff;
+    --add-bg-hover: #cffafe;
+    --history-bg: #f9fafb;
+    --history-border: #e5e7eb;
+    --dataBase-text: #0891b2;
+    --dataBase-bg: #cffafe;
+    --name-text: #111827;
+    --scroll-text: #e5e7eb;
+    --scheme: light;
+}
+
+body[data-theme="dark"] {
+    --add-text: #22d3ee;
+    --add-bg: #06b6d41a;
+    --add-bg-hover: #06b6d433;
+    --history-bg: #0d1117;
+    --history-border: #1f293780;
+    --dataBase-text: #22d3ee;
+    --dataBase-bg: #06b6d433;
+    --name-text: #e5e7eb;
+    --scroll-text: #1f2937;
+    --scheme: dark;
+}
+
+.historyHeader {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.headerText {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--text-secondary)
+}
+
+.historyAddButton {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 3px;
+    padding: 6px 12px;
+    border-radius: 8px;
+    color: var(--add-text);
+    background-color: var(--add-bg);
+    font-size: 12px;
+    font-weight: 700;
+    transition: all 0.3s;
+    cursor: pointer;
+}
+
+.historyAddButton:hover {
+    background-color: var(--add-bg-hover);
+}
+
+.historyAdd {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    padding: 16px;
+    background-color: var(--history-bg);
+    border: 1px solid var(--history-border);
+    border-radius: 12px;
+}
+
+.addTitle {
+    color: var(--text-secondary);
+    font-size: 14px;
+    font-weight: 700;
+}
+
+.addForm {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.addInputs {
+    display: flex;
+    flex-direction: row;
+    gap: 16px;
+}
+
+.input {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    gap: 8px;
+}
+
+.input span {
+    font-size: 12px;
+    color: #6b7280;
+    font-weight: 700;
+}
+
+input[type="date"] {
+    color-scheme: var(--scheme);
+}
+
+.input input {
+    padding: 10px 16px;
+    background-color: var(--card-bg);
+    color: var(--text-secondary);
+    border: 1px solid var(--card-border);
+    font-size: 16px;
+    min-height: 22px;
+    border-radius: 12px;
+}
+
+.input input:focus {
+    border-color: var(--card-border-focus);
+    outline: none;
+}
+
+.addButton {
+    display: flex;
+    flex-direction: row;
+    gap: 8px;
+}
+
+.addButton button {
+    padding: 8px 16px;
+    border-radius: 12px;
+}
+
+.historyContent {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    max-height: 418px;
+    overflow-y: auto;
+    padding-right: 5px;
+    margin-right: -9px;
+}
+
+.historyContent::-webkit-scrollbar {
+    width: 4px;
+}
+
+.historyContent::-webkit-scrollbar-button {
+    display: none;
+}
+
+.historyContent::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.historyContent::-webkit-scrollbar-thumb {
+    background-color: var(--scroll-text);
+    border-radius: 10px;
+}
+
+.tariff {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px;
+    background-color: var(--history-bg);
+    border: 1px solid var(--history-border);
+    border-radius: 12px;
+}
+
+.tariffHeader {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 16px;
+}
+
+.dataBase {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--dataBase-text);
+    background-color: var(--dataBase-bg);
+    border-radius: 9999px;
+    padding: 10px;
+}
+
+.tariffNameDate {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.tariffName {
+    color: var(--name-text);
+    font-size: 14px;
+    font-weight: 700;
+}
+
+.tariffDate {
+    color: #6b7280;
+    font-size: 12px;
+}
+
+.role {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 25px;
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.active {
+    background-color: var(--bg-active);
+    color: var(--text-active);
+    border: 1px solid var(--border-active);
+}
+
+.expired {
+    background-color: var(--bg-expired);
+    color: var(--text-expired);
+    border: 1px solid var(--border-expired);
+}
+
+.regular {
+    background-color: var(--bg-regular);
+    color: var(--text-regular);
+    border: 1px solid var(--border-regular);
+}
+
+.none {
+    display: none;
+}
+
+.loadingText {
+    width: 100%;
+    text-align: center;
+    font-size: 18px;
+    color: #2fd5ef;
+}
+
+@media (max-width: 768px) {
+    .addInputs {
+        flex-direction: column;
+    }
+}

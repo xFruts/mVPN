@@ -27,7 +27,7 @@ export const ROLE_CONFIG = {
     },
 } as const;
 
-export const USER_STATUS = ["ACTIVE", "EXPIRED", "CANCELLED", "NONE"] as const;
+export const USER_STATUS = ["ACTIVE", "EXPIRED", "CANCELLED"] as const;
 
 export const SERVER_STATUS = ["ACTIVE", "INACTIVE", "MAINTENANCE"] as const;
 

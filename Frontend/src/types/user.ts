@@ -1,11 +1,12 @@
 export type UserRole = "ADMIN" | "SPECIAL" | "REGULAR"
-export type UserStatus = "ACTIVE" | "EXPIRED" | "CANCELLED" | "NONE"
+export type UserStatus = "ACTIVE" | "EXPIRED" | "CANCELLED"
 
 export interface UsersGet {
     id: number;
     fullName: string;
     role: UserRole;
     tariffName: string | null;
+    startDate: string | null;
     subscriptionStatus: UserStatus | null;
     endDate: string | null;
 }
@@ -27,24 +28,24 @@ export interface UserServerResponse {
 
 export interface UserGet {
     fullName: string;
-    userTelegramId: number;
+    userTelegramId: number | undefined;
     role: UserRole;
-    startDate: string;
-    subscriptionEndDate: string;
-    subscriptionStatus: UserStatus;
-    tariffName: string;
+    startDate: string | undefined;
+    subscriptionEndDate: string | undefined;
+    subscriptionStatus: UserStatus | undefined;
+    tariffName: string | undefined;
 }
 
 export interface UserUpdate {
     fullName: string;
     userTelegramId: number;
     role: UserRole;
-    subscriptionStatus: UserStatus;
-    subscriptionEndDate: string;
+    subscriptionStatus: UserStatus | undefined | null;
+    subscriptionEndDate: string | undefined | null;
 }
 
 export interface UserCreate {
     fullName: string;
-    userTelegramId: number;
+    userTelegramId: number | undefined | null;
     role: UserRole;
 }

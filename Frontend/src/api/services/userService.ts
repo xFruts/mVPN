@@ -33,7 +33,7 @@ export const UserService = {
             startDate: raw.subscription?.startDate || "",
             subscriptionEndDate: raw.subscription?.endDate || "",
             subscriptionStatus:
-                (raw.subscription?.status as UserStatus) || "INACTIVE",
+                (raw.subscription?.status as UserStatus) || "CANCELED",
             tariffName: raw.subscription?.tariff?.name || "Нет тарифа",
         };
     },
@@ -54,10 +54,10 @@ export const UserService = {
         await apiClient.delete<ApiResponse<UserGet>>(url + `/${id}`);
     },
 
-    async updateCodeUser(id: number): Promise<UserGet> {
-        const response = await apiClient.post<ApiResponse<UserGet>>(
+    async getCodeUser(id: number): Promise<string> {
+        const response = await apiClient.get<string>(
             url + `/${id}/code`,
         );
-        return response.data.content;
+        return response.data;
     },
 };
