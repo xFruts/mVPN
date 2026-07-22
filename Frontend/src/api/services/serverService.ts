@@ -1,16 +1,22 @@
 import apiClient from "../index";
-import type { ApiResponse } from "../types";
 import type {Servers, ServerGet, ServerPut} from "@/types/server.ts";
-import type { GetData } from "@/types/general.ts";
+import type {
+    GetServerData,
+    PageResponse,
+} from "@/types/general.ts";
 
 const url: string = "/servers";
 
 export const ServerService = {
-    async getServers(getData: Partial<GetData>): Promise<Servers[]> {
-        const response = await apiClient.get<ApiResponse<Servers[]>>(url, {
+    async getServers(
+        getData: Partial<GetServerData>,
+    ): Promise<PageResponse<Servers>> {
+        const response = await apiClient.get<
+            PageResponse<Servers>
+        >(url, {
             params: getData,
         });
-        return response.data.content;
+        return response.data;
     },
 
     async getServerById(id: number): Promise<ServerGet> {

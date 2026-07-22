@@ -9,12 +9,12 @@ import type {
     UserRole,
     UserStatus,
 } from "@/types/user.ts";
-import type {GetData, PageResponse } from "@/types/general.ts";
+import type {GetUserData, PageResponse } from "@/types/general.ts";
 
 const url: string = "/users";
 
 export const UserService = {
-    async getUsers(getData: Partial<GetData>): Promise<PageResponse<UsersGet>> {
+    async getUsers(getData: Partial<GetUserData>): Promise<PageResponse<UsersGet>> {
         const response = await apiClient.get<PageResponse<UsersGet>>(url, {
             params: getData,
         });

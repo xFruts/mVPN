@@ -1,0 +1,75 @@
+.changePage {
+    display: flex;
+    justify-content: space-between;
+    padding: 16px;
+    border-top: 1px solid var(--border-table);
+    background: var(--bg-table-line);
+    border-bottom-left-radius: 16px;
+    border-bottom-right-radius: 16px;
+}
+
+.size {
+    color: var(--text-date);
+}
+
+.size select {
+    margin: 0 8px;
+    color: var(--text-date);
+    background: var(--bg-size);
+    border: 1px solid var(--border-size);
+    padding: 6px 8px;
+    font-size: 12px;
+    outline: none;
+}
+
+.page {
+    display: flex;
+    flex-direction: row;
+    gap: 4px;
+}
+
+.chevron {
+    display: flex;
+    align-items: center;
+    color: var(--text-date);
+    background: var(--bg-size);
+    border: 1px solid var(--border-size);
+    border-radius: 8px;
+    padding: 6px;
+}
+
+.chevron:hover {
+    background: var(--bg-page-hover)
+}
+
+.viewPage {
+    display: flex;
+    align-items: center;
+    color: var(--text-page);
+    background: var(--bg-page);
+    border: 1px solid var(--border-page);
+    border-radius: 8px;
+    padding: 4px 12px;
+}
+
+.disable {
+    cursor: not-allowed;
+}
+
+.disable:hover {
+    background: var(--bg-size);
+}
+@media (max-width: 768px) {
+    .changePage {
+        padding: 16px 0;
+        border: none;
+    }
+
+    .size select {
+        width: 50px;
+    }
+
+    .viewPage {
+        padding: 4px 8px;
+    }
+}

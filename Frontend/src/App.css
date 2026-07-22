@@ -59,6 +59,7 @@ body {
         ui-sans-serif,
         system-ui,
         sans-serif;
+    overscroll-behavior: none;
 }
 
 .main-page {
@@ -149,7 +150,7 @@ a:focus, a:focus-visible, a:active {
     }
 
     .PC {
-        display: none;
+        display: none !important;
     }
 
     .Mobile {

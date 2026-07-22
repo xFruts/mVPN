@@ -2,7 +2,7 @@ import { create } from "zustand";
 import { immer } from "zustand/middleware/immer";
 import type { UsersGet } from "@typings/user";
 import { UserService } from "../api/services/userService.ts";
-import type {GetData} from "@/types/general.ts";
+import type {GetUserData} from "@/types/general.ts";
 import type { ApiError } from "@api/types.ts";
 
 interface UsersState {
@@ -12,9 +12,9 @@ interface UsersState {
     isInitialized: boolean;
     isLoading: boolean;
     error: ApiError | null;
-    filters: Partial<GetData>;
-    setParams: (params: Partial<GetData>) => void;
-    fetchUsers: (params?: Partial<GetData>) => Promise<void>;
+    filters: Partial<GetUserData>;
+    setParams: (params: Partial<GetUserData>) => void;
+    fetchUsers: (params?: Partial<GetUserData>) => Promise<void>;
     selectedUser: { id: number } | null;
     selectedIds: number[];
     toggleSelectId: (id: number) => void;
@@ -52,7 +52,7 @@ const useUsersStore = create<UsersState>()(
                 }
 
                 Object.keys(newParams).forEach((key) => {
-                    const k = key as keyof GetData;
+                    const k = key as keyof GetUserData;
                     if (
                         updatedFilters[k] === "" ||
                         updatedFilters[k] === null ||
@@ -105,6 +105,7 @@ const useUsersStore = create<UsersState>()(
                 }
 
                 const errorMap: Record<number, string> = {
+                    0: "Нет подключения к интернету",
                     400: "Неверный запрос",
                     401: "Нужна авторизация",
                     403: "Доступ ограничен",

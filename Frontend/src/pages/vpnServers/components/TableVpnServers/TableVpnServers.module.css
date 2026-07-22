@@ -1,16 +1,92 @@
+body[data-theme="light"] {
+    --planet-bg: #f8fafc;
+    --name-text: #1e293b;
+    --maintenance-text: #a16207;
+    --maintenance-bg: #fef9c3;
+    --maintenance-border: #fef08a;
+    --bar-bg: #f1f5f9;
+    --usage-text: #1e293b;
+    --settings-text: #334155;
+    --settings-text-hover: #0891b2;
+    --settings-bg-hover: #f8fafc;
+    --delete-text: #dc2626;
+}
+
+body[data-theme="dark"] {
+    --planet-bg: #1f2937;
+    --name-text: #e5e7eb;
+    --maintenance-text: #facc15;
+    --maintenance-bg: #eab3081a;
+    --maintenance-border: #eab30833;
+    --bar-bg: #1f2937;
+    --usage-text: #e5e7eb;
+    --settings-text: #d1d5db;
+    --settings-text-hover: #22d3ee;
+    --settings-bg-hover: #06b6d41a;
+    --delete-text: #f87171;
+}
+
 .vpnserversTable {
+    position: relative;
     max-height: 550px;
-    min-height: 100px;
     height: auto;
-    overflow-y: auto;
-    border: 1px solid #e4e4e4;
-    border-radius: 10px;
+    border: 1px solid var(--border-table);
+    border-radius: 16px;
+    box-shadow: 0 5px 30px -3px rgba(0, 0, 0, 0.2);
     box-sizing: border-box;
-    margin: 50px 15px 0 15px;
+    margin: 24px 15px 0 15px;
 }
 
 td:has(input) {
     padding: 16px 0  16px 24px !important;
+}
+
+tr {
+    background: var(--bg-table-line);
+    transition: all 0.3s;
+}
+
+table {
+    border-collapse: separate;
+    border-spacing: 0;
+    width: 100%;
+}
+
+.trTitle {
+    top: 77px;
+    position: sticky;
+    z-index: 10;
+    background: var(--bg-table-title);
+}
+
+.trTitle:hover {
+    background: var(--bg-table-title) !important;
+}
+
+.trTitle td:first-child {
+    border-top-left-radius: 16px;
+}
+
+.trTitle td:last-child {
+    border-top-right-radius: 16px;
+}
+
+tr:hover {
+    background: var(--bg-table-line-hover);
+}
+
+.trMessage {
+    padding: 16px 16px;
+    background: var(--bg-table-line);
+    border-radius: 16px;
+}
+
+.tableMessage {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #2fd5ef;
+    font-size: 16px;
 }
 
 .usersCheckbox {
@@ -25,10 +101,21 @@ td:has(input) {
     display: flex;
     flex-direction: row;
     align-items: center;
+    gap: 4px;
+    font-size: 11px;
+    font-weight: 700;
+    cursor: pointer;
+    color: var(--text-title);
+    transition: all 0.3s;
 }
 
-.tableTitle span {
-    padding-right: 7px;
+.tableTitle:hover {
+    color: #22d3ee;
+}
+
+.chevron {
+    display: flex;
+    align-items: center;
 }
 
 .tableServers {
@@ -38,79 +125,114 @@ td:has(input) {
 }
 
 .tableServers tr + tr td {
-    border-top: 1px solid #e4e4e4;
+    border-top: 1px solid var(--border-table);
 }
 
 .tableServers td {
-    padding: 15px 60px 15px 40px;
+    padding: 16px 24px;
     box-sizing: border-box;
     font-size: 14px;
 }
 
-td:has(.ID, .date) {
-    padding-right: 10px;
-}
-
 .serverName {
     display: flex;
+    flex-direction: row;
+    gap: 12px;
+    align-items: center;
+}
+
+.planet {
+    display: flex;
+    align-items: center;
+    font-size: 22px;
+    height: 22px;
+}
+
+.info {
+    display: flex;
     flex-direction: column;
+    gap: 2px;
 }
 
 .name {
-    font-size: 17px;
-}
-
-.location {
     font-size: 14px;
-    color: #5a646e;
+    color: var(--name-text);
+    font-weight: 500;
 }
 
-.ip {
+.ipLocation {
     font-size: 12px;
-    color: #86909a;
+    color: #9ca3af;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;;
+}
+
+.dot {
+    font-size: 20px;
 }
 
 .status {
     display: inline-block;
-    padding: 3px 10px;
+    padding: 2px 10px;
     border-radius: 25px;
-    font-size: 12px;
+    font-size: 9px;
+    font-weight: 700;
 }
 
 .maintenance {
-    background-color: #fef7c3;
-    color: #92400e;
+    background-color: var(--maintenance-bg);
+    color: var(--maintenance-text);
+    border: 1px solid var(--maintenance-border);
 }
 
 .online {
-    background-color: #e5f8ed;
-    color: #34c759;
+    background-color: var(--bg-active);
+    color: var(--text-active);
+    border: 1px solid var(--border-active);
 }
 
 .offline {
-    background-color: #ffeeee;
-    color: #ff4d4d;
+    background-color: var(--bg-expired);
+    color: var(--text-expired);
+    border: 1px solid var(--border-expired);
+}
+
+.center {
+    text-align: center;
 }
 
 .users {
     display: flex;
-    justify-content: left;
-    font-size: 16px;
+    justify-content: center;
+    gap: 4px;
+    font-size: 12px;
+    color: #64748b;
+    font-weight: 500;
+}
+
+.usage {
+    color: var(--usage-text);
 }
 
 .progressContainer {
     display: flex;
+    flex-direction: column;
     align-items: center;
-    gap: 12px;
+    justify-content: center;
+    gap: 6px;
     width: 100%;
 }
 
 .progressBar {
-    flex-grow: 1;
-    height: 10px;
-    background-color: #e5e7eb;
+    width: 100%;
+    max-width: 64px;
+    height: 6px;
+    background-color: var(--bar-bg);
     border-radius: 9999px;
     overflow: hidden;
+}
+
+.bar {
+    background-color: #06b6d4;
 }
 
 .progressBarFill {
@@ -120,98 +242,142 @@ td:has(.ID, .date) {
 }
 
 .progressLabel {
-    font-family: sans-serif;
-    font-size: 14px;
-    color: #4b5563;
+    font-size: 12px;
+    color: #64748b;
     font-weight: 500;
-    min-width: 40px;
-}
-
-td:has(.progressContainer) {
-    padding-right: 30px;
 }
 
 .ping {
-    font-size: 15px;
-}
-
-.backgroundcolorGreen {
-    background-color: green;
-}
-
-.backgroundcolorOrange {
-    background-color: orange;
-}
-
-.backgroundcolorRed {
-    background-color: red;
-}
-
-.colorGreen {
-    color: green;
-}
-
-.colorRed {
-    color: red;
-}
-
-.colorOrange {
-    color: orange;
+    font-size: 12px;
+    color: #06b6d4;
+    font-weight: 500;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
 }
 
 .uptime {
-    font-size: 16px;
-    display: flex;
-    flex-direction: row;
-    justify-content: space-between;
+    font-size: 12px;
+    color: #64748b;
+    font-weight: 500;
 }
 
+.end {
+    text-align: end;
+}
 
-td:has(.maxtrafficDot) {
-    padding-right: 15px;
+.ellipsis {
+    color: #6b7280;
+    transition: all 0.3s;
+    cursor: pointer;
+}
+
+.ellipsis:hover {
+    color: #22d3ee;
 }
 
 .vpnserversModal {
     position: absolute;
     display: flex;
     flex-direction: column;
+    width: 190px;
     background-color: #fff;
-    font-size: 15px;
-    right: 45px;
+    right: 65px;
     z-index: 1000;
-    border: 1px solid #e4e4e4;
-    border-radius: 15px;
+    border: 1px solid var(--border-modal);
+    border-radius: 12px;
+    background: var(--bg-modal);
 }
 
-.vpnserversModalName {
+.settings {
     display: flex;
-    flex-direction: column;
-    border-bottom: 1px solid #e4e4e4;
-    padding: 15px 30px 10px 15px;
+    padding: 12px 16px;
+    color: var(--settings-text);
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.3s;
+    border-top-left-radius: 12px;
+    border-top-right-radius: 12px;
 }
 
-.vpnserversModalChange {
-    display: flex;
-    flex-direction: column;
-    padding: 10px 30px 15px 15px;
-    gap: 10px;
-}
-
-.vpnserversModalChangeMain {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-}
-
-.vpnserversModalChangeMain div {
-    display: flex;
-    gap: 10px;
-    padding-top: 10px;
+.settings:hover {
+    color: var(--settings-text-hover);
+    background: var(--settings-bg-hover);
 }
 
 .delete {
     display: flex;
-    gap: 10px;
-    padding-top: 15px;
-    border-top: 1px solid #e4e4e4;
+    padding: 12px 16px;
+    font-size: 12px;
+    color: var(--delete-text);
+    border-top: 1px solid var(--border-modal);
+    cursor: pointer;
+    transition: all 0.3s;
+    border-bottom-left-radius: 12px;
+    border-bottom-right-radius: 12px;
+}
+
+.delete:hover {
+    background: var(--bg-delete-hover);
+}
+
+.error {
+    color: var(--delete-text)
+}
+
+@media (max-width: 768px) {
+    .vpnserversTable {
+        border: none;
+        box-shadow: none;
+        margin: 0;
+    }
+
+    .trMessage {
+        border: 1px solid var(--border-table);
+    }
+
+    .listServers {
+        display: flex !important;
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    .server {
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        justify-content: space-between;
+        padding: 16px;
+        border: 1px solid var(--border-table);
+        border-radius: 16px;
+        background: var(--bg-table-line);
+    }
+
+    .serverName {
+        display: flex;
+        flex-direction: row;
+        gap: 12px;
+    }
+
+    .nameIp {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+    }
+
+    .info {
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        gap: 20px;
+    }
+
+    .mobilePing {
+        background: #06b6d41a;
+        border: 1px solid #06b6d433;
+        border-radius: 6px;
+        padding: 2px 8px;
+    }
+
+    .vpnserversModal {
+        right: 10px;
+    }
 }
