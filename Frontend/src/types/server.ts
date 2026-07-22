@@ -13,7 +13,7 @@ export interface Servers {
     status: StatusServer;
     load: number;
     usage: number;
-    maxTraffic: number;
+    maxUsers: number;
     ping: string;
     uptime: number;
 }

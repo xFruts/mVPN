@@ -87,14 +87,12 @@ body[data-theme="dark"] {
     top: 77px;
     z-index: 10;
     background: var(--bg-table-title);
-
 }
 
 .trTitle td:first-child {
     border-top-left-radius: 16px;
 }
 
-/* Верхний правый угол */
 .trTitle td:last-child {
     border-top-right-radius: 16px;
 }
@@ -108,10 +106,8 @@ body[data-theme="dark"] {
 }
 
 .trMessage {
+    padding: 16px 16px;
     background: var(--bg-table-line);
-}
-
-.trMessage td {
     border-radius: 16px;
 }
 
@@ -336,64 +332,7 @@ td:has(.ID) {
     color: var(--text-delete) !important;
 }
 
-.changePage {
-    display: flex;
-    justify-content: space-between;
-    padding: 16px;
-    border-top: 1px solid var(--border-table);
-}
 
-.size {
-    color: var(--text-date);
-}
-
-.size select {
-    margin: 0 8px;
-    color: var(--text-date);
-    background: var(--bg-size);
-    border: 1px solid var(--border-size);
-    padding: 6px 8px;
-    font-size: 12px;
-    outline: none;
-}
-
-.page {
-    display: flex;
-    flex-direction: row;
-    gap: 4px;
-}
-
-.chevron {
-    display: flex;
-    align-items: center;
-    color: var(--text-date);
-    background: var(--bg-size);
-    border: 1px solid var(--border-size);
-    border-radius: 8px;
-    padding: 6px;
-}
-
-.chevron:hover {
-    background: var(--bg-page-hover)
-}
-
-.viewPage {
-    display: flex;
-    align-items: center;
-    color: var(--text-page);
-    background: var(--bg-page);
-    border: 1px solid var(--border-page);
-    border-radius: 8px;
-    padding: 4px 12px;
-}
-
-.disable {
-    cursor: not-allowed;
-}
-
-.disable:hover {
-    background: var(--bg-size);
-}
 
 .tableMessage {
     display: flex;
@@ -412,6 +351,10 @@ td:has(.ID) {
         border: none;
         box-shadow: none;
         margin: 0;
+    }
+
+    .trMessage {
+        border: 1px solid var(--border-table);
     }
 
     .listUsers {
@@ -456,18 +399,5 @@ td:has(.ID) {
     .modal {
         top: 55px;
         right: 10px;
-    }
-
-    .changePage {
-        padding: 16px 0;
-        border: none;
-    }
-
-    .size select {
-        width: 50px;
-    }
-
-    .viewPage {
-        padding: 4px 8px;
     }
 }

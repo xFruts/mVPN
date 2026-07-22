@@ -4,23 +4,23 @@ import {
     ChevronsUpDown,
     ChevronUp,
     ChevronDown,
-    ChevronLeft,
-    ChevronRight,
 } from "lucide-react";
 import styles from "./TableAllUsers.module.css";
 import { NavLink } from "react-router";
 import useUsersStore from "../../../../store/useUsersStore.ts";
-import type { SortFields, SortDirection, SortData } from "@/types/general.ts";
+import type {
+    SortUserFields,
+    SortDirection,
+    SortUserData,
+    GetUserData,
+} from "@/types/general.ts";
 import {UserService} from "@api/services/userService.ts";
 import Configuration from "@pages/allUsers/component/Configuration/Configuration.tsx";
+import type {TitlesUser} from "@/types/general.ts";
+import { Pagination } from "@pages/shared/pagination/Pagination.tsx"
 
-interface Titles {
-    name: string;
-    api: SortFields;
-    side: "flex-end" | "flex-start" | "center";
-}
 
-const titles: Titles[] = [
+const titles: TitlesUser[] = [
     {
         name: "ID",
         api: "id",
@@ -73,12 +73,11 @@ export default function TableAllUsers() {
     } = useUsersStore();
     const [currentField, currentDir] = (filters.sort || "id,asc").split(
         ",",
-    ) as [SortFields, SortDirection];
+    ) as [SortUserFields, SortDirection];
     const allUserIds = users.map((u) => u.id);
-    const { page = 0, size = 20 } = filters;
-    const handleSort = (title: SortFields) => {
+    const handleSort = (title: SortUserFields) => {
 
-        let newSort: SortData;
+        let newSort: SortUserData;
 
         if (currentField !== title) {
             newSort = `${title},asc`;
@@ -163,7 +162,7 @@ export default function TableAllUsers() {
                         </tr>
                     )}
 
-                    {totalElements > 0 ? (
+                    {totalElements > 0 &&
                         users.map((user) => (
                             <tr
                                 key={user.id}
@@ -274,23 +273,7 @@ export default function TableAllUsers() {
                                     )}
                                 </td>
                             </tr>
-                        ))
-                    ) : (
-                        <tr className={styles.trMessage}>
-                            <td colSpan={10}>
-                                <div className={styles.tableMessage}>
-                                    {error ? (
-                                        <span className={styles.error}>
-                                            Ошибка {error.statusCode}:{" "}
-                                            {error.message}
-                                        </span>
-                                    ) : (
-                                        <span>Пользователи не найдены</span>
-                                    )}
-                                </div>
-                            </td>
-                        </tr>
-                    )}
+                        ))}
                 </tbody>
             </table>
             <div className={`${styles.listUsers} ${"Mobile"}`}>
@@ -334,9 +317,11 @@ export default function TableAllUsers() {
                                         <span>Изменить</span>
                                     </NavLink>
                                 </div>
-                                <div onClick={() => {
-                                    setConfiguration(user.id);
-                                }}>
+                                <div
+                                    onClick={() => {
+                                        setConfiguration(user.id);
+                                    }}
+                                >
                                     <span>Конфиг</span>
                                 </div>
                                 <div
@@ -351,53 +336,28 @@ export default function TableAllUsers() {
                 ))}
             </div>
             {totalElements > 0 && (
-                <div className={styles.changePage}>
-                    <div className={styles.size}>
-                        <span>
-                            <span className={"PC"}>Показывать</span> по:
-                        </span>
-                        <select
-                            value={filters.size}
-                            onChange={(e) => {
-                                setParams({ size: Number(e.target.value) });
-                            }}
-                        >
-                            <option value={10}>10</option>
-                            <option value={20}>20</option>
-                            <option value={50}>50</option>
-                            <option value={100}>100</option>
-                        </select>
-                        <span>
-                            ({page * size + 1} -{" "}
-                            {(page + 1) * size > totalElements
-                                ? totalElements
-                                : (page + 1) * size}{" "}
-                            из {totalElements})
-                        </span>
-                    </div>
-                    <div className={styles.page}>
-                        <button
-                            className={`${styles.chevron} ${page === 0 ? styles.disable : ""}`}
-                            disabled={page === 0}
-                            onClick={() => setParams({ page: page - 1 })}
-                        >
-                            <ChevronLeft size={16} />
-                        </button>
-                        <div className={styles.viewPage}>
-                            {page + 1} / {totalPages}
-                        </div>
-                        <button
-                            className={`${styles.chevron} ${page + 1 === totalPages ? styles.disable : ""}`}
-                            disabled={page + 1 === totalPages}
-                            onClick={() => setParams({ page: page + 1 })}
-                        >
-                            <ChevronRight size={16} />
-                        </button>
-                    </div>
-                </div>
+                <Pagination
+                    filters={filters as GetUserData}
+                    setParams={setParams}
+                    totalElements={totalElements}
+                    totalPages={totalPages}
+                />
             )}
             {selectedConfigUserId && (
                 <Configuration userId={selectedConfigUserId} />
+            )}
+            {totalElements === 0 && (
+            <div className={styles.trMessage}>
+                <div className={styles.tableMessage}>
+                    {error ? (
+                        <span className={styles.error}>
+                            Ошибка {error.statusCode}: {error.message}
+                        </span>
+                    ) : (
+                        <span>Пользователи не найдены</span>
+                    )}
+                </div>
+            </div>
             )}
         </div>
     );

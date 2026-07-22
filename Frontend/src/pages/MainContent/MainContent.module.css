@@ -19,7 +19,7 @@ body[data-theme="dark"] {
 
 .mainContent {
     margin: 0;
-    min-height: 100vh;
+    min-height: calc(100vh - 77px);
     transition: background-color 0.3s ease;
 
     background-color: var(--bg-main);

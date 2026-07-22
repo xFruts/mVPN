@@ -1,30 +1,32 @@
 .filterTable {
     display: flex;
-    border: 1px solid #e4e4e4;
-    border-radius: 10px;
-    padding: 15px;
 }
 
 .input {
     display: flex;
     flex-direction: row;
     align-items: center;
-    padding: 0 10px;
     flex: 9;
-    border: 1px solid lightgrey;
     border-radius: 10px;
+    padding: 10px 16px;
+    background: var(--bg-input);
 }
 
 .input input {
-    padding-left: 10px;
     border: 0;
     width: 100%;
-    height: 40px;
-    font-size: 16px;
+    font-size: 14px;
+    border-radius: 12px;
+    background: var(--bg-input);
+    color: var(--text-input);
 }
 
 .input input:focus {
     outline: none;
+}
+
+.input:has(input:focus) {
+    border: 1px solid var(--border-filter-focus);
 }
 
 .text {
@@ -34,33 +36,37 @@
     justify-content: center;
     flex: 1;
     margin-left: 15px;
-    padding: 0 10px;
-    border: 1px solid lightgrey;
     border-radius: 10px;
     gap: 0;
+    background: var(--bg-input);
 }
 
 .chevronDown {
     padding-left: 10px;
 }
 
-.input:has(input:focus) {
-    border: 1px solid var(--primary);
-}
-
-.searchInput {
-    border: none;
-    font-size: 16px;
-    font-family:
-        Nunito Sans,
-        sans-serif;
+.search {
+    color: var(--glass-input);
     padding-right: 10px;
 }
 
-.searchInput:focus {
+.filterInput {
+    border: none;
+    font-size: 14px;
+    padding-right: 10px;
+    background: none;
+    color: var(--text-filter);
+}
+
+.filterInput:focus {
     outline: none;
 }
 
 .text:has(select:focus) {
-    border: 1px solid var(--primary);
+    border: 1px solid var(--border-filter-focus);
 }
+
+.filterInput option {
+    background: var(--bg-input);
+}
+
