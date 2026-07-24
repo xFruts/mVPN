@@ -8,6 +8,7 @@ import org.mapstruct.NullValuePropertyMappingStrategy;
 import ru.maxow.mvpn.model.CreateUpdateServerRequestDto;
 import ru.maxow.mvpn.model.GetServerResponseDto;
 import ru.maxow.mvpn.model.ListServerDto;
+import ru.maxow.mvpn.model.ListServerNameAndLocationDto;
 import ru.maxow.mvpn.model.ServerResponseDto;
 
 @Mapper(componentModel = "spring")
@@ -17,6 +18,8 @@ public interface ServerMapper {
   GetServerResponseDto toGetDto(Server server);
 
   ListServerDto toListDto(Server servers);
+
+  ListServerNameAndLocationDto toNameAndLocationDto(Server server);
 
   @Mapping(target = "id", ignore = true)
   @Mapping(target = "load", ignore = true)

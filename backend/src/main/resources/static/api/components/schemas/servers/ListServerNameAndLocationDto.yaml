@@ -1,0 +1,12 @@
+type: object
+properties:
+  id:
+    type: integer
+    format: int64
+  name:
+    type: string
+    example: "Finland"
+  location:
+    type: string
+    description: Первые две буквы локации сервера КАПСОМ
+    example: "FI"

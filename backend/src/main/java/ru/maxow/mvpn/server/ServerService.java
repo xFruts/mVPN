@@ -9,6 +9,8 @@ import java.util.Set;
 public interface ServerService {
   PageListServerDto getServers(Integer page, Integer size, List<String> sort, String status, String search);
 
+  List<ListServerNameAndLocationDto> getServersNameAndLocation();
+
   GetServerResponseDto getServer(Long id);
 
   // For service use only
