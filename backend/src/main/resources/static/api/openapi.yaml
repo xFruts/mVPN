@@ -34,12 +34,14 @@ paths:
 
   /v1/servers:
     $ref: './paths/servers.yaml#/ServersCollection'
+  /v1/servers/name-and-location:
+    $ref: './paths/servers.yaml#/ListServerNameWithLocation'
+  /v1/servers/ssh-keys:
+    $ref: './paths/servers.yaml#/ServerSshKeyUpload'
   /v1/servers/{id}:
     $ref: './paths/servers.yaml#/ServerSingle'
   /v1/servers/{id}/status:
     $ref: './paths/servers.yaml#/ServerStatusUpdate'
-  /v1/servers/ssh-keys:
-    $ref: './paths/servers.yaml#/ServerSshKeyUpload'
 
   /v1/subscriptions/{id}:
     $ref: './paths/subscriptions.yaml#/SubscriptionById'

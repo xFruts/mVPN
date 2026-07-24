@@ -25,6 +25,11 @@ public class ServerController implements ServersApi {
   }
 
   @Override
+  public List<ListServerNameAndLocationDto> getServersNameAndLocation() {
+    return serverService.getServersNameAndLocation();
+  }
+
+  @Override
   public ServerResponseDto createServer(CreateUpdateServerRequestDto createUpdateServerRequestDto) {
     return serverService.createServer(createUpdateServerRequestDto);
   }

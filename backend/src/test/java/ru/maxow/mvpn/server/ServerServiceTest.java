@@ -111,6 +111,45 @@ class ServerServiceTest {
   }
 
   @Nested
+  @DisplayName("Получение id/name/location (GET /v1/servers/name-and-location)")
+  class GetServersNameAndLocationTests {
+
+    @Test
+    @DisplayName("Должен вернуть список серверов с id, name и location")
+    void shouldReturnServersNameAndLocation() {
+      ListServerNameAndLocationDto dto = new ListServerNameAndLocationDto()
+          .id(1L)
+          .name("Moscow-1")
+          .location("RU");
+
+      when(serverRepository.findAll()).thenReturn(List.of(testServer));
+      when(serverMapper.toNameAndLocationDto(testServer)).thenReturn(dto);
+
+      List<ListServerNameAndLocationDto> result = serverService.getServersNameAndLocation();
+
+      assertThat(result).hasSize(1);
+      assertThat(result.getFirst().getId()).isEqualTo(1L);
+      assertThat(result.getFirst().getName()).isEqualTo("Moscow-1");
+      assertThat(result.getFirst().getLocation()).isEqualTo("RU");
+
+      verify(serverRepository).findAll();
+      verify(serverMapper).toNameAndLocationDto(testServer);
+    }
+
+    @Test
+    @DisplayName("Должен вернуть пустой список, если серверов нет")
+    void shouldReturnEmptyListWhenNoServers() {
+      when(serverRepository.findAll()).thenReturn(List.of());
+
+      List<ListServerNameAndLocationDto> result = serverService.getServersNameAndLocation();
+
+      assertThat(result).isEmpty();
+      verify(serverRepository).findAll();
+      verifyNoInteractions(serverMapper);
+    }
+  }
+
+  @Nested
   @DisplayName("Получение сервера по id (GET /v1/servers/{id})")
   class GetServerByIdTests {
 

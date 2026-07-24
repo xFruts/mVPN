@@ -51,6 +51,13 @@ public class ServerServiceImpl implements ServerService {
   }
 
   @Override
+  public List<ListServerNameAndLocationDto> getServersNameAndLocation() {
+    return serverRepository.findAll().stream()
+        .map(serverMapper::toNameAndLocationDto)
+        .toList();
+  }
+
+  @Override
   public GetServerResponseDto getServer(Long id) {
     return serverRepository
         .findById(id)
