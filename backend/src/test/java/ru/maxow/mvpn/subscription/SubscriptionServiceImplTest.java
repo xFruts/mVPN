@@ -196,6 +196,39 @@ class SubscriptionServiceImplTest {
     }
 
     @Test
+    @DisplayName("Должен истечь просроченные ACTIVE подписки при создании новой")
+    void shouldExpireOverdueActiveSubscriptionsWhenCreatingNew() {
+      Long userId = 1L;
+      Long tariffId = 1L;
+      CreateUpdateSubscriptionDto requestDto = new CreateUpdateSubscriptionDto();
+      requestDto.setStartDate(OffsetDateTime.now(ZoneOffset.UTC));
+      requestDto.setStatus(SubscriptionStatus.ACTIVE);
+      requestDto.setTariffId(tariffId);
+
+      Tariff tariff = new Tariff();
+      tariff.setDurationOfDays(30);
+
+      Subscription overdue = new Subscription();
+      overdue.setId(10L);
+      overdue.setUser(testUser);
+      overdue.setStatus(SubscriptionStatus.ACTIVE);
+      overdue.setEndDate(OffsetDateTime.now(ZoneOffset.UTC).minusDays(7));
+
+      when(userRepository.findById(userId)).thenReturn(Optional.of(testUser));
+      when(tariffRepository.findById(tariffId)).thenReturn(Optional.of(tariff));
+      when(subscriptionRepository.save(any(Subscription.class))).thenAnswer(invocation -> invocation.getArgument(0));
+      when(subscriptionRepository.findByUser_IdOrderByStartDateDesc(userId))
+          .thenReturn(List.of(testSubscription, overdue));
+      when(subscriptionMapper.toSubscriptionResponseDto(any(Subscription.class)))
+          .thenReturn(testSubscriptionDto);
+
+      subscriptionService.createSubscription(userId, requestDto);
+
+      assertThat(overdue.getStatus()).isEqualTo(SubscriptionStatus.EXPIRED);
+      verify(subscriptionRepository, atLeastOnce()).save(overdue);
+    }
+
+    @Test
     @DisplayName("Должен выбросить NotFoundException для несуществующего пользователя")
     void shouldThrowNotFoundExceptionForNonExistentUser() {
       Long nonExistentUserId = 999L;
@@ -357,24 +390,27 @@ class SubscriptionServiceImplTest {
     }
 
     @Test
-    @DisplayName("Должен получить все подписки пользователя")
+    @DisplayName("Должен получить все подписки пользователя от новых к старым")
     void shouldGetAllSubscriptionsByUserId() {
       Long userId = 1L;
       Subscription subscription2 = new Subscription();
       subscription2.setId(2L);
+      subscription2.setStatus(SubscriptionStatus.ACTIVE);
+      subscription2.setEndDate(OffsetDateTime.now().plusMonths(1));
       List<Subscription> subscriptions = List.of(testSubscription, subscription2);
 
       SubscriptionResponseDto dto2 = new SubscriptionResponseDto();
       dto2.setId(2L);
 
-      when(subscriptionRepository.findByUser_Id(userId)).thenReturn(subscriptions);
+      when(subscriptionRepository.findByUser_IdOrderByStartDateDesc(userId))
+          .thenReturn(subscriptions);
       when(subscriptionMapper.toSubscriptionResponseDto(testSubscription)).thenReturn(testSubscriptionDto);
       when(subscriptionMapper.toSubscriptionResponseDto(subscription2)).thenReturn(dto2);
 
       List<SubscriptionResponseDto> result = subscriptionService.findSubscriptionsByUserId(userId);
 
       assertThat(result).hasSize(2).containsExactly(testSubscriptionDto, dto2);
-      verify(subscriptionRepository).findByUser_Id(userId);
+      verify(subscriptionRepository).findByUser_IdOrderByStartDateDesc(userId);
       verify(subscriptionMapper, times(2)).toSubscriptionResponseDto(any(Subscription.class));
     }
 
@@ -382,13 +418,75 @@ class SubscriptionServiceImplTest {
     @DisplayName("Должен вернуть пустой список если у пользователя нет подписок")
     void shouldReturnEmptyListWhenUserHasNoSubscriptions() {
       Long userId = 1L;
-      when(subscriptionRepository.findByUser_Id(userId)).thenReturn(List.of());
+      when(subscriptionRepository.findByUser_IdOrderByStartDateDesc(userId)).thenReturn(List.of());
 
       List<SubscriptionResponseDto> result = subscriptionService.findSubscriptionsByUserId(userId);
 
       assertThat(result).isEmpty();
-      verify(subscriptionRepository).findByUser_Id(userId);
+      verify(subscriptionRepository).findByUser_IdOrderByStartDateDesc(userId);
       verify(subscriptionMapper, never()).toSubscriptionResponseDto(any());
+    }
+
+    @Test
+    @DisplayName("Должен перевести просроченный ACTIVE в EXPIRED")
+    void shouldExpireOverdueActiveSubscription() {
+      Long userId = 1L;
+      testSubscription.setEndDate(OffsetDateTime.now(ZoneOffset.UTC).minusDays(5));
+      testSubscription.setStatus(SubscriptionStatus.ACTIVE);
+
+      SubscriptionResponseDto expiredDto = new SubscriptionResponseDto();
+      expiredDto.setId(1L);
+      expiredDto.setStatus(SubscriptionStatus.EXPIRED);
+
+      when(subscriptionRepository.findByUser_IdOrderByStartDateDesc(userId))
+          .thenReturn(List.of(testSubscription));
+      when(subscriptionRepository.save(testSubscription)).thenReturn(testSubscription);
+      when(subscriptionMapper.toSubscriptionResponseDto(testSubscription)).thenReturn(expiredDto);
+
+      List<SubscriptionResponseDto> result = subscriptionService.findSubscriptionsByUserId(userId);
+
+      assertThat(testSubscription.getStatus()).isEqualTo(SubscriptionStatus.EXPIRED);
+      assertThat(result).containsExactly(expiredDto);
+      verify(subscriptionRepository).save(testSubscription);
+    }
+
+    @Test
+    @DisplayName("Не должен менять действующий ACTIVE")
+    void shouldNotChangeActiveSubscriptionWithFutureEndDate() {
+      Long userId = 1L;
+      testSubscription.setEndDate(OffsetDateTime.now(ZoneOffset.UTC).plusDays(10));
+      testSubscription.setStatus(SubscriptionStatus.ACTIVE);
+
+      when(subscriptionRepository.findByUser_IdOrderByStartDateDesc(userId))
+          .thenReturn(List.of(testSubscription));
+      when(subscriptionMapper.toSubscriptionResponseDto(testSubscription))
+          .thenReturn(testSubscriptionDto);
+
+      subscriptionService.findSubscriptionsByUserId(userId);
+
+      assertThat(testSubscription.getStatus()).isEqualTo(SubscriptionStatus.ACTIVE);
+      verify(subscriptionRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("Не должен менять CANCELED с прошедшим endDate")
+    void shouldNotChangeCanceledSubscriptionEvenIfEndDatePassed() {
+      Long userId = 1L;
+      testSubscription.setEndDate(OffsetDateTime.now(ZoneOffset.UTC).minusDays(30));
+      testSubscription.setStatus(SubscriptionStatus.CANCELED);
+
+      SubscriptionResponseDto canceledDto = new SubscriptionResponseDto();
+      canceledDto.setId(1L);
+      canceledDto.setStatus(SubscriptionStatus.CANCELED);
+
+      when(subscriptionRepository.findByUser_IdOrderByStartDateDesc(userId))
+          .thenReturn(List.of(testSubscription));
+      when(subscriptionMapper.toSubscriptionResponseDto(testSubscription)).thenReturn(canceledDto);
+
+      subscriptionService.findSubscriptionsByUserId(userId);
+
+      assertThat(testSubscription.getStatus()).isEqualTo(SubscriptionStatus.CANCELED);
+      verify(subscriptionRepository, never()).save(any());
     }
   }
 
