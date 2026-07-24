@@ -63,6 +63,8 @@ public class SubscriptionServiceImpl implements SubscriptionService {
     subscription.setTariff(tariff);
 
     Subscription savedSubscription = subscriptionRepository.save(subscription);
+    expireOverdueSubscriptions(
+        subscriptionRepository.findByUser_IdOrderByStartDateDesc(userId));
     log.info("subscription created for user with id: {}", userId);
     return subscriptionMapper.toSubscriptionResponseDto(savedSubscription);
   }
@@ -111,9 +113,12 @@ public class SubscriptionServiceImpl implements SubscriptionService {
   }
 
   @Override
-  @Transactional(readOnly = true)
+  @Transactional
   public List<SubscriptionResponseDto> findSubscriptionsByUserId(Long userId) {
-    return subscriptionRepository.findByUser_Id(userId).stream()
+    List<Subscription> subscriptions =
+        subscriptionRepository.findByUser_IdOrderByStartDateDesc(userId);
+    expireOverdueSubscriptions(subscriptions);
+    return subscriptions.stream()
         .map(subscriptionMapper::toSubscriptionResponseDto)
         .toList();
   }
@@ -234,5 +239,22 @@ public class SubscriptionServiceImpl implements SubscriptionService {
     }
 
     subscriptionRepository.saveAll(subscriptions);
+  }
+
+  private void expireOverdueSubscriptions(List<Subscription> subscriptions) {
+    OffsetDateTime now = OffsetDateTime.now(ZoneOffset.UTC);
+    for (Subscription subscription : subscriptions) {
+      expireIfOverdue(subscription, now);
+    }
+  }
+
+  private void expireIfOverdue(Subscription subscription, OffsetDateTime now) {
+    if (subscription.getStatus() == SubscriptionStatus.ACTIVE
+        && subscription.getEndDate() != null
+        && subscription.getEndDate().isBefore(now)) {
+      subscription.setStatus(SubscriptionStatus.EXPIRED);
+      subscriptionRepository.save(subscription);
+      log.info("Subscription with id: {} marked as EXPIRED", subscription.getId());
+    }
   }
 }

@@ -10,7 +10,7 @@ import ru.maxow.mvpn.user.User;
 @Repository
 public interface SubscriptionRepository extends JpaRepository<Subscription, Long> {
 
-  List<Subscription> findByUser_Id(Long userId);
+  List<Subscription> findByUser_IdOrderByStartDateDesc(Long userId);
 
   Optional<Subscription> findFirstByUser_IdOrderByStartDateDesc(Long userId);
 
@@ -21,6 +21,4 @@ public interface SubscriptionRepository extends JpaRepository<Subscription, Long
 
   @EntityGraph(attributePaths = {"tariff", "tariff.servers"})
   Optional<Subscription> findFirstWithTariffAndServersByUser_IdOrderByStartDateDesc(Long userId);
-
-  List<Subscription> findAllByUser(User user);
 }
