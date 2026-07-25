@@ -196,7 +196,7 @@ export default function UserTariffs() {
                     </form>
                 </div>
             )}
-            <div className={styles.historyContent}>
+            <div className={`${styles.historyContent} scroll`}>
                 {isLoading && (
                     <div className={"loadingText"} style={{ padding: 0 }}>
                         Загрузка подписок...

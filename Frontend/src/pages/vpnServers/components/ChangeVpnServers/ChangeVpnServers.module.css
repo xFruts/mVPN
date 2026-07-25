@@ -90,28 +90,10 @@ body[data-theme="dark"] {
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 16px;
     padding: 24px;
-    overflow-y: auto;
     flex: 1;
     min-height: 0;
     height: calc(95vh - 76px - 150px);
     margin-right: 1px;
-}
-
-.content::-webkit-scrollbar {
-    width: 4px;
-}
-
-.content::-webkit-scrollbar-button {
-    display: none;
-}
-
-.content::-webkit-scrollbar-track {
-    background: transparent;
-}
-
-.content::-webkit-scrollbar-thumb {
-    background-color: var(--scroll-text);
-    border-radius: 10px;
 }
 
 .fullWidth {

@@ -50,3 +50,9 @@ export interface ServerGet {
     sshAuthType: AuthType;
     subscriptionFormat: SubscriptionFormat;
 }
+
+export interface ServersAllGet {
+    id: number;
+    name: string;
+    location: string;
+}
