@@ -1,5 +1,5 @@
 import apiClient from "../index";
-import type {Servers, ServerGet, ServerPut} from "@/types/server.ts";
+import type {Servers, ServerGet, ServerPut, ServersAllGet } from "@/types/server.ts";
 import type {
     GetServerData,
     PageResponse,
@@ -22,6 +22,11 @@ export const ServerService = {
     async getServerById(id: number): Promise<ServerGet> {
         const response = await apiClient.get<ServerGet>(url + `/${id}`);
         return response.data;
+    },
+
+    async getAllServers(): Promise<ServersAllGet[]> {
+        const response = await apiClient.get<ServersAllGet[]>(url + `/name-and-location`);
+        return response.data
     },
 
     async createServer(serverData: Partial<ServerPut>): Promise<void> {

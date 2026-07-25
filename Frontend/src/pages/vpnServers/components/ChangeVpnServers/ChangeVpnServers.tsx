@@ -125,7 +125,7 @@ export default function ChangeVpnServers() {
 
     return (
         <div
-            className={styles.modalOverlay}
+            className="overlay"
             onClick={(e) => {
                 if (e.target === e.currentTarget) {
                     setIsChangeOpen(false);
@@ -162,7 +162,7 @@ export default function ChangeVpnServers() {
                             id="change-server-form"
                             onSubmit={handleSubmit(onSubmit)}
                         >
-                            <div className={styles.content}>
+                            <div className={`${styles.content} scroll`}>
                                 <div className={styles.fullWidth}>
                                     <span>НАЗВАНИЕ СЕРВЕРА</span>
                                     <input
@@ -202,7 +202,7 @@ export default function ChangeVpnServers() {
                                 <div>
                                     <span>ПОРТ X-UI</span>
                                     <input
-                                        type={"number"}
+                                        type={"text"}
                                         {...register("port", {
                                             valueAsNumber: true,
                                         })}
@@ -334,7 +334,7 @@ export default function ChangeVpnServers() {
                                 <div>
                                     <span>ЛИМИТ ПОЛЬЗОВАТЕЛЕЙ</span>
                                     <input
-                                        type={"number"}
+                                        type={"text"}
                                         {...register("maxUsers", {
                                             valueAsNumber: true,
                                         })}
@@ -344,7 +344,7 @@ export default function ChangeVpnServers() {
                                 <div>
                                     <span>ЛИМИТ ТРАФИКА (GB)</span>
                                     <input
-                                        type={"number"}
+                                        type={"text"}
                                         {...register("maxTraffic", {
                                             valueAsNumber: true,
                                         })}
