@@ -50,6 +50,7 @@ public class PromocodeServiceImpl implements  PromocodeService {
   }
 
   @Override
+  @Transactional(readOnly = true)
   public List<PromocodeResponseDto> getPromocodes() {
     return promocodeRepository.findAll().stream()
         .map(promocodeMapper::toDto)
