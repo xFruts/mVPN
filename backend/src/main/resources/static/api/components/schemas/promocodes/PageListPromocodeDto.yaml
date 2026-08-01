@@ -1,0 +1,27 @@
+type: object
+description: Страница со списком промокодов
+properties:
+  content:
+    type: array
+    items:
+      $ref: './PromocodeResponseDto.yaml'
+  totalElements:
+    type: integer
+    format: int64
+    description: Всего записей в БД
+    example: 150
+  totalPages:
+    type: integer
+    format: int32
+    description: Всего страниц
+    example: 15
+  size:
+    type: integer
+    format: int32
+    description: Размер страницы
+    example: 10
+  number:
+    type: integer
+    format: int32
+    description: Номер текущей страницы (начинается с 0)
+    example: 0

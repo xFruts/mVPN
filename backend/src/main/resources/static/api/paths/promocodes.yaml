@@ -4,15 +4,45 @@ PromocodesCollection:
     operationId: getPromocodes
     summary: Получить список всех промокодов
     tags: [Promocodes]
+    parameters:
+      - name: page
+        in: query
+        description: Номер страницы (0..N)
+        schema:
+          type: integer
+          default: 0
+      - name: size
+        in: query
+        description: Количество элементов на странице
+        schema:
+          type: integer
+          default: 10
+      - name: sort
+        in: query
+        description: Сортировка (например, id,desc)
+        schema:
+          type: array
+          items:
+            type: string
+      - name: status
+        in: query
+        description: Фильтр по статусу промокода
+        required: false
+        schema:
+          type: string
+      - name: search
+        in: query
+        description: Поиск по названию промокода
+        required: false
+        schema:
+          type: string
     responses:
       '200':
         description: Список промокодов
         content:
           application/json:
             schema:
-              type: array
-              items:
-                $ref: '../components/schemas/promocodes/PromocodeResponseDto.yaml'
+              $ref: '../components/schemas/promocodes/PageListPromocodeDto.yaml'
       401:
         $ref: '../components/responses/error/Unauthorized.yaml'
       403:

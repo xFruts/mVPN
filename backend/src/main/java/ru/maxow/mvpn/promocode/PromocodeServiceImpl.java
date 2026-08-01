@@ -7,15 +7,23 @@ import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ru.maxow.mvpn.model.CreatePromocodeRequestDto;
+import ru.maxow.mvpn.model.PageListPromocodeDto;
 import ru.maxow.mvpn.model.PromocodeResponseDto;
 import ru.maxow.mvpn.model.PromocodeStatus;
 import ru.maxow.mvpn.tariff.Tariff;
 import ru.maxow.mvpn.tariff.TariffRepository;
 import ru.maxow.mvpn.util.exception.BadRequestException;
 import ru.maxow.mvpn.util.exception.NotFoundException;
+
+import static ru.maxow.mvpn.promocode.PromocodeSpecifications.codeContains;
+import static ru.maxow.mvpn.promocode.PromocodeSpecifications.hasStatus;
+import static ru.maxow.mvpn.util.PaginationUtils.parseSorting;
 
 @Slf4j
 @Service
@@ -51,10 +59,20 @@ public class PromocodeServiceImpl implements  PromocodeService {
 
   @Override
   @Transactional(readOnly = true)
-  public List<PromocodeResponseDto> getPromocodes() {
-    return promocodeRepository.findAll().stream()
-        .map(promocodeMapper::toDto)
-        .toList();
+  public PageListPromocodeDto getPromocodes(Integer page, Integer size, List<String> sort,
+                                            String status, String search) {
+    Specification<Promocode> spec = Specification.where(hasStatus(status))
+        .and(codeContains(search));
+
+    Page<Promocode> promocodes = promocodeRepository.findAll(spec, PageRequest.of(
+        page, size, parseSorting(sort)));
+
+    return new PageListPromocodeDto()
+        .content(promocodes.getContent().stream().map(promocodeMapper::toDto).toList())
+        .totalElements(promocodes.getTotalElements())
+        .totalPages(promocodes.getTotalPages())
+        .size(promocodes.getSize())
+        .number(promocodes.getNumber());
   }
 
   @Override
