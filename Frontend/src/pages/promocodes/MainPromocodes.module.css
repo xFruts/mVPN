@@ -1,0 +1,82 @@
+body[data-theme="light"] {
+    --active-text: #16a34a;
+    --allUsage-text: #0891b2;
+}
+
+body[data-theme="dark"] {
+    --active-text: #4ade80;
+    --allUsage-text: #22d3ee;
+}
+
+.promocode {
+    display: flex;
+    flex-direction: column;
+    padding: 32px;
+    gap: 24px;
+}
+
+.promocodeHeader {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    gap: 5px;
+}
+
+.headerText {
+    font-size: 14px;
+    color: var(--header-text);
+}
+
+.promocodeContent {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+}
+
+.promocodeInfo {
+    display: flex;
+    flex-direction: row;
+    gap: 16px;
+}
+
+.info {
+    flex: 1;
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    background-color: var(--card-bg);
+    border: 1px solid var(--card-border);
+    border-radius: 16px;
+}
+
+.infoText {
+    color: #6b7280;
+    font-weight: 700;
+    font-size: 12px;
+}
+
+.allCodes {
+    font-size: 30px;
+    font-weight: 700;
+    color: var(--text-secondary);
+}
+
+.activeCodes {
+    font-size: 30px;
+    font-weight: 700;
+    color: var(--active-text);
+}
+
+.allUsages {
+    font-size: 30px;
+    font-weight: 700;
+    color: var(--allUsage-text);
+}
+
+@media (max-width: 768px) {
+    .promocodeInfo {
+        flex-direction: column;
+    }
+}

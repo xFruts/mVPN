@@ -1,0 +1,66 @@
+.addPromocode {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+    background-color: var(--card-bg);
+    border: 1px solid var(--card-border);
+    border-radius: 16px;
+    padding: 24px;
+}
+
+.addHeader {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--text-secondary);
+}
+
+.addContent {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 24px;
+}
+
+.inputHeader {
+    font-size: 12px;
+    color: #6b7280;
+    font-weight: 700;
+}
+
+.addFooter {
+    display: flex;
+    justify-content: end;
+}
+
+.addButton {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 700;
+    font-size: 14px;
+    padding: 10px 24px;
+    border: 1px solid var(--border-add);
+    border-radius: 10px;
+    transition: all 0.3s;
+    color: var(--text-add);
+    background-color: var(--bd-add);
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1),
+    0 4px 6px -4px rgba(0, 0, 0, 0.1);
+    cursor: pointer;
+}
+
+.addButton:hover {
+    background: var(--bg-add-hover);
+    border-color: var(--border-add-hover);
+    box-shadow: var(--shadow-add-hover);
+}
+
+.focus:focus {
+    border-color: var(--card-border-focus);
+}
+
+@media (max-width: 768px) {
+    .addContent {
+        flex-direction: column;
+    }
+}

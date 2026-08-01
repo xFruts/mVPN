@@ -166,6 +166,28 @@ input:-webkit-autofill:focus {
     transition: background-color 5000s ease-in-out 0s;
 }
 
+.input {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    gap: 8px;
+}
+
+.inputHeader {
+    color: var(--input-header-text);
+    font-size: 14px;
+    font-weight: 700;
+}
+
+.input input, .input select {
+    padding: 10px 16px;
+    background-color: var(--input-bg);
+    border: 1px solid var(--input-border);
+    color: var(--input-text);
+    border-radius: 12px;
+    outline: none;
+}
+
 .scroll {
     overflow-y: auto;
 }

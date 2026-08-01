@@ -14,10 +14,19 @@ export type SortServerFields =
     | "maxUsers"
     | "ping"
     | "uptime";
+
+export type SortPromocodeFields =
+    | "id"
+    | "code"
+    | "tariffName"
+    | "usage"
+    | "status"
+    | "expirationDate";
 export type SortDirection = "asc" | "desc";
 
 export type SortUserData = `${SortUserFields},${SortDirection}`;
 export type SortServerData = `${SortServerFields},${SortDirection}`;
+export type SortPromocodeData = `${SortPromocodeFields},${SortDirection}`;
 
 export interface BasePaginationParams {
     page: number;
@@ -41,6 +50,14 @@ export interface GetServerData {
     search?: string;
 }
 
+export interface GetPromocodeData {
+    page: number;
+    size: number;
+    sort: SortPromocodeData;
+    status?: string;
+    search?: string;
+}
+
 export interface PageResponse<T> {
     content: T[];
     totalElements: number;
@@ -58,5 +75,11 @@ export interface TitlesUser {
 export interface TitlesServer {
     name: string;
     api: SortServerFields;
+    side: "flex-end" | "flex-start" | "center";
+}
+
+export interface TitlesPromocode {
+    name: string;
+    api: SortPromocodeFields;
     side: "flex-end" | "flex-start" | "center";
 }

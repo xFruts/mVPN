@@ -1,0 +1,252 @@
+body[data-theme="light"] {
+    --table-header-text: #4b5563;
+    --table-tariff-text: #374151;
+    --table-usage-text: #4b5563;
+}
+
+body[data-theme="dark"] {
+    --table-header-text: #6b7280;
+    --table-tariff-text: #e5e7eb;
+    --table-usage-text: #d1d5db;
+}
+
+table tr:hover {
+    background: var(--card-bg);
+}
+
+.tablePromocodes {
+    display: flex;
+    flex-direction: column;
+    background-color: var(--card-bg);
+    border: 1px solid var(--card-border);
+    border-radius: 16px;
+}
+
+.tableFilters {
+    display: flex;
+    flex-direction: row;
+    gap: 12px;
+    padding: 16px;
+    align-items: center;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.tableFilters .input:first-child {
+    flex: 1;
+}
+
+.tableFilters .input:last-child {
+    width: 150px;
+    flex-shrink: 0;
+}
+
+.tableFilters .input {
+    width: 250px;
+}
+
+.input {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.tableHeader {
+    color: var(--table-header-text);
+    font-weight: 700;
+    font-size: 11px;
+}
+
+.tableHeader td {
+    border-top: 1px solid var(--card-border);
+    border-bottom: 1px solid var(--card-border);
+    padding: 0;
+}
+
+.headerText {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 7px;
+    padding: 16px 24px;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.chevron {
+    display: flex;
+    align-items: center;
+}
+
+.headerText:hover {
+    color: #22d3ee;
+}
+
+tbody td {
+    padding: 16px 24px;
+}
+
+.codeName {
+
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 8px;
+}
+
+.name {
+    padding: 4px 8px;
+    border-radius: 6px;
+    font-weight: 700;
+    font-size: 14px;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+    border: 1px solid var(--border-add);
+    color: var(--text-add);
+    background-color: var(--bd-add);
+}
+
+.copy {
+    color: var(--copy-text);
+    transition: all 0.3s;
+    cursor: pointer;
+}
+
+.copy:hover {
+    color: var(--copy-text-hover);
+}
+
+.tariffName {
+    color: var(--table-tariff-text);
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.usage {
+    text-align: center;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+    color: var(--table-usage-text);
+}
+
+.status {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 25px;
+    font-size: 9px;
+    font-weight: 700;
+}
+
+.ACTIVE {
+    background-color: var(--bg-active);
+    color: var(--text-active);
+    border: 1px solid var(--border-active);
+}
+
+.EXPIRED {
+    background-color: var(--bg-expired);
+    color: var(--text-expired);
+    border: 1px solid var(--border-expired);
+}
+
+.USED {
+    background-color: var(--bg-admin);
+    color: var(--text-admin);
+    border: 1px solid var(--border-admin);
+}
+
+.date {
+    color: var(--copy-text);
+    font-size: 12px;
+    font-weight: 500;
+    text-align: right;
+}
+
+.trash {
+    color: var(--copy-text);
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.trash:hover {
+    color: var(--action-delete-text-hover);
+}
+
+.input input,
+.input select {
+    width: 100%;
+    padding: 10px 16px;
+    background-color: var(--input-bg);
+    border: 1px solid var(--input-border);
+    color: var(--input-text);
+    border-radius: 12px;
+    outline: none;
+    box-sizing: border-box;
+}
+
+
+.tableMessage {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #2fd5ef;
+    font-size: 16px;
+    padding: 8px 16px 24px;
+}
+
+
+@media (max-width: 768px) {
+    .trMessage {
+        border: 1px solid var(--border-table);
+        border-radius: 16px;
+    }
+
+    .tablePromocodes {
+        border: none;
+        background: none;
+        gap: 8px;
+    }
+
+    .tableFilters {
+        display: flex;
+        flex-direction: row;
+        gap: 8px;
+        padding: 0;
+        width: 100%;
+        box-sizing: border-box;
+    }
+
+    .tableFilters .input {
+        flex: 1 1 0;
+        min-width: 0;
+        width: 0;
+    }
+
+    .input input,
+    .input select {
+        padding: 10px 8px;
+        font-size: 13px;
+    }
+
+    .mobileTable {
+        display: flex !important;
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .mobileTd {
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        justify-content: space-between;
+        padding: 16px;
+        border: 1px solid var(--card-border);
+        border-radius: 16px;
+        background: var(--bg-table-line);
+    }
+
+    .statusTrash {
+        display: flex;
+        flex-direction: row;
+        gap: 20px;
+        align-items: center;
+    }
+}

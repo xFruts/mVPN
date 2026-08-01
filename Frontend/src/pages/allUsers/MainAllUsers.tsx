@@ -1,11 +1,13 @@
 import FilterAllUsers from "./component/FilterAllUsers/FilterAllUsers.tsx";
 import TableAllUsers from "./component/TableAllUsers/TableAllUsers.tsx";
 import styles from "./AllUsers.module.css";
-import { Plus, RefreshCw } from "lucide-react";
+import { Plus } from "lucide-react";
 import { NavLink } from "react-router";
 import useUsersStore from "../../store/useUsersStore.ts";
 import {useEffect} from "react";
 import {SubscriptionService} from "@api/services/subscriptionService.ts";
+import UpdateButton from "@pages/shared/update/update.tsx";
+import type { GetUserData } from "@/types/general.ts";
 
 export default function MainAllUsers() {
     const { totalElements, fetchUsers, selectedIds, isInitialized, error, isLoading } = useUsersStore();
@@ -21,10 +23,6 @@ export default function MainAllUsers() {
         catch (error)  {
             console.error(error);
         }
-    }
-
-    const handleRefresh = () => {
-        fetchUsers({});
     }
 
     if (!isInitialized) {
@@ -44,9 +42,10 @@ export default function MainAllUsers() {
             <div className={`${styles.allUsersHeader} padding`}>
                 <span className={styles.countText}>Найдено: {totalElements}</span>
                 <div className={styles.usersButton}>
-                    <button className={styles.updateButton} onClick={handleRefresh}>
-                        <RefreshCw size={16} className={isLoading ? styles.spinning  : ""}/>
-                    </button>
+                    <UpdateButton<GetUserData>
+                        isLoading={isLoading}
+                        fetchData={fetchUsers}
+                    />
                     {selectedIds.length > 0 && (
                         <button
                             className={styles.extendButton}

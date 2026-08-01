@@ -1,0 +1,38 @@
+.updateButton {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: var(--bg-update);
+    border: 1px solid var(--border-update);
+    color: var(--text-update);
+    border-radius: 12px;
+    padding: 8px;
+    cursor: pointer;
+    transition: 0.3s;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.spinning {
+    animation: spin 1s linear infinite;
+}
+
+@media (hover: hover) {
+    .updateButton:hover {
+        color: var(--text-update-hover);
+        border-color: var(--border-update-hover)
+    }
+}
+
+.updateButton:active {
+    color: var(--text-update-hover);
+    border-color: var(--border-update-hover)
+}
+
+@keyframes spin {
+    from {
+        transform: rotate(0deg);
+    }
+    to {
+        transform: rotate(360deg);
+    }
+}
