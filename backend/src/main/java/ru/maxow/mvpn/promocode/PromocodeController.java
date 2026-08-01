@@ -8,6 +8,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.RestController;
 import ru.maxow.mvpn.api.PromocodesApi;
 import ru.maxow.mvpn.model.CreatePromocodeRequestDto;
+import ru.maxow.mvpn.model.PageListPromocodeDto;
 import ru.maxow.mvpn.model.PromocodeResponseDto;
 
 
@@ -20,11 +21,6 @@ public class PromocodeController implements PromocodesApi {
   PromocodeService promocodeService;
 
   @Override
-  public List<PromocodeResponseDto> getPromocodes() {
-    return promocodeService.getPromocodes();
-  }
-
-  @Override
   public PromocodeResponseDto createPromocode(CreatePromocodeRequestDto createPromocodeRequestDto) {
     return promocodeService.createPromocode(createPromocodeRequestDto);
   }
@@ -32,5 +28,10 @@ public class PromocodeController implements PromocodesApi {
   @Override
   public void deletePromocode(Long id) {
     promocodeService.deletePromocode(id);
+  }
+
+  @Override
+  public PageListPromocodeDto getPromocodes(Integer page, Integer size, List<String> sort, String status, String search) {
+    return promocodeService.getPromocodes(page, size, sort, status, search);
   }
 }
