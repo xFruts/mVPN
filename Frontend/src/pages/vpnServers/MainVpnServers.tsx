@@ -1,10 +1,12 @@
-import { Plus, RefreshCw } from "lucide-react";
+import { Plus } from "lucide-react";
 import FilterVpnServers from "./components/FilterVpnServers/FilterVpnServers.tsx";
 import TableVpnServers from "./components/TableVpnServers/TableVpnServers.tsx";
 import styles from "./MainVpnServers.module.css";
 import { useEffect } from "react";
 import useServersStore from "@store/useServersStore.ts";
 import ChangeVpnServers from "@pages/vpnServers/components/ChangeVpnServers/ChangeVpnServers.tsx";
+import UpdateButton from "@pages/shared/update/update.tsx";
+import type { GetServerData } from "@/types/general.ts";
 
 export default function MainVpnServers() {
     const {
@@ -21,10 +23,6 @@ export default function MainVpnServers() {
     useEffect(() => {
         fetchServers({});
     }, [fetchServers]);
-
-    const handleRefresh = () => {
-        fetchServers({});
-    }
 
     if (!isInitialized) {
         return <div className={"loadingText"}>Загрузка серверов...</div>;
@@ -45,15 +43,7 @@ export default function MainVpnServers() {
                     Всего серверов: {totalElements}
                 </span>
                 <div className={styles.serversButton}>
-                    <div
-                        className={styles.updateButton}
-                        onClick={handleRefresh}
-                    >
-                        <RefreshCw
-                            size={16}
-                            className={isLoading ? styles.spinning : ""}
-                        />
-                    </div>
+                    <UpdateButton<GetServerData> isLoading={isLoading} fetchData={fetchServers}/>
                     <div
                         className={styles.addButton}
                         onClick={() => {

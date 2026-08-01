@@ -31,6 +31,8 @@ export const USER_STATUS = ["ACTIVE", "EXPIRED", "CANCELLED"] as const;
 
 export const SERVER_STATUS = ["ACTIVE", "INACTIVE", "MAINTENANCE"] as const;
 
+export const PROMOCODE_STATUS = ["ACTIVE", "EXPIRED", "USED"] as const;
+
 export const SERVER_LOCATION = {
     FI: {
         codes: "FI",

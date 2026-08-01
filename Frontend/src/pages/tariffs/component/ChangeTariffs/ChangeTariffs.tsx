@@ -89,7 +89,6 @@ export default function ChangeTariffs({ id, onClose }: { id: number; onClose: ()
     }
 
     const onSubmit = async (data: FormData) => {
-        console.log(data);
         if (id === -1) {
             await TariffService.createTariff(data);
         } else {

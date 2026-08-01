@@ -3,7 +3,7 @@ import styles from "./MainContent.module.css"
 import MainAllUsers from "../allUsers/MainAllUsers.tsx";
 import MainSendMessages from "../sendMessages/MainSendMessages.tsx";
 import MainVpnServers from "../vpnServers/MainVpnServers.tsx";
-import MainPromotional from "../promotional/MainPromotional.tsx";
+import MainPromocodes from "@pages/promocodes/MainPromocodes.tsx";
 import MainTariffs from "@pages/tariffs/MainTariffs.tsx";
 import MainSettings from "../settings/MainSettings.tsx";
 import MainPayment from "@pages/payment/MainPayment.tsx";
@@ -21,7 +21,7 @@ export default function MainContent() {
                 <Route path="/users" Component={MainAllUsers} />
                 <Route path="/sendMessages" Component={MainSendMessages} />
                 <Route path="/servers" Component={MainVpnServers} />
-                <Route path="/promotional" Component={MainPromotional} />
+                <Route path="/promotional" Component={MainPromocodes} />
                 <Route path="/tariffs" Component={MainTariffs} />
                 <Route path="/paying" Component={MainPaying} />
                 <Route path="/settings" Component={MainSettings} />
