@@ -223,6 +223,46 @@ class PaymentVerificationServiceTest {
       assertThat(result).isNotNull();
       verify(repository).findAll(any(Specification.class), any(PageRequest.class));
     }
+
+    @Test
+    @DisplayName("Должен бросить BadRequestException при неподдерживаемом поле сортировки")
+    void shouldRejectUnsupportedSortProperty() {
+      assertThatThrownBy(() -> paymentVerificationService.getAllAsPage(
+          0,
+          10,
+          List.of("user.password,asc"),
+          null,
+          null,
+          null,
+          null))
+          .isInstanceOf(BadRequestException.class)
+          .hasMessageContaining("Unsupported sort property");
+
+      verify(repository, never()).findAll(any(Specification.class), any(PageRequest.class));
+    }
+
+    @Test
+    @DisplayName("Должен применить явную сортировку по разрешённому полю")
+    void shouldApplyAllowedExplicitSort() {
+      when(repository.findAll(any(Specification.class), any(PageRequest.class)))
+          .thenReturn(new PageImpl<>(List.of(), PageRequest.of(0, 10), 0));
+
+      paymentVerificationService.getAllAsPage(
+          0,
+          10,
+          List.of("status,asc"),
+          null,
+          null,
+          null,
+          null);
+
+      ArgumentCaptor<PageRequest> captor = ArgumentCaptor.forClass(PageRequest.class);
+      verify(repository).findAll(any(Specification.class), captor.capture());
+
+      var order = captor.getValue().getSort().getOrderFor("status");
+      assertThat(order).isNotNull();
+      assertThat(order.getDirection().name()).isEqualTo("ASC");
+    }
   }
 
   @Nested
