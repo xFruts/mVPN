@@ -24,12 +24,33 @@ import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.util.List;
+import java.util.Set;
+
+import static ru.maxow.mvpn.payment.paymentverification.PaymentVerificationSpecifications.createdAtFrom;
+import static ru.maxow.mvpn.payment.paymentverification.PaymentVerificationSpecifications.createdAtTo;
+import static ru.maxow.mvpn.payment.paymentverification.PaymentVerificationSpecifications.fullNameContains;
+import static ru.maxow.mvpn.payment.paymentverification.PaymentVerificationSpecifications.hasStatus;
+import static ru.maxow.mvpn.util.PaginationUtils.parseSorting;
 
 @Service
 @Slf4j
 @RequiredArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class PaymentVerificationServiceImpl implements PaymentVerificationService {
+
+  private static final Set<String> ALLOWED_SORT_PROPERTIES = Set.of(
+      "id",
+      "createdAt",
+      "status",
+      "paidAmount",
+      "paidUntilDate",
+      "payerFullName",
+      "verifiedAt",
+      "currency",
+      "user.fullName"
+  );
+
+  private static final Sort DEFAULT_SORT = Sort.by(Sort.Order.desc("createdAt"));
 
   PaymentVerificationMapper mapper;
   PaymentVerificationRepository repository;
@@ -45,14 +66,6 @@ public class PaymentVerificationServiceImpl implements PaymentVerificationServic
       String fullName,
       OffsetDateTime createdFrom,
       OffsetDateTime createdTo) {
-    Sort sorting = (sort == null || sort.isEmpty())
-        ? Sort.by(Sort.Order.desc("createdAt"))
-        : Sort.by(sort.stream().map(s -> {
-          String[] parts = s.split(",");
-          return parts.length == 2 && parts[1].equalsIgnoreCase("desc")
-              ? Sort.Order.desc(parts[0])
-              : Sort.Order.asc(parts[0]);
-        }).toList());
 
     Instant defaultFrom = ZonedDateTime.now(ZoneOffset.UTC)
         .withDayOfMonth(1)
@@ -71,11 +84,11 @@ public class PaymentVerificationServiceImpl implements PaymentVerificationServic
         .where(createdAtFrom(effectiveFrom))
         .and(createdAtTo(effectiveTo))
         .and(hasStatus(status))
-        .and(hasUserFullName(fullName));
+        .and(fullNameContains(fullName));
 
     Page<PaymentVerification> verifications = repository.findAll(
         spec,
-        PageRequest.of(page, size, sorting));
+        PageRequest.of(page, size, parseSorting(sort, ALLOWED_SORT_PROPERTIES, DEFAULT_SORT)));
 
     return new PageListPaymentVerificationDto()
         .content(verifications.getContent().stream().map(mapper::toDto).toList())
@@ -126,29 +139,5 @@ public class PaymentVerificationServiceImpl implements PaymentVerificationServic
     repository.save(verification);
     log.info("Payment verification with id: {} has been rejected", id);
     return mapper.toDto(verification);
-  }
-
-  private Specification<PaymentVerification> hasStatus(VerificationStatus status) {
-    return (root, query, cb) -> status == null
-        ? cb.conjunction()
-        : cb.equal(root.get("status"), status);
-  }
-
-  private Specification<PaymentVerification> createdAtFrom(Instant from) {
-    return (root, query, cb) -> cb.greaterThanOrEqualTo(root.get("createdAt"), from);
-  }
-
-  private Specification<PaymentVerification> createdAtTo(Instant to) {
-    return (root, query, cb) -> cb.lessThanOrEqualTo(root.get("createdAt"), to);
-  }
-
-  private Specification<PaymentVerification> hasUserFullName(String fullName) {
-    return (root, query, cb) -> {
-      if (fullName == null || fullName.isBlank()) {
-        return cb.conjunction();
-      }
-      String pattern = "%" + fullName.trim().toLowerCase() + "%";
-      return cb.like(cb.lower(root.join("user").get("fullName")), pattern);
-    };
   }
 }

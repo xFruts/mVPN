@@ -30,7 +30,9 @@ PaymentVerificationsCollection:
       - name: fullName
         in: query
         required: false
-        description: Поиск по ФИО пользователя (user.fullName, contains, case-insensitive)
+        description: >
+          Поиск по ФИО (contains, case-insensitive) — совпадение по user.fullName
+          или payerFullName заявки
         schema:
           type: string
       - name: createdFrom
