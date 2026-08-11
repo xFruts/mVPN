@@ -2,12 +2,16 @@ package ru.maxow.mvpn.user;
 
 import java.util.List;
 import java.util.UUID;
+import org.springframework.transaction.annotation.Transactional;
 import ru.maxow.mvpn.model.*;
 
 public interface UserService {
 
   PageListUserDto findAllAsPage(Integer page, Integer size, List<String> sort,
                                 String role, String subStatus, String search);
+
+  @Transactional(readOnly = true)
+  List<ListUserDto> findAllAsList();
 
   List<User> findAll();
 

@@ -63,6 +63,8 @@ paths:
 
   /v1/users:
     $ref: './paths/users.yaml#/UsersCollection'
+  /v1/users/list:
+    $ref: './paths/users.yaml#/UsersList'
   /v1/users/{userId}:
     $ref: './paths/users.yaml#/UserSingle'
   /v1/users/{userId}/role:

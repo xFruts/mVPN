@@ -494,6 +494,44 @@ class UserServiceTest {
   }
 
   @Nested
+  @DisplayName("Получение списка всех пользователей")
+  class FindAllAsListTests {
+
+    @Test
+    @DisplayName("Должен вернуть список всех пользователей")
+    void shouldReturnAllUsersAsList() {
+      ListUserDto dto = new ListUserDto()
+          .id(1L)
+          .fullName("John Doe")
+          .role("REGULAR");
+
+      when(userRepository.findAll()).thenReturn(List.of(testUser));
+      when(userMapper.toListUserDto(testUser)).thenReturn(dto);
+
+      List<ListUserDto> result = userService.findAllAsList();
+
+      assertThat(result).hasSize(1);
+      assertThat(result.getFirst().getId()).isEqualTo(1L);
+      assertThat(result.getFirst().getFullName()).isEqualTo("John Doe");
+
+      verify(userRepository).findAll();
+      verify(userMapper).toListUserDto(testUser);
+    }
+
+    @Test
+    @DisplayName("Должен вернуть пустой список, если пользователей нет")
+    void shouldReturnEmptyListWhenNoUsers() {
+      when(userRepository.findAll()).thenReturn(List.of());
+
+      List<ListUserDto> result = userService.findAllAsList();
+
+      assertThat(result).isEmpty();
+      verify(userRepository).findAll();
+      verifyNoInteractions(userMapper);
+    }
+  }
+
+  @Nested
   @DisplayName("Пагинация и сортировка пользователей")
   class FindAllAsPageTests {
 

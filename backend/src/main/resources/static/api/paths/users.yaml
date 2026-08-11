@@ -1,3 +1,22 @@
+UsersList:
+  get:
+    operationId: getUsersList
+    summary: Получить список всех пользователей
+    tags: [Users]
+    responses:
+      '200':
+        description: Список пользователей
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                $ref: '../components/schemas/users/ListUserDto.yaml'
+      401:
+        $ref: '../components/responses/error/Unauthorized.yaml'
+      403:
+        $ref: '../components/responses/error/Forbidden.yaml'
+
 # URL: /v1/users
 UsersCollection:
   get:

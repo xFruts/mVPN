@@ -27,6 +27,11 @@ public class UserController implements UsersApi {
   }
 
   @Override
+  public List<ListUserDto> getUsersList() {
+    return userService.findAllAsList();
+  }
+
+  @Override
   public UserResponseDto createUser(CreateUserRequestDto createUserRequestDto) {
     UserResponseDto createdUser = userService.createUser(createUserRequestDto);
     log.info("User with ID: {} created: ", createdUser.getId());
