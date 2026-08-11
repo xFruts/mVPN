@@ -17,6 +17,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import ru.maxow.mvpn.model.CreateUpdatePaymentVerificationDto;
 import ru.maxow.mvpn.model.PageListPaymentVerificationDto;
 import ru.maxow.mvpn.model.PaymentVerificationResponseDto;
+import ru.maxow.mvpn.model.PaymentVerificationStatsDto;
 import ru.maxow.mvpn.model.VerificationStatus;
 import ru.maxow.mvpn.user.User;
 import ru.maxow.mvpn.user.UserRepository;
@@ -262,6 +263,28 @@ class PaymentVerificationServiceTest {
       var order = captor.getValue().getSort().getOrderFor("status");
       assertThat(order).isNotNull();
       assertThat(order.getDirection().name()).isEqualTo("ASC");
+    }
+  }
+
+  @Nested
+  @DisplayName("Получение статистики заявок")
+  class GetPaymentVerificationStatsTests {
+
+    @Test
+    @DisplayName("Должен вернуть статистику по ожидающим заявкам")
+    void shouldReturnPendingPaymentVerificationStats() {
+      when(repository.countByStatus(VerificationStatus.PENDING)).thenReturn(5L);
+      when(repository.sumPaidAmountByStatus(VerificationStatus.PENDING))
+          .thenReturn(java.math.BigDecimal.valueOf(12500.75));
+
+      PaymentVerificationStatsDto result = paymentVerificationService.getPaymentVerificationStats();
+
+      assertThat(result).isNotNull();
+      assertThat(result.getPendingCount()).isEqualTo(5L);
+      assertThat(result.getPendingAmount()).isEqualTo(12500.75);
+
+      verify(repository).countByStatus(VerificationStatus.PENDING);
+      verify(repository).sumPaidAmountByStatus(VerificationStatus.PENDING);
     }
   }
 

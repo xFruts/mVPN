@@ -22,6 +22,8 @@ paths:
 
   /v1/payment-verifications:
     $ref: './paths/payment-verifications.yaml#/PaymentVerificationsCollection'
+  /v1/payment-verifications/stats:
+    $ref: './paths/payment-verifications.yaml#/PaymentVerificationsStats'
   /v1/payment-verifications/{id}/approve:
     $ref: './paths/payment-verifications.yaml#/PaymentVerificationsApprove'
   /v1/payment-verifications/{id}/reject:

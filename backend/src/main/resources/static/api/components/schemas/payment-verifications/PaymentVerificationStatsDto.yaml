@@ -1,0 +1,16 @@
+type: object
+description: Сводная статистика по заявкам на верификацию платежей
+required:
+  - pendingCount
+  - pendingAmount
+properties:
+  pendingCount:
+    type: integer
+    format: int64
+    description: Количество заявок, ожидающих проверки
+    example: 12
+  pendingAmount:
+    type: number
+    format: double
+    description: Сумма платежей, ожидающих подтверждения
+    example: 18500.50

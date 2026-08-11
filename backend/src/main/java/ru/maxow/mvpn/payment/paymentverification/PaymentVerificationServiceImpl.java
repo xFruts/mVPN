@@ -13,6 +13,7 @@ import org.springframework.transaction.annotation.Transactional;
 import ru.maxow.mvpn.model.CreateUpdatePaymentVerificationDto;
 import ru.maxow.mvpn.model.PageListPaymentVerificationDto;
 import ru.maxow.mvpn.model.PaymentVerificationResponseDto;
+import ru.maxow.mvpn.model.PaymentVerificationStatsDto;
 import ru.maxow.mvpn.model.VerificationStatus;
 import ru.maxow.mvpn.user.User;
 import ru.maxow.mvpn.user.UserRepository;
@@ -96,6 +97,14 @@ public class PaymentVerificationServiceImpl implements PaymentVerificationServic
         .totalPages(verifications.getTotalPages())
         .size(verifications.getSize())
         .number(verifications.getNumber());
+  }
+
+  @Override
+  @Transactional(readOnly = true)
+  public PaymentVerificationStatsDto getPaymentVerificationStats() {
+    return new PaymentVerificationStatsDto()
+        .pendingCount(repository.countByStatus(VerificationStatus.PENDING))
+        .pendingAmount(repository.sumPaidAmountByStatus(VerificationStatus.PENDING).doubleValue());
   }
 
   @Override

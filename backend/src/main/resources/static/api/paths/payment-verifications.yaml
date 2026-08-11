@@ -1,3 +1,20 @@
+PaymentVerificationsStats:
+  get:
+    operationId: getPaymentVerificationStats
+    summary: Получить сводную статистику по заявкам на верификацию платежей
+    tags: [Payment Verifications]
+    responses:
+      '200':
+        description: Статистика по заявкам на верификацию платежей
+        content:
+          application/json:
+            schema:
+              $ref: '../components/schemas/payment-verifications/PaymentVerificationStatsDto.yaml'
+      401:
+        $ref: '../components/responses/error/Unauthorized.yaml'
+      403:
+        $ref: '../components/responses/error/Forbidden.yaml'
+
 # POST /v1/payment-verifications
 PaymentVerificationsCollection:
   get:
