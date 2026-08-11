@@ -10,6 +10,7 @@ import ru.maxow.mvpn.api.PromocodesApi;
 import ru.maxow.mvpn.model.CreatePromocodeRequestDto;
 import ru.maxow.mvpn.model.PageListPromocodeDto;
 import ru.maxow.mvpn.model.PromocodeResponseDto;
+import ru.maxow.mvpn.model.PromocodeStatsDto;
 
 
 @Slf4j
@@ -33,5 +34,10 @@ public class PromocodeController implements PromocodesApi {
   @Override
   public PageListPromocodeDto getPromocodes(Integer page, Integer size, List<String> sort, String status, String search) {
     return promocodeService.getPromocodes(page, size, sort, status, search);
+  }
+
+  @Override
+  public PromocodeStatsDto getPromocodeStats() {
+    return promocodeService.getPromocodeStats();
   }
 }

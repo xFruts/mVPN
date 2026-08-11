@@ -1,0 +1,22 @@
+type: object
+description: Сводная статистика по промокодам
+required:
+  - totalCodes
+  - activeCodes
+  - totalUsages
+properties:
+  totalCodes:
+    type: integer
+    format: int64
+    description: Общее количество промокодов
+    example: 150
+  activeCodes:
+    type: integer
+    format: int64
+    description: Количество активных промокодов
+    example: 42
+  totalUsages:
+    type: integer
+    format: int64
+    description: Общее количество использований промокодов
+    example: 318

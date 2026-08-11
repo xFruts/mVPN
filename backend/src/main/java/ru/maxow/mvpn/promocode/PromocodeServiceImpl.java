@@ -15,6 +15,7 @@ import org.springframework.transaction.annotation.Transactional;
 import ru.maxow.mvpn.model.CreatePromocodeRequestDto;
 import ru.maxow.mvpn.model.PageListPromocodeDto;
 import ru.maxow.mvpn.model.PromocodeResponseDto;
+import ru.maxow.mvpn.model.PromocodeStatsDto;
 import ru.maxow.mvpn.model.PromocodeStatus;
 import ru.maxow.mvpn.tariff.Tariff;
 import ru.maxow.mvpn.tariff.TariffRepository;
@@ -73,6 +74,15 @@ public class PromocodeServiceImpl implements  PromocodeService {
         .totalPages(promocodes.getTotalPages())
         .size(promocodes.getSize())
         .number(promocodes.getNumber());
+  }
+
+  @Override
+  @Transactional(readOnly = true)
+  public PromocodeStatsDto getPromocodeStats() {
+    return new PromocodeStatsDto()
+        .totalCodes(promocodeRepository.count())
+        .activeCodes(promocodeRepository.countByStatus(PromocodeStatus.ACTIVE))
+        .totalUsages(promocodeRepository.sumUsage());
   }
 
   @Override

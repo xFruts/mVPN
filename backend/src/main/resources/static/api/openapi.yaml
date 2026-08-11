@@ -29,6 +29,8 @@ paths:
 
   /v1/promocodes:
     $ref: './paths/promocodes.yaml#/PromocodesCollection'
+  /v1/promocodes/stats:
+    $ref: './paths/promocodes.yaml#/PromocodesStats'
   /v1/promocodes/{id}:
     $ref: './paths/promocodes.yaml#/PromocodeSingle'
 

@@ -1,4 +1,20 @@
-# Группа для пути /v1/promocodes (без ID)
+PromocodesStats:
+  get:
+    operationId: getPromocodeStats
+    summary: Получить сводную статистику по промокодам
+    tags: [Promocodes]
+    responses:
+      '200':
+        description: Статистика по промокодам
+        content:
+          application/json:
+            schema:
+              $ref: '../components/schemas/promocodes/PromocodeStatsDto.yaml'
+      401:
+        $ref: '../components/responses/error/Unauthorized.yaml'
+      403:
+        $ref: '../components/responses/error/Forbidden.yaml'
+
 PromocodesCollection:
   get:
     operationId: getPromocodes
@@ -71,7 +87,6 @@ PromocodesCollection:
       403:
         $ref: '../components/responses/error/Forbidden.yaml'
 
-# Группа для пути /v1/promocodes/{id}
 PromocodeSingle:
   delete:
     operationId: deletePromocode

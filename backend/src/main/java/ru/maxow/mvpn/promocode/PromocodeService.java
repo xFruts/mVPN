@@ -4,6 +4,7 @@ import org.springframework.transaction.annotation.Transactional;
 import ru.maxow.mvpn.model.CreatePromocodeRequestDto;
 import ru.maxow.mvpn.model.PageListPromocodeDto;
 import ru.maxow.mvpn.model.PromocodeResponseDto;
+import ru.maxow.mvpn.model.PromocodeStatsDto;
 
 import java.util.List;
 
@@ -13,6 +14,9 @@ public interface PromocodeService {
   @Transactional(readOnly = true)
   PageListPromocodeDto getPromocodes(Integer page, Integer size, List<String> sort,
                                      String status, String search);
+
+  @Transactional(readOnly = true)
+  PromocodeStatsDto getPromocodeStats();
 
   PromocodeResponseDto usePromocode(String code);
 

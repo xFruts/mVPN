@@ -21,6 +21,7 @@ import org.springframework.data.jpa.domain.Specification;
 import ru.maxow.mvpn.model.CreatePromocodeRequestDto;
 import ru.maxow.mvpn.model.PageListPromocodeDto;
 import ru.maxow.mvpn.model.PromocodeResponseDto;
+import ru.maxow.mvpn.model.PromocodeStatsDto;
 import ru.maxow.mvpn.model.PromocodeStatus;
 import ru.maxow.mvpn.model.TariffPlanResponseDto;
 import ru.maxow.mvpn.tariff.Tariff;
@@ -206,6 +207,30 @@ class PromocodeServiceTest {
 
       verify(promocodeMapper).toDto(promocode);
       verify(promocodeMapper).toDto(second);
+    }
+  }
+
+  @Nested
+  @DisplayName("Получение статистики промокодов")
+  class GetPromocodeStatsTests {
+
+    @Test
+    @DisplayName("Должен вернуть общую статистику по промокодам")
+    void shouldReturnPromocodeStats() {
+      when(promocodeRepository.count()).thenReturn(15L);
+      when(promocodeRepository.countByStatus(PromocodeStatus.ACTIVE)).thenReturn(7L);
+      when(promocodeRepository.sumUsage()).thenReturn(42L);
+
+      PromocodeStatsDto result = promocodeService.getPromocodeStats();
+
+      assertThat(result).isNotNull();
+      assertThat(result.getTotalCodes()).isEqualTo(15L);
+      assertThat(result.getActiveCodes()).isEqualTo(7L);
+      assertThat(result.getTotalUsages()).isEqualTo(42L);
+
+      verify(promocodeRepository).count();
+      verify(promocodeRepository).countByStatus(PromocodeStatus.ACTIVE);
+      verify(promocodeRepository).sumUsage();
     }
   }
 
