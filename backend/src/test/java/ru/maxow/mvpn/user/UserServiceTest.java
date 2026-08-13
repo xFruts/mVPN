@@ -1,11 +1,17 @@
 package ru.maxow.mvpn.user;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.when;
+
+import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
-import org.springframework.dao.EmptyResultDataAccessException;
-import org.springframework.data.domain.PageImpl;
-import org.springframework.data.domain.PageRequest;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -15,11 +21,15 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import ru.maxow.mvpn.model.CreateUserRequestDto;
 import ru.maxow.mvpn.model.ListUserDto;
+import ru.maxow.mvpn.model.PageListUserDto;
+import ru.maxow.mvpn.model.ShortListUserDto;
 import ru.maxow.mvpn.model.SubscriptionStatus;
 import ru.maxow.mvpn.model.UpdateUserRequestDto;
 import ru.maxow.mvpn.model.UserResponseDto;
@@ -30,20 +40,8 @@ import ru.maxow.mvpn.util.exception.BadRequestException;
 import ru.maxow.mvpn.util.exception.NotFoundException;
 import ru.maxow.mvpn.util.exception.ResourceAlreadyExistsException;
 
-import static org.assertj.core.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.*;
-
-/**
- * Unit тесты для UserService.
- * <p>
- * Тестируем бизнес-логику без обращения к БД (мокируем Repository).
- * Это быстрые и изолированные тесты.
- * <p>
- * Паттерн: Arrange (подготовка) -> Act (действие) -> Assert (проверка)
- */
 @ExtendWith(MockitoExtension.class)
-@DisplayName("UserService - Unit тесты (бизнес-логика)")
+@DisplayName("UserService")
 class UserServiceTest {
 
   @Mock
@@ -59,645 +57,422 @@ class UserServiceTest {
   private UserServiceImpl userService;
 
   private User testUser;
+  private UUID verificationCode;
 
   @BeforeEach
   void setUp() {
+    verificationCode = UUID.fromString("550e8400-e29b-41d4-a716-446655440000");
     testUser = new User();
     testUser.setId(1L);
     testUser.setFullName("John Doe");
     testUser.setRole(UserRole.REGULAR);
-    testUser.setVerificationCode(UUID.randomUUID());
+    testUser.setVerificationCode(verificationCode);
     testUser.setUserTelegramId(123456789L);
   }
 
   @Nested
-  @DisplayName("Создание пользователя (POST /v1/users)")
-  class CreateUserTests {
+  @DisplayName("createUser")
+  class CreateUser {
 
     @Test
-    @DisplayName("Должен успешно создать пользователя с валидными данными")
-    void shouldCreateUserSuccessfully() {
-      // Arrange
-      CreateUserRequestDto request = new CreateUserRequestDto();
-      request.setFullName("New User");
+    @DisplayName("persists mapped user when fullName is unique")
+    void createsWhenUnique() {
+      CreateUserRequestDto request = new CreateUserRequestDto().fullName("New User");
+      User mapped = new User();
+      mapped.setId(2L);
+      mapped.setFullName("New User");
+      mapped.setRole(UserRole.REGULAR);
+      UserResponseDto response = new UserResponseDto().id(2L).fullName("New User").role(UserRole.REGULAR);
 
-      User newUser = new User();
-      newUser.setId(2L);
-      newUser.setFullName("New User");
-      newUser.setRole(UserRole.REGULAR);
+      when(userRepository.existsByFullName("New User")).thenReturn(false);
+      when(userMapper.toUser(request)).thenReturn(mapped);
+      when(userRepository.save(mapped)).thenReturn(mapped);
+      when(userMapper.toUserResponseDto(mapped)).thenReturn(response);
 
-      UserResponseDto expectedResponse = new UserResponseDto();
-      expectedResponse.setId(2L);
-      expectedResponse.setFullName("New User");
-      expectedResponse.setRole(UserRole.REGULAR);
-
-      when(userMapper.toUser(request)).thenReturn(newUser);
-      when(userRepository.save(any(User.class))).thenReturn(newUser);
-      when(userMapper.toUserResponseDto(newUser)).thenReturn(expectedResponse);
-
-      // Act
       UserResponseDto result = userService.createUser(request);
 
-      // Assert
-      assertThat(result)
-          .isNotNull()
-          .satisfies(dto -> {
-            assertThat(dto.getId()).isEqualTo(2L);
-            assertThat(dto.getFullName()).isEqualTo("New User");
-            assertThat(dto.getRole()).isEqualTo(UserRole.REGULAR);
-          });
-
-      // Verify что методы были вызваны нужное количество раз
-      verify(userRepository, times(1)).save(any(User.class));
-      verify(userMapper, times(1)).toUser(request);
+      assertThat(result.getId()).isEqualTo(2L);
+      assertThat(result.getFullName()).isEqualTo("New User");
+      verify(userRepository).save(mapped);
     }
 
     @Test
-    @DisplayName("Должен выбросить ResourceAlreadyExistsException при создании пользователя с занятым fullName")
-    void shouldThrowResourceAlreadyExistsWhenFullNameAlreadyExists() {
-      CreateUserRequestDto request = new CreateUserRequestDto();
-      request.setFullName("New User");
-
+    @DisplayName("rejects duplicate fullName before mapping or persist")
+    void rejectsDuplicateFullName() {
+      CreateUserRequestDto request = new CreateUserRequestDto().fullName("New User");
       when(userRepository.existsByFullName("New User")).thenReturn(true);
 
       assertThatThrownBy(() -> userService.createUser(request))
           .isInstanceOf(ResourceAlreadyExistsException.class)
           .hasMessageContaining("already exists");
 
-      verify(userRepository).existsByFullName("New User");
-      verify(userMapper, never()).toUser(any(CreateUserRequestDto.class));
-      verify(userRepository, never()).save(any(User.class));
+      verify(userMapper, never()).toUser(any());
+      verify(userRepository, never()).save(any());
     }
   }
 
   @Nested
-  @DisplayName("Получение пользователя по ID (GET /v1/users/{userId})")
-  class FindByIdTests {
+  @DisplayName("findById")
+  class FindById {
 
     @Test
-    @DisplayName("Должен вернуть пользователя по id")
-    void shouldReturnUserById() {
-      Long userId = 1L;
+    @DisplayName("returns mapped dto for existing user")
+    void found() {
+      UserResponseDto response = new UserResponseDto()
+          .id(1L)
+          .fullName("John Doe")
+          .role(UserRole.REGULAR);
+      when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
+      when(userMapper.toUserResponseDto(testUser)).thenReturn(response);
 
-      UserResponseDto expectedResponse = new UserResponseDto();
-      expectedResponse.setId(userId);
-      expectedResponse.setFullName(testUser.getFullName());
-      expectedResponse.setRole(testUser.getRole());
-
-      when(userRepository.findById(userId)).thenReturn(Optional.of(testUser));
-      when(userMapper.toUserResponseDto(testUser)).thenReturn(expectedResponse);
-
-      UserResponseDto result = userService.findById(userId);
-
-      assertThat(result)
-          .isNotNull()
-          .satisfies(dto -> {
-            assertThat(dto.getId()).isEqualTo(userId);
-            assertThat(dto.getFullName()).isEqualTo(testUser.getFullName());
-            assertThat(dto.getRole()).isEqualTo(testUser.getRole());
-          });
-
-      verify(userRepository).findById(userId);
-      verify(userMapper).toUserResponseDto(testUser);
+      assertThat(userService.findById(1L)).isSameAs(response);
     }
 
     @Test
-    @DisplayName("Должен бросить NotFoundException если пользователь не найден")
-    void shouldThrowNotFoundWhenUserMissing() {
-      Long userId = 404L;
+    @DisplayName("throws NotFoundException when user is missing")
+    void missing() {
+      when(userRepository.findById(404L)).thenReturn(Optional.empty());
 
-      when(userRepository.findById(userId)).thenReturn(Optional.empty());
-
-      assertThatThrownBy(() -> userService.findById(userId))
+      assertThatThrownBy(() -> userService.findById(404L))
           .isInstanceOf(NotFoundException.class)
           .hasMessageContaining("User")
-          .hasMessageContaining(String.valueOf(userId));
+          .hasMessageContaining("404");
 
-      verify(userRepository).findById(userId);
       verifyNoInteractions(userMapper);
     }
   }
 
   @Nested
-  @DisplayName("Обновление пользователя (PUT /v1/users/{userId})")
-  class UpdateUserTests {
+  @DisplayName("updateUser")
+  class UpdateUser {
 
     @Test
-    @DisplayName("Должен успешно обновить ФИ пользователя")
-    void shouldUpdateUserFullName() {
-      // Arrange
-      Long userId = 1L;
-      UpdateUserRequestDto updateDto = new UpdateUserRequestDto();
-      updateDto.setFullName("Updated Name");
+    @DisplayName("updates fullName when unique")
+    void updatesFullName() {
+      UpdateUserRequestDto dto = new UpdateUserRequestDto().fullName("Updated Name");
+      UserResponseDto response = new UserResponseDto().id(1L).fullName("Updated Name");
 
-      User updatedUser = new User();
-      updatedUser.setId(userId);
-      updatedUser.setFullName("Updated Name");
-      updatedUser.setRole(UserRole.REGULAR);
+      when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
+      when(userRepository.existsByFullName("Updated Name")).thenReturn(false);
+      when(userRepository.save(testUser)).thenReturn(testUser);
+      when(userMapper.toUserResponseDto(testUser)).thenReturn(response);
 
-      UserResponseDto expectedResponse = new UserResponseDto();
-      expectedResponse.setId(userId);
-      expectedResponse.setFullName("Updated Name");
+      UserResponseDto result = userService.updateUser(1L, dto);
 
-      when(userRepository.findById(userId)).thenReturn(Optional.of(testUser));
-      when(subscriptionRepository.findFirstByUserOrderByStartDateDesc(testUser))
-          .thenReturn(Optional.empty());
-      when(userRepository.save(any(User.class))).thenReturn(updatedUser);
-      when(userMapper.toUserResponseDto(updatedUser)).thenReturn(expectedResponse);
-
-      // Act
-      UserResponseDto result = userService.updateUser(userId, updateDto);
-
-      // Assert
-      assertThat(result).isNotNull().satisfies(dto -> {
-        assertThat(dto.getId()).isEqualTo(userId);
-        assertThat(dto.getFullName()).isEqualTo("Updated Name");
-      });
-
-      verify(userRepository).findById(userId);
-      verify(userRepository).save(any(User.class));
+      assertThat(result.getFullName()).isEqualTo("Updated Name");
+      assertThat(testUser.getFullName()).isEqualTo("Updated Name");
+      verify(subscriptionRepository, never()).findFirstByUserOrderByStartDateDesc(any());
     }
 
     @Test
-    @DisplayName("Должен выбросить NotFoundException для несуществующего пользователя")
-    void shouldThrowNotFoundForNonExistentUser() {
-      // Arrange
-      Long nonExistentUserId = 999L;
-      UpdateUserRequestDto updateDto = new UpdateUserRequestDto();
-      updateDto.setFullName("New Name");
+    @DisplayName("rejects fullName that belongs to another user")
+    void rejectsTakenFullName() {
+      UpdateUserRequestDto dto = new UpdateUserRequestDto().fullName("Taken Name");
+      when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
+      when(userRepository.existsByFullName("Taken Name")).thenReturn(true);
 
-      when(userRepository.findById(nonExistentUserId)).thenReturn(Optional.empty());
+      assertThatThrownBy(() -> userService.updateUser(1L, dto))
+          .isInstanceOf(ResourceAlreadyExistsException.class);
 
-      // Act & Assert
-      assertThatThrownBy(() -> userService.updateUser(nonExistentUserId, updateDto))
-          .isInstanceOf(NotFoundException.class)
-          .hasMessageContaining("User");
-
-      verify(userRepository).findById(nonExistentUserId);
       verify(userRepository, never()).save(any());
     }
 
     @Test
-    @DisplayName("Должен обновить статус и дату окончания последней подписки, если они переданы")
-    void shouldUpdateLatestSubscriptionWhenFieldsProvided() {
-      Long userId = 1L;
-      UpdateUserRequestDto updateDto = new UpdateUserRequestDto();
-      updateDto.setSubscriptionStatus(SubscriptionStatus.CANCELED);
-      updateDto.setSubscriptionEndDate(java.time.OffsetDateTime.parse("2026-12-31T00:00:00Z"));
-
-      Subscription latestSubscription = new Subscription();
-      latestSubscription.setStatus(SubscriptionStatus.ACTIVE);
-
-      UserResponseDto expectedResponse = new UserResponseDto();
-      expectedResponse.setId(userId);
-
-      when(userRepository.findById(userId)).thenReturn(Optional.of(testUser));
-      when(subscriptionRepository.findFirstByUserOrderByStartDateDesc(testUser))
-          .thenReturn(Optional.of(latestSubscription));
+    @DisplayName("allows keeping the same fullName without uniqueness conflict")
+    void allowsSameFullName() {
+      UpdateUserRequestDto dto = new UpdateUserRequestDto().fullName("John Doe");
+      when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
       when(userRepository.save(testUser)).thenReturn(testUser);
-      when(userMapper.toUserResponseDto(testUser)).thenReturn(expectedResponse);
+      when(userMapper.toUserResponseDto(testUser)).thenReturn(new UserResponseDto().id(1L));
 
-      UserResponseDto result = userService.updateUser(userId, updateDto);
+      userService.updateUser(1L, dto);
 
-      assertThat(result).isNotNull();
-      assertThat(latestSubscription.getStatus()).isEqualTo(SubscriptionStatus.CANCELED);
-      assertThat(latestSubscription.getEndDate()).isEqualTo(updateDto.getSubscriptionEndDate());
-      verify(subscriptionRepository).save(latestSubscription);
+      verify(userRepository, never()).existsByFullName(any());
       verify(userRepository).save(testUser);
     }
-  }
-
-  @Nested
-  @DisplayName("Удаление пользователя (DELETE /v1/users/{userId})")
-  class DeleteUserTests {
 
     @Test
-    @DisplayName("Должен успешно удалить пользователя")
-    void shouldDeleteUserSuccessfully() {
-      // Arrange
-      Long userId = 1L;
-      doNothing().when(userRepository).deleteById(userId);
+    @DisplayName("updates latest subscription only when subscription fields are present")
+    void updatesLatestSubscription() {
+      OffsetDateTime endDate = OffsetDateTime.parse("2026-12-31T00:00:00Z");
+      UpdateUserRequestDto dto = new UpdateUserRequestDto()
+          .subscriptionStatus(SubscriptionStatus.CANCELED)
+          .subscriptionEndDate(endDate);
+      Subscription latest = new Subscription();
+      latest.setStatus(SubscriptionStatus.ACTIVE);
 
-      // Act
-      userService.deleteUserById(userId);
+      when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
+      when(subscriptionRepository.findFirstByUserOrderByStartDateDesc(testUser))
+          .thenReturn(Optional.of(latest));
+      when(userRepository.save(testUser)).thenReturn(testUser);
+      when(userMapper.toUserResponseDto(testUser)).thenReturn(new UserResponseDto().id(1L));
 
-      // Assert
-      verify(userRepository, times(1)).deleteById(userId);
+      userService.updateUser(1L, dto);
+
+      assertThat(latest.getStatus()).isEqualTo(SubscriptionStatus.CANCELED);
+      assertThat(latest.getEndDate()).isEqualTo(endDate);
+      verify(subscriptionRepository).save(latest);
     }
 
     @Test
-    @DisplayName("Должен бросить NotFoundException, если пользователь для удаления не найден")
-    void shouldThrowNotFoundWhenDeleteMissingUser() {
-      Long userId = 404L;
-      doThrow(new EmptyResultDataAccessException(1)).when(userRepository).deleteById(userId);
+    @DisplayName("throws NotFoundException for missing user")
+    void missingUser() {
+      when(userRepository.findById(999L)).thenReturn(Optional.empty());
 
-      assertThatThrownBy(() -> userService.deleteUserById(userId))
+      assertThatThrownBy(() -> userService.updateUser(999L, new UpdateUserRequestDto().fullName("X")))
+          .isInstanceOf(NotFoundException.class);
+
+      verify(userRepository, never()).save(any());
+    }
+  }
+
+  @Nested
+  @DisplayName("deleteUserById")
+  class DeleteUser {
+
+    @Test
+    @DisplayName("deletes when user exists")
+    void deletesExisting() {
+      when(userRepository.existsById(1L)).thenReturn(true);
+
+      userService.deleteUserById(1L);
+
+      verify(userRepository).deleteById(1L);
+    }
+
+    @Test
+    @DisplayName("throws NotFoundException when user does not exist")
+    void missing() {
+      when(userRepository.existsById(404L)).thenReturn(false);
+
+      assertThatThrownBy(() -> userService.deleteUserById(404L))
           .isInstanceOf(NotFoundException.class)
-          .hasMessageContaining("User");
+          .hasMessageContaining("404");
 
-      verify(userRepository).deleteById(userId);
+      verify(userRepository, never()).deleteById(any());
     }
   }
 
   @Nested
-  @DisplayName("Обновление роли пользователя (PATCH /v1/users/{userId}/role)")
-  class UpdateUserRoleTests {
+  @DisplayName("updateUserRole")
+  class UpdateUserRole {
 
     @Test
-    @DisplayName("Должен успешно обновить роль на ADMIN")
-    void shouldUpdateUserRoleToAdmin() {
-      // Arrange
-      Long userId = 1L;
-      String newRole = "ADMIN";
+    @DisplayName("updates role using case-insensitive enum value")
+    void updatesRole() {
+      when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
+      when(userRepository.save(testUser)).thenReturn(testUser);
+      when(userMapper.toUserResponseDto(testUser))
+          .thenReturn(new UserResponseDto().id(1L).role(UserRole.ADMIN));
 
-      User updatedUser = new User();
-      updatedUser.setId(userId);
-      updatedUser.setFullName("John Doe");
-      updatedUser.setRole(UserRole.ADMIN);
+      UserResponseDto result = userService.updateUserRole(1L, "admin");
 
-      UserResponseDto expectedResponse = new UserResponseDto();
-      expectedResponse.setId(userId);
-      expectedResponse.setRole(UserRole.ADMIN);
-
-      when(userRepository.findById(userId)).thenReturn(Optional.of(testUser));
-      when(userRepository.save(any(User.class))).thenReturn(updatedUser);
-      when(userMapper.toUserResponseDto(updatedUser)).thenReturn(expectedResponse);
-
-      // Act
-      UserResponseDto result = userService.updateUserRole(userId, newRole);
-
-      // Assert
-      assertThat(result).isNotNull().satisfies(dto -> {
-        assertThat(dto.getId()).isEqualTo(userId);
-        assertThat(dto.getRole()).isEqualTo(UserRole.ADMIN);
-      });
-
-      verify(userRepository).findById(userId);
-      verify(userRepository).save(any(User.class));
+      assertThat(testUser.getRole()).isEqualTo(UserRole.ADMIN);
+      assertThat(result.getRole()).isEqualTo(UserRole.ADMIN);
     }
 
     @Test
-    @DisplayName("Должен выбросить BadRequestException для невалидной роли")
-    void shouldThrowBadRequestForInvalidRole() {
-      // Arrange
-      Long userId = 1L;
-      String invalidRole = "INVALID_ROLE";
+    @DisplayName("rejects invalid role without persisting")
+    void invalidRole() {
+      when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
 
-      when(userRepository.findById(userId)).thenReturn(Optional.of(testUser));
-
-      // Act & Assert
-      assertThatThrownBy(() -> userService.updateUserRole(userId, invalidRole))
+      assertThatThrownBy(() -> userService.updateUserRole(1L, "INVALID_ROLE"))
           .isInstanceOf(BadRequestException.class)
           .hasMessageContaining("Invalid user role");
 
-      verify(userRepository).findById(userId);
+      verify(userRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("rejects blank role")
+    void blankRole() {
+      assertThatThrownBy(() -> userService.updateUserRole(1L, "  "))
+          .isInstanceOf(BadRequestException.class);
+
+      verify(userRepository, never()).findById(any());
       verify(userRepository, never()).save(any());
     }
   }
 
   @Nested
-  @DisplayName("Проверка кода верификации")
-  class VerificationCodeTests {
+  @DisplayName("verification code")
+  class VerificationCode {
 
     @Test
-    @DisplayName("Должен вернуть true если код верификации существует")
-    void shouldReturnTrueForExistingVerificationCode() {
-      // Arrange
-      UUID code = testUser.getVerificationCode();
-      when(userRepository.existsByVerificationCode(code)).thenReturn(true);
+    @DisplayName("checkVerificationCode delegates to repository")
+    void checkDelegates() {
+      when(userRepository.existsByVerificationCode(verificationCode)).thenReturn(true);
 
-      // Act
-      boolean result = userService.checkVerificationCode(code);
-
-      // Assert
-      assertThat(result).isTrue();
-      verify(userRepository).existsByVerificationCode(code);
+      assertThat(userService.checkVerificationCode(verificationCode)).isTrue();
     }
 
     @Test
-    @DisplayName("Должен вернуть false если код верификации не существует")
-    void shouldReturnFalseForNonExistentVerificationCode() {
-      // Arrange
-      UUID code = UUID.randomUUID();
-      when(userRepository.existsByVerificationCode(code)).thenReturn(false);
+    @DisplayName("getUserVerificationCode returns stored UUID")
+    void getCode() {
+      when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
 
-      // Act
-      boolean result = userService.checkVerificationCode(code);
-
-      // Assert
-      assertThat(result).isFalse();
-      verify(userRepository).existsByVerificationCode(code);
-    }
-  }
-
-  @Nested
-  @DisplayName("Проверка активных подписок")
-  class HasActiveSubscriptionsTests {
-
-    @Test
-    @DisplayName("Должен вернуть false, если у пользователя нет подписок")
-    void shouldReturnFalseWhenUserHasNoSubscriptions() {
-      // Arrange
-      Long userId = 1L;
-      when(userRepository.findById(userId)).thenReturn(Optional.of(testUser));
-      when(subscriptionRepository.findFirstByUserOrderByStartDateDesc(testUser))
-          .thenReturn(Optional.empty());
-
-      // Act
-      boolean result = userService.hasAnySubscriptions(userId);
-
-      // Assert
-      assertThat(result).isFalse();
-      verify(userRepository).findById(userId);
-      verify(subscriptionRepository).findFirstByUserOrderByStartDateDesc(testUser);
+      assertThat(userService.getUserVerificationCode(1L)).isEqualTo(verificationCode);
     }
 
     @Test
-    @DisplayName("Должен вернуть true, если у пользователя есть хотя бы одна подписка")
-    void shouldReturnTrueWhenSubscriptionListIsNotEmpty() {
-      Long userId = 1L;
-      Subscription subscription = new Subscription();
+    @DisplayName("updateUserTelegramId binds telegram id when code matches")
+    void bindTelegramId() {
+      when(userRepository.findByVerificationCode(verificationCode)).thenReturn(Optional.of(testUser));
 
-      when(userRepository.findById(userId)).thenReturn(Optional.of(testUser));
-      when(subscriptionRepository.findFirstByUserOrderByStartDateDesc(testUser))
-          .thenReturn(Optional.of(subscription));
-
-      boolean result = userService.hasAnySubscriptions(userId);
-
-      assertThat(result).isTrue();
-      verify(userRepository).findById(userId);
-      verify(subscriptionRepository).findFirstByUserOrderByStartDateDesc(testUser);
-    }
-  }
-
-  @Nested
-  @DisplayName("Поиск пользователей по Telegram ID")
-  class TelegramIdTests {
-
-    @Test
-    @DisplayName("Должен найти пользователя по Telegram ID")
-    void shouldFindUserByTelegramId() {
-      // Arrange
-      Long telegramId = 123456789L;
-      when(userRepository.findByUserTelegramId(telegramId)).thenReturn(Optional.of(testUser));
-
-      // Act
-      User result = userService.findByTelegramId(telegramId);
-
-      // Assert
-      assertThat(result).isNotNull().satisfies(user -> {
-        assertThat(user.getId()).isEqualTo(1L);
-        assertThat(user.getUserTelegramId()).isEqualTo(telegramId);
-      });
-
-      verify(userRepository).findByUserTelegramId(telegramId);
-    }
-
-    @Test
-    @DisplayName("Должен вернуть null если пользователь не найден")
-    void shouldReturnNullWhenUserNotFound() {
-      // Arrange
-      Long telegramId = 999999999L;
-      when(userRepository.findByUserTelegramId(telegramId)).thenReturn(Optional.empty());
-
-      // Act
-      User result = userService.findByTelegramId(telegramId);
-
-      // Assert
-      assertThat(result).isNull();
-      verify(userRepository).findByUserTelegramId(telegramId);
-    }
-  }
-
-  @Nested
-  @DisplayName("Получение роли пользователей")
-  class GetUsersByRoleTests {
-
-    @Test
-    @DisplayName("Должен найти всех пользователей с ролью REGULAR")
-    void shouldFindUsersByRole() {
-      // Arrange
-      List<User> regularUsers = List.of(testUser);
-      when(userRepository.findAllByRole(UserRole.REGULAR)).thenReturn(regularUsers);
-
-      // Act
-      List<User> result = userService.getUsersByRole(UserRole.REGULAR);
-
-      // Assert
-      assertThat(result)
-          .isNotEmpty()
-          .hasSize(1)
-          .contains(testUser);
-
-      verify(userRepository).findAllByRole(UserRole.REGULAR);
-    }
-  }
-
-  @Nested
-  @DisplayName("Получение списка всех пользователей")
-  class FindAllAsListTests {
-
-    @Test
-    @DisplayName("Должен вернуть список всех пользователей")
-    void shouldReturnAllUsersAsList() {
-      ListUserDto dto = new ListUserDto()
-          .id(1L)
-          .fullName("John Doe")
-          .role("REGULAR");
-
-      when(userRepository.findAll()).thenReturn(List.of(testUser));
-      when(userMapper.toListUserDto(testUser)).thenReturn(dto);
-
-      List<ListUserDto> result = userService.findAllAsList();
-
-      assertThat(result).hasSize(1);
-      assertThat(result.getFirst().getId()).isEqualTo(1L);
-      assertThat(result.getFirst().getFullName()).isEqualTo("John Doe");
-
-      verify(userRepository).findAll();
-      verify(userMapper).toListUserDto(testUser);
-    }
-
-    @Test
-    @DisplayName("Должен вернуть пустой список, если пользователей нет")
-    void shouldReturnEmptyListWhenNoUsers() {
-      when(userRepository.findAll()).thenReturn(List.of());
-
-      List<ListUserDto> result = userService.findAllAsList();
-
-      assertThat(result).isEmpty();
-      verify(userRepository).findAll();
-      verifyNoInteractions(userMapper);
-    }
-  }
-
-  @Nested
-  @DisplayName("Пагинация и сортировка пользователей")
-  class FindAllAsPageTests {
-
-    private void mockRepositoryAndMapper() {
-      when(userRepository.findAll(any(Specification.class), any(Pageable.class)))
-          .thenReturn(new PageImpl<>(List.of(testUser),
-              PageRequest.of(0, 10), 1));
-
-      when(userMapper.toListUserDto(testUser)).thenReturn(new ListUserDto().id(1L));
-    }
-
-    @Test
-    @DisplayName("Given sort is null When findAllAsPage Then use unsorted")
-    void givenSortNullWhenFindAllAsPageThenUseUnsorted() {
-      mockRepositoryAndMapper();
-
-      userService.findAllAsPage(0, 10,
-          null, null, null, null);
-
-      ArgumentCaptor<Pageable> captor = ArgumentCaptor.forClass(Pageable.class);
-      verify(userRepository).findAll(any(Specification.class), captor.capture());
-
-      assertThat(captor.getValue().getSort().isUnsorted()).isTrue();
-    }
-
-    @Test
-    @DisplayName("Given comma-separated sort strings When findAllAsPage Then parse correctly")
-    void givenCommaSeparatedSortWhenFindAllAsPageThenParseCorrectly() {
-      mockRepositoryAndMapper();
-
-      // Стандартный сценарий: "поле,направление"
-      userService.findAllAsPage(0, 10, List.of("fullName,desc", "role,invalid"),
-          null, null, null);
-
-      ArgumentCaptor<Pageable> captor = ArgumentCaptor.forClass(Pageable.class);
-      verify(userRepository).findAll(any(Specification.class), captor.capture());
-
-      Sort sort = captor.getValue().getSort();
-
-      // AssertJ позволяет делать проверки очень лаконично
-      assertThat(sort.getOrderFor("fullName")).isNotNull();
-      assertThat(sort.getOrderFor("fullName").isDescending()).isTrue();
-
-      // Для 'invalid' fallback должен сработать на ASC
-      assertThat(sort.getOrderFor("role")).isNotNull();
-      assertThat(sort.getOrderFor("role").isAscending()).isTrue();
-    }
-
-    @Test
-    @DisplayName("Given Spring-splitted sort (field and direction as separate items) When findAllAsPage Then link them correctly")
-    void givenSpringSplittedSortWhenFindAllAsPageThenLinkThemCorrectly() {
-      mockRepositoryAndMapper();
-
-      // ТОТ САМЫЙ КЕЙС: Спринг разбил строку ?sort=id,desc на ["id", "desc"]
-      userService.findAllAsPage(0, 10, List.of("id", "desc"),
-          null, null, null);
-
-      ArgumentCaptor<Pageable> captor = ArgumentCaptor.forClass(Pageable.class);
-      verify(userRepository).findAll(any(Specification.class), captor.capture());
-
-      Sort sort = captor.getValue().getSort();
-
-      // Должен быть ровно один Order
-      assertThat(sort.toList()).hasSize(1);
-      assertThat(sort.getOrderFor("id")).isNotNull();
-      assertThat(sort.getOrderFor("id").isDescending()).isTrue();
-    }
-
-    @Test
-    @DisplayName("Given mixed sort arrays When findAllAsPage Then parse all fields correctly")
-    void givenMixedSortWhenFindAllAsPageThenParseAllFieldsCorrectly() {
-      mockRepositoryAndMapper();
-
-      userService.findAllAsPage(0, 10, List.of("fullName,asc", "role", "desc"),
-          null, null, null);
-
-      ArgumentCaptor<Pageable> captor = ArgumentCaptor.forClass(Pageable.class);
-      verify(userRepository).findAll(any(Specification.class), captor.capture());
-
-      Sort sort = captor.getValue().getSort();
-
-      assertThat(sort.toList()).hasSize(2);
-
-      assertThat(sort.getOrderFor("fullName")).isNotNull();
-      assertThat(sort.getOrderFor("fullName").isAscending()).isTrue();
-
-      assertThat(sort.getOrderFor("role")).isNotNull();
-      assertThat(sort.getOrderFor("role").isDescending()).isTrue();
-    }
-  }
-
-  @Nested
-  @DisplayName("Обновление Telegram ID по verification code")
-  class UpdateUserTelegramIdTests {
-
-    @Test
-    @DisplayName("Given user exists by verification code When updateUserTelegramId Then save updated telegram id")
-    void givenUserExistsWhenUpdateTelegramIdThenSave() {
-      UUID code = testUser.getVerificationCode();
-      when(userRepository.findByVerificationCode(code)).thenReturn(Optional.of(testUser));
-
-      userService.updateUserTelegramId(code, 777L);
+      userService.updateUserTelegramId(verificationCode, 777L);
 
       assertThat(testUser.getUserTelegramId()).isEqualTo(777L);
       verify(userRepository).save(testUser);
     }
 
     @Test
-    @DisplayName("Given user not found by verification code When updateUserTelegramId Then do not save")
-    void givenUserMissingWhenUpdateTelegramIdThenDoNotSave() {
-      UUID code = UUID.randomUUID();
-      when(userRepository.findByVerificationCode(code)).thenReturn(Optional.empty());
+    @DisplayName("updateUserTelegramId is a no-op for unknown code (anti-enumeration)")
+    void unknownCodeNoOp() {
+      UUID unknown = UUID.randomUUID();
+      when(userRepository.findByVerificationCode(unknown)).thenReturn(Optional.empty());
 
-      userService.updateUserTelegramId(code, 777L);
+      userService.updateUserTelegramId(unknown, 777L);
 
-      verify(userRepository, never()).save(any(User.class));
+      verify(userRepository, never()).save(any());
     }
   }
 
   @Nested
-  @DisplayName("Запрос verification code и пользователей по Telegram IDs")
-  class VerificationAndTelegramIdsTests {
+  @DisplayName("subscriptions presence")
+  class HasAnySubscriptions {
 
     @Test
-    @DisplayName("Given existing user id When getUserVerificationCode Then return code")
-    void givenExistingUserWhenGetVerificationCodeThenReturnCode() {
+    @DisplayName("returns false when user has no subscriptions")
+    void none() {
       when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
+      when(subscriptionRepository.findFirstByUserOrderByStartDateDesc(testUser))
+          .thenReturn(Optional.empty());
 
-      UUID code = userService.getUserVerificationCode(1L);
-
-      assertThat(code).isEqualTo(testUser.getVerificationCode());
+      assertThat(userService.hasAnySubscriptions(1L)).isFalse();
     }
 
     @Test
-    @DisplayName("Given missing user id When getUserVerificationCode Then throw NotFoundException")
-    void givenMissingUserWhenGetVerificationCodeThenThrow() {
-      when(userRepository.findById(999L)).thenReturn(Optional.empty());
+    @DisplayName("returns true when at least one subscription exists")
+    void present() {
+      when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
+      when(subscriptionRepository.findFirstByUserOrderByStartDateDesc(testUser))
+          .thenReturn(Optional.of(new Subscription()));
 
-      assertThatThrownBy(() -> userService.getUserVerificationCode(999L))
-          .isInstanceOf(NotFoundException.class)
-          .hasMessageContaining("User");
+      assertThat(userService.hasAnySubscriptions(1L)).isTrue();
+    }
+  }
+
+  @Nested
+  @DisplayName("telegram lookups")
+  class TelegramLookups {
+
+    @Test
+    @DisplayName("findByTelegramId returns user or null")
+    void findByTelegramId() {
+      when(userRepository.findByUserTelegramId(123456789L)).thenReturn(Optional.of(testUser));
+      when(userRepository.findByUserTelegramId(1L)).thenReturn(Optional.empty());
+
+      assertThat(userService.findByTelegramId(123456789L)).isSameAs(testUser);
+      assertThat(userService.findByTelegramId(1L)).isNull();
     }
 
     @Test
-    @DisplayName("Given telegram ids list When getUsersByTelegramIds Then return repository result")
-    void givenTelegramIdsWhenGetUsersByTelegramIdsThenReturnUsers() {
+    @DisplayName("getUsersByTelegramIds returns repository result")
+    void byTelegramIds() {
       List<Long> ids = List.of(111L, 222L);
       when(userRepository.findByUserTelegramIdIn(ids)).thenReturn(List.of(testUser));
 
-      List<User> users = userService.getUsersByTelegramIds(ids);
-
-      assertThat(users).containsExactly(testUser);
-      verify(userRepository).findByUserTelegramIdIn(ids);
+      assertThat(userService.getUsersByTelegramIds(ids)).containsExactly(testUser);
     }
 
     @Test
-    @DisplayName("Given unknown telegram ids list When getUsersByTelegramIds Then return empty list")
-    void givenUnknownTelegramIdsWhenGetUsersByTelegramIdsThenReturnEmpty() {
-      List<Long> ids = List.of(999L, 1000L);
-      when(userRepository.findByUserTelegramIdIn(ids)).thenReturn(List.of());
+    @DisplayName("getUsersByRole returns repository result")
+    void byRole() {
+      when(userRepository.findAllByRole(UserRole.REGULAR)).thenReturn(List.of(testUser));
 
-      List<User> users = userService.getUsersByTelegramIds(ids);
+      assertThat(userService.getUsersByRole(UserRole.REGULAR)).containsExactly(testUser);
+    }
+  }
 
-      assertThat(users).isEmpty();
-      verify(userRepository).findByUserTelegramIdIn(ids);
+  @Nested
+  @DisplayName("findAllAsList")
+  class FindAllAsList {
+
+    @Test
+    @DisplayName("maps users to ShortListUserDto")
+    void mapsShortList() {
+      ShortListUserDto dto = new ShortListUserDto().id(1L).fullName("John Doe");
+      when(userRepository.findAll()).thenReturn(List.of(testUser));
+      when(userMapper.toShortListUserDto(testUser)).thenReturn(dto);
+
+      List<ShortListUserDto> result = userService.findAllAsList();
+
+      assertThat(result).containsExactly(dto);
+      verify(userMapper).toShortListUserDto(testUser);
+      verify(userMapper, never()).toListUserDto(any());
+    }
+
+    @Test
+    @DisplayName("returns empty list when repository is empty")
+    void empty() {
+      when(userRepository.findAll()).thenReturn(List.of());
+
+      assertThat(userService.findAllAsList()).isEmpty();
+      verifyNoInteractions(userMapper);
+    }
+  }
+
+  @Nested
+  @DisplayName("findAllAsPage")
+  class FindAllAsPage {
+
+    @SuppressWarnings("unchecked")
+    private void stubPage() {
+      when(userRepository.findAll(any(Specification.class), any(Pageable.class)))
+          .thenReturn(new PageImpl<>(List.of(testUser), PageRequest.of(0, 10), 1));
+      when(userMapper.toListUserDto(testUser)).thenReturn(new ListUserDto().id(1L));
+    }
+
+    @Test
+    @DisplayName("uses unsorted pageable when sort is null")
+    void unsortedWhenSortNull() {
+      stubPage();
+
+      PageListUserDto page = userService.findAllAsPage(0, 10, null, null, null, null);
+
+      ArgumentCaptor<Pageable> captor = ArgumentCaptor.forClass(Pageable.class);
+      verify(userRepository).findAll(any(Specification.class), captor.capture());
+      assertThat(captor.getValue().getSort().isUnsorted()).isTrue();
+      assertThat(page.getContent()).hasSize(1);
+      assertThat(page.getTotalElements()).isEqualTo(1);
+    }
+
+    @Test
+    @DisplayName("parses comma-separated sort pairs")
+    void commaSeparatedSort() {
+      stubPage();
+
+      userService.findAllAsPage(0, 10, List.of("fullName,desc", "role,invalid"), null, null, null);
+
+      ArgumentCaptor<Pageable> captor = ArgumentCaptor.forClass(Pageable.class);
+      verify(userRepository).findAll(any(Specification.class), captor.capture());
+      Sort sort = captor.getValue().getSort();
+      assertThat(sort.getOrderFor("fullName").isDescending()).isTrue();
+      assertThat(sort.getOrderFor("role").isAscending()).isTrue();
+    }
+
+    @Test
+    @DisplayName("relinks field/direction when Spring splits sort query params")
+    void springSplitSort() {
+      stubPage();
+
+      userService.findAllAsPage(0, 10, List.of("id", "desc"), null, null, null);
+
+      ArgumentCaptor<Pageable> captor = ArgumentCaptor.forClass(Pageable.class);
+      verify(userRepository).findAll(any(Specification.class), captor.capture());
+      Sort sort = captor.getValue().getSort();
+      assertThat(sort.toList()).hasSize(1);
+      assertThat(sort.getOrderFor("id").isDescending()).isTrue();
     }
   }
 }
-

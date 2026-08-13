@@ -42,7 +42,7 @@ public class User {
 
   @Enumerated(EnumType.STRING)
   @Column(nullable = false)
-  UserRole role =  UserRole.REGULAR;
+  UserRole role = UserRole.REGULAR;
 
   @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
   List<Subscription> subscriptions = new ArrayList<>();

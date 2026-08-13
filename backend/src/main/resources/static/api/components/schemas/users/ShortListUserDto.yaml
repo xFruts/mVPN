@@ -1,0 +1,8 @@
+type: object
+properties:
+  id:
+    type: integer
+    format: int64
+  fullName:
+    type: string
+    example: "Иванов Иван"

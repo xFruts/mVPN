@@ -3,7 +3,12 @@ package ru.maxow.mvpn.user;
 import java.util.List;
 import java.util.UUID;
 import org.springframework.transaction.annotation.Transactional;
-import ru.maxow.mvpn.model.*;
+import ru.maxow.mvpn.model.CreateUserRequestDto;
+import ru.maxow.mvpn.model.PageListUserDto;
+import ru.maxow.mvpn.model.ShortListUserDto;
+import ru.maxow.mvpn.model.UpdateUserRequestDto;
+import ru.maxow.mvpn.model.UserResponseDto;
+import ru.maxow.mvpn.model.UserRole;
 
 public interface UserService {
 
@@ -11,7 +16,7 @@ public interface UserService {
                                 String role, String subStatus, String search);
 
   @Transactional(readOnly = true)
-  List<ListUserDto> findAllAsList();
+  List<ShortListUserDto> findAllAsList();
 
   List<User> findAll();
 
@@ -34,7 +39,6 @@ public interface UserService {
   List<User> getUsersByTelegramIds(List<Long> ids);
 
   List<User> getUsersByRole(UserRole role);
-
 
   boolean hasAnySubscriptions(Long userId);
 

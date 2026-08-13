@@ -5,13 +5,13 @@ UsersList:
     tags: [Users]
     responses:
       '200':
-        description: Список пользователей
+        description: Список пользователей (только id и fullName)
         content:
           application/json:
             schema:
               type: array
               items:
-                $ref: '../components/schemas/users/ListUserDto.yaml'
+                $ref: '../components/schemas/users/ShortListUserDto.yaml'
       401:
         $ref: '../components/responses/error/Unauthorized.yaml'
       403:

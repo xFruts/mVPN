@@ -7,6 +7,7 @@ import java.util.Optional;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest;
@@ -14,7 +15,7 @@ import org.springframework.boot.jpa.test.autoconfigure.TestEntityManager;
 import ru.maxow.mvpn.model.UserRole;
 
 @DataJpaTest
-@DisplayName("UserRepository Integration Tests")
+@DisplayName("UserRepository")
 class UserRepositoryTest {
 
   @Autowired
@@ -24,133 +25,139 @@ class UserRepositoryTest {
   private TestEntityManager entityManager;
 
   private User testUser;
+  private UUID verificationCode;
 
   @BeforeEach
   void setUp() {
+    verificationCode = UUID.fromString("11111111-1111-1111-1111-111111111111");
     testUser = new User();
     testUser.setFullName("Test User");
     testUser.setRole(UserRole.REGULAR);
     testUser.setUserTelegramId(12345L);
-    testUser.setVerificationCode(UUID.randomUUID());
+    testUser.setVerificationCode(verificationCode);
   }
 
-  @Test
-  @DisplayName("findByVerificationCode: находит пользователя")
-  void findByVerificationCode_found() {
-    entityManager.persistAndFlush(testUser);
+  @Nested
+  @DisplayName("verification code")
+  class VerificationCode {
 
-    Optional<User> found = userRepository.findByVerificationCode(testUser.getVerificationCode());
+    @Test
+    @DisplayName("findByVerificationCode returns user for known code")
+    void findFound() {
+      entityManager.persistAndFlush(testUser);
 
-    assertThat(found).isPresent();
-    assertThat(found.get().getFullName()).isEqualTo("Test User");
+      Optional<User> found = userRepository.findByVerificationCode(verificationCode);
+
+      assertThat(found).isPresent();
+      assertThat(found.get().getFullName()).isEqualTo("Test User");
+    }
+
+    @Test
+    @DisplayName("findByVerificationCode is empty for unknown code")
+    void findMissing() {
+      assertThat(userRepository.findByVerificationCode(UUID.randomUUID())).isEmpty();
+    }
+
+    @Test
+    @DisplayName("existsByVerificationCode reflects presence")
+    void exists() {
+      entityManager.persistAndFlush(testUser);
+
+      assertThat(userRepository.existsByVerificationCode(verificationCode)).isTrue();
+      assertThat(userRepository.existsByVerificationCode(UUID.randomUUID())).isFalse();
+    }
   }
 
-  @Test
-  @DisplayName("Должен вернуть Optional.empty, если verification code не существует")
-  void testFindByVerificationCode_NotFound() {
-    // Arrange
-    UUID nonExistentCode = UUID.randomUUID();
+  @Nested
+  @DisplayName("identity lookups")
+  class IdentityLookups {
 
-    // Act
-    Optional<User> found = userRepository.findByVerificationCode(nonExistentCode);
+    @Test
+    @DisplayName("existsByFullName is true only for exact stored name")
+    void existsByFullName() {
+      entityManager.persistAndFlush(testUser);
 
-    // Assert
-    assertThat(found).isEmpty();
+      assertThat(userRepository.existsByFullName("Test User")).isTrue();
+      assertThat(userRepository.existsByFullName("Other User")).isFalse();
+    }
+
+    @Test
+    @DisplayName("findByUserTelegramId returns matching user")
+    void findByTelegramId() {
+      entityManager.persistAndFlush(testUser);
+
+      assertThat(userRepository.findByUserTelegramId(12345L))
+          .isPresent()
+          .get()
+          .extracting(User::getFullName)
+          .isEqualTo("Test User");
+      assertThat(userRepository.findByUserTelegramId(999999L)).isEmpty();
+    }
+
+    @Test
+    @DisplayName("findByUserTelegramIdIn returns only matching users")
+    void findByTelegramIds() {
+      User second = new User();
+      second.setFullName("Second User");
+      second.setRole(UserRole.REGULAR);
+      second.setUserTelegramId(22222L);
+
+      entityManager.persistAndFlush(testUser);
+      entityManager.persistAndFlush(second);
+
+      List<User> found = userRepository.findByUserTelegramIdIn(List.of(12345L, 99999L));
+
+      assertThat(found)
+          .extracting(User::getUserTelegramId)
+          .containsExactly(12345L);
+    }
   }
 
-  @Test
-  @DisplayName("existsByVerificationCode: true для существующего кода")
-  void existsByVerificationCode_true() {
-    entityManager.persistAndFlush(testUser);
+  @Nested
+  @DisplayName("role queries")
+  class RoleQueries {
 
-    assertThat(userRepository.existsByVerificationCode(testUser.getVerificationCode())).isTrue();
+    @Test
+    @DisplayName("findAllByRole returns only users with requested role")
+    void findByRole() {
+      User admin = new User();
+      admin.setFullName("Admin");
+      admin.setRole(UserRole.ADMIN);
+
+      entityManager.persistAndFlush(testUser);
+      entityManager.persistAndFlush(admin);
+
+      assertThat(userRepository.findAllByRole(UserRole.REGULAR))
+          .extracting(User::getFullName)
+          .containsExactly("Test User");
+      assertThat(userRepository.findAllByRole(UserRole.SPECIAL)).isEmpty();
+    }
   }
 
-  @Test
-  @DisplayName("Должен вернуть false, если verification code не существует")
-  void testExistsByVerificationCode_NotExists() {
-    // Arrange
-    UUID nonExistentCode = UUID.randomUUID();
+  @Nested
+  @DisplayName("persistence")
+  class Persistence {
 
-    // Act
-    boolean exists = userRepository.existsByVerificationCode(nonExistentCode);
+    @Test
+    @DisplayName("save assigns id and persists defaults")
+    void save() {
+      User saved = userRepository.saveAndFlush(testUser);
 
-    // Assert
-    assertThat(exists).isFalse();
-  }
+      assertThat(saved.getId()).isNotNull();
+      assertThat(saved.getVerificationCode()).isEqualTo(verificationCode);
+      assertThat(userRepository.findById(saved.getId())).isPresent();
+    }
 
-  @Test
-  @DisplayName("findByUserTelegramId: находит пользователя")
-  void findByUserTelegramId_found() {
-    entityManager.persistAndFlush(testUser);
+    @Test
+    @DisplayName("deleteById removes persisted user")
+    void delete() {
+      User saved = userRepository.saveAndFlush(testUser);
+      Long id = saved.getId();
 
-    Optional<User> found = userRepository.findByUserTelegramId(12345L);
+      userRepository.deleteById(id);
+      entityManager.flush();
 
-    assertThat(found).isPresent();
-    assertThat(found.get().getUserTelegramId()).isEqualTo(12345L);
-  }
-
-  @Test
-  @DisplayName("Должен вернуть Optional.empty, если Telegram ID не существует")
-  void testFindByUserTelegramId_NotFound() {
-    // Arrange
-    Long nonExistentTelegramId = 999999L;
-
-    // Act
-    Optional<User> found = userRepository.findByUserTelegramId(nonExistentTelegramId);
-
-    // Assert
-    assertThat(found).isEmpty();
-  }
-
-  @Test
-  @DisplayName("findAllByRole: возвращает пользователей только с нужной ролью")
-  void findAllByRole_regularOnly() {
-    User admin = new User();
-    admin.setFullName("Admin");
-    admin.setRole(UserRole.ADMIN);
-
-    entityManager.persistAndFlush(testUser);
-    entityManager.persistAndFlush(admin);
-
-    List<User> users = userRepository.findAllByRole(UserRole.REGULAR);
-
-    assertThat(users).hasSize(1);
-    assertThat(users.getFirst().getRole()).isEqualTo(UserRole.REGULAR);
-  }
-
-  @Test
-  @DisplayName("Должен вернуть пустой список, если нет пользователей с указанной ролью")
-  void testFindAllByRole_NoUsers() {
-    // Arrange
-    User regularUser = new User();
-    regularUser.setFullName("Regular User");
-    regularUser.setRole(UserRole.REGULAR);
-    userRepository.save(regularUser);
-
-    // Act
-    List<User> adminUsers = userRepository.findAllByRole(UserRole.ADMIN);
-
-    // Assert
-    assertThat(adminUsers).isEmpty();
-  }
-
-  @Test
-  @DisplayName("save: сохраняет пользователя")
-  void save_success() {
-    User saved = userRepository.save(testUser);
-
-    assertThat(saved.getId()).isNotNull();
-    assertThat(saved.getFullName()).isEqualTo("Test User");
-  }
-
-  @Test
-  @DisplayName("deleteById: удаляет пользователя")
-  void deleteById_success() {
-    User saved = userRepository.save(testUser);
-
-    userRepository.deleteById(saved.getId());
-
-    assertThat(userRepository.findById(saved.getId())).isEmpty();
+      assertThat(userRepository.findById(id)).isEmpty();
+    }
   }
 }
