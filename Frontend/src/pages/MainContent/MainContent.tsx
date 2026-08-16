@@ -11,8 +11,19 @@ import ChangeUsers from "../allUsers/component/ChangeUsers/ChangeUsers.tsx";
 import MainPaying from "../paying/MainPaying.tsx"
 import MainSubscription from "@pages/subscription/MainSubscription.tsx";
 import MainLanding from "@pages/landing/MainLanding.tsx";
+import { useErrorStore } from "@store/useErrorStore.ts";
 
 export default function MainContent() {
+    const { criticalError } = useErrorStore();
+
+    if (criticalError) {
+        return (
+            <div className={styles.errorText}>
+                {criticalError === 500 ? ("Ошибка сервера") : ("Проблемы с интернетом")}
+            </div>
+        );
+    }
+
     return (
         <div className={styles.mainContent}>
             <Routes>
@@ -23,7 +34,7 @@ export default function MainContent() {
                 <Route path="/servers" Component={MainVpnServers} />
                 <Route path="/promotional" Component={MainPromocodes} />
                 <Route path="/tariffs" Component={MainTariffs} />
-                <Route path="/paying" Component={MainPaying} />
+                <Route path="/paying/*" Component={MainPaying} />
                 <Route path="/settings" Component={MainSettings} />
                 <Route path="/subscription" Component={MainSubscription} />
                 <Route path="/landing" Component={MainLanding} />

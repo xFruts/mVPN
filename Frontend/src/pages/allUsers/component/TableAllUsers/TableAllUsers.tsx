@@ -59,7 +59,6 @@ export default function TableAllUsers() {
         totalPages,
         totalElements,
         filters,
-        setParams,
         fetchUsers,
         selectedIds,
         isOpen,
@@ -87,7 +86,7 @@ export default function TableAllUsers() {
             newSort = "id,asc";
         }
 
-        setParams({sort: newSort});
+        void fetchUsers({ sort: newSort });
     };
 
     useEffect(() => {
@@ -338,7 +337,7 @@ export default function TableAllUsers() {
             {totalElements > 0 && (
                 <Pagination
                     filters={filters as GetUserData}
-                    setParams={setParams}
+                    fetchData={fetchUsers}
                     totalElements={totalElements}
                     totalPages={totalPages}
                 />
@@ -347,17 +346,17 @@ export default function TableAllUsers() {
                 <Configuration userId={selectedConfigUserId} />
             )}
             {totalElements === 0 && (
-            <div className={styles.trMessage}>
-                <div className={styles.tableMessage}>
-                    {error ? (
-                        <span className={styles.error}>
-                            Ошибка {error.statusCode}: {error.message}
-                        </span>
-                    ) : (
-                        <span>Пользователи не найдены</span>
-                    )}
+                <div className={styles.trMessage}>
+                    <div className={styles.tableMessage}>
+                        {error ? (
+                            <span className={styles.error}>
+                                Ошибка {error.statusCode}: {error.message}
+                            </span>
+                        ) : (
+                            <span>Пользователи не найдены</span>
+                        )}
+                    </div>
                 </div>
-            </div>
             )}
         </div>
     );

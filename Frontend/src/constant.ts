@@ -33,6 +33,8 @@ export const SERVER_STATUS = ["ACTIVE", "INACTIVE", "MAINTENANCE"] as const;
 
 export const PROMOCODE_STATUS = ["ACTIVE", "EXPIRED", "USED"] as const;
 
+export const PAYING_STATUS = ["PENDING", "APPROVED", "REJECTED"] as const;
+
 export const SERVER_LOCATION = {
     FI: {
         codes: "FI",

@@ -8,26 +8,6 @@ body[data-theme="dark"] {
     --allUsage-text: #22d3ee;
 }
 
-.promocode {
-    display: flex;
-    flex-direction: column;
-    padding: 32px;
-    gap: 24px;
-}
-
-.promocodeHeader {
-    display: flex;
-    flex-direction: row;
-    justify-content: space-between;
-    align-items: center;
-    gap: 5px;
-}
-
-.headerText {
-    font-size: 14px;
-    color: var(--header-text);
-}
-
 .promocodeContent {
     display: flex;
     flex-direction: column;
@@ -73,6 +53,10 @@ body[data-theme="dark"] {
     font-size: 30px;
     font-weight: 700;
     color: var(--allUsage-text);
+}
+
+.padding {
+    padding-bottom: 24px;
 }
 
 @media (max-width: 768px) {

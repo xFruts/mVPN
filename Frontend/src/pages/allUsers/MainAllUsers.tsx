@@ -10,7 +10,7 @@ import UpdateButton from "@pages/shared/update/update.tsx";
 import type { GetUserData } from "@/types/general.ts";
 
 export default function MainAllUsers() {
-    const { totalElements, fetchUsers, selectedIds, isInitialized, error, isLoading } = useUsersStore();
+    const { totalElements, fetchUsers, selectedIds, isInitialized, isLoading } = useUsersStore();
     useEffect(() => {
         fetchUsers({});
     }, [fetchUsers]);
@@ -29,18 +29,10 @@ export default function MainAllUsers() {
         return <div className={"loadingText"}>Загрузка пользователей...</div>;
     }
 
-    if (error && error.statusCode >= 500) {
-        return (
-            <div className={styles.errorText}>
-                Ошибка сервера ({error.statusCode}): {error.message}
-            </div>
-        );
-    }
-
     return (
-        <div className={styles.allUsersContent}>
-            <div className={`${styles.allUsersHeader} padding`}>
-                <span className={styles.countText}>Найдено: {totalElements}</span>
+        <div className={"component"}>
+            <div className={`componentHeader padding`}>
+                <span className={"componentText"}>Найдено: {totalElements}</span>
                 <div className={styles.usersButton}>
                     <UpdateButton<GetUserData>
                         isLoading={isLoading}
@@ -55,7 +47,7 @@ export default function MainAllUsers() {
                         </button>
                     )}
                     <NavLink to={"/users/add"} className="navLink">
-                        <div className={styles.addButton}>
+                        <div className={"addButton"}>
                             <Plus size={16} />
                             <span>
                                 Добавить <span className={"PC"}>пользователя</span>

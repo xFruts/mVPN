@@ -3,7 +3,8 @@ import { immer } from "zustand/middleware/immer";
 import type { Servers } from "@typings/server";
 import type { GetServerData } from "@/types/general.ts";
 import { ServerService } from "@api/services/serverService.ts";
-import type { ApiError } from "@api/types.ts";
+import type { ApiErrorType } from "@api/types.ts";
+import { createDataFetcher } from "@pages/shared/setParams.ts";
 
 interface ServersState {
     servers: Servers[];
@@ -11,10 +12,9 @@ interface ServersState {
     totalPages: number;
     isInitialized: boolean;
     isLoading: boolean;
-    error: ApiError | null;
-    filters: Partial<GetServerData>;
-    setParams: (params: Partial<GetServerData>) => void;
-    fetchServers: (params?: Partial<GetServerData>) => Promise<void>;
+    error: ApiErrorType | null;
+    filters: GetServerData;
+    fetchServers: (newParams: Partial<GetServerData>) => Promise<void>;
     isChangeOpen: boolean;
     isOpen: number;
     setIsChangeOpen: (value: boolean) => void;
@@ -34,90 +34,12 @@ const useServersStore = create<ServersState>()(
             size: 12,
             sort: "id,asc",
         },
-        setParams: (newParams) => {
-            set((state) => {
-                const updatedFilters = { ...state.filters, ...newParams };
-
-                if (newParams.page === undefined) {
-                    updatedFilters.page = 0;
-                }
-
-                Object.keys(newParams).forEach((key) => {
-                    const k = key as keyof GetServerData;
-                    if (
-                        updatedFilters[k] === "" ||
-                        updatedFilters[k] === null ||
-                        updatedFilters[k] === undefined
-                    ) {
-                        delete updatedFilters[k];
-                    }
-                });
-
-                state.filters = updatedFilters;
-            });
-
-            get().fetchServers();
-        },
-        fetchServers: async (newParams) => {
-            set({ isLoading: true });
-            const currentFilters = { ...get().filters, ...newParams };
-
-            try {
-                const data = await ServerService.getServers(currentFilters);
-
-                set((state) => {
-                    state.servers = data.content;
-                    state.totalElements = data.totalElements;
-                    state.totalPages = data.totalPages;
-                    state.filters = currentFilters;
-                    state.isInitialized = true;
-                    state.isLoading = false;
-                    state.error = null;
-                });
-            } catch (e: unknown) {
-                let status = 500;
-                let message = "Произошла ошибка при загрузке серверов";
-
-                if (e && typeof e === "object") {
-                    const err = e as Record<string, unknown>;
-
-                    if (typeof err.statusCode === "number") {
-                        status = err.statusCode;
-                    } else if (
-                        err.response &&
-                        typeof err.response === "object"
-                    ) {
-                        const resp = err.response as Record<string, unknown>;
-                        if (typeof resp.status === "number")
-                            status = resp.status;
-                    }
-
-                    if (typeof err.message === "string") {
-                        message = err.message;
-                    }
-                }
-
-                const errorMap: Record<number, string> = {
-                    0: "Нет подключения к интернету",
-                    400: "Неверный запрос",
-                    401: "Нужна авторизация",
-                    403: "Доступ ограничен",
-                    404: "Серверы не найдены",
-                    500: "Внутренняя ошибка сервера",
-                };
-
-                const finalError: ApiError = {
-                    statusCode: status,
-                    message: errorMap[status] || message,
-                };
-
-                set((state) => {
-                    state.error = finalError;
-                    state.isInitialized = true;
-                    state.isLoading = false;
-                });
-            }
-        },
+        fetchServers: createDataFetcher(
+            ServerService.getServers,
+            get,
+            set,
+            "servers",
+        ),
         isChangeOpen: false,
         isOpen: -1,
         setIsChangeOpen: (value: boolean) =>

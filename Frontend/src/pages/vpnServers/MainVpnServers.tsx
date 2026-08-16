@@ -37,15 +37,15 @@ export default function MainVpnServers() {
     }
 
     return (
-        <div className={styles.serversContent}>
-            <div className={`${styles.serversHeader} ${styles.padding}`}>
-                <span className={styles.headerText}>
+        <div className="component">
+            <div className={`componentHeader ${styles.padding}`}>
+                <span className="componentText">
                     Всего серверов: {totalElements}
                 </span>
                 <div className={styles.serversButton}>
                     <UpdateButton<GetServerData> isLoading={isLoading} fetchData={fetchServers}/>
                     <div
-                        className={styles.addButton}
+                        className={"addButton"}
                         onClick={() => {
                             setIsChangeOpen(true);
                             setIsOpen(-1);

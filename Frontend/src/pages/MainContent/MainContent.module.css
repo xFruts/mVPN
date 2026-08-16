@@ -26,3 +26,12 @@ body[data-theme="dark"] {
     background-image: var(--grad-display);
     background-attachment: fixed;
 }
+
+.errorText {
+    height: 100vh;
+    width: 100%;
+    text-align: center;
+    padding-top: 50px;
+    font-size: 18px;
+    color: red;
+}

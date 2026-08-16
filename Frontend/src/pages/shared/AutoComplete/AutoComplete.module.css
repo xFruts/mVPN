@@ -1,0 +1,42 @@
+.container {
+    position: relative;
+    width: 100%;
+}
+
+.input {
+    width: 416px;
+    padding: 10px;
+    border-radius: 8px;
+    background-color: var(--input-bg);
+    border: 1px solid var(--input-border);
+    color: var(--input-text);
+}
+
+.dropdown {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    margin: 5px 0 0 0;
+    padding: 0;
+    list-style: none;
+    background-color: var(--input-bg);
+    border: 1px solid var(--input-border);
+    color: var(--input-text);
+    border-radius: 8px;
+    max-height: 200px;
+    overflow-y: auto;
+    z-index: 1001;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+}
+
+.item {
+    padding: 10px;
+    cursor: pointer;
+    color: #ccc;
+}
+
+.item:hover {
+    background: var(--bg-table-line-hover);
+    color: white;
+}

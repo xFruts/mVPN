@@ -1,0 +1,77 @@
+body[data-theme="light"] {
+    --paying-close-bg-hover: #f3f4f6;
+}
+
+body[data-theme="dark"] {
+    --paying-close-bg-hover: #1f2937;
+}
+
+.modal {
+    background: var(--modal-bg);
+    width: 100%;
+    max-width: 450px;
+    max-height: 70vh;
+    border: 1px solid var(--modal-border);
+    border-radius: 24px;
+    position: relative;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    padding: 24px;
+    gap: 24px;
+}
+
+.modalHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    color: var(--text-secondary);
+    font-size: 20px;
+    font-weight: 700;
+}
+
+.close {
+    color: #6b7280;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 12px;
+    transition: all 0.3s;
+    cursor: pointer;
+    padding: 8px;
+}
+
+.close:hover {
+    background: var(--paying-close-bg-hover);
+}
+
+.modalContent {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.inputHeader {
+    color: #6b7280;
+    font-weight: 700;
+    font-size: 12px;
+}
+
+.textarea {
+    height: 65px !important;
+    resize: none;
+}
+
+.modalFooter {
+    display: flex;
+    justify-content: end;
+    gap: 12px;
+}
+
+.button {
+    padding: 10px 24px;
+    border-radius: 12px;
+    font-weight: 700;
+    font-size: 14px;
+}

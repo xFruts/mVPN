@@ -8,6 +8,7 @@ import type {
     UserServerResponse,
     UserRole,
     UserStatus,
+    AllUsers,
 } from "@/types/user.ts";
 import type {GetUserData, PageResponse } from "@/types/general.ts";
 
@@ -36,6 +37,11 @@ export const UserService = {
                 (raw.subscription?.status as UserStatus) || "CANCELED",
             tariffName: raw.subscription?.tariff?.name || "Нет тарифа",
         };
+    },
+
+    async getAllUsers() {
+        const response = await apiClient.get<AllUsers[]>(url + "/list")
+        return response.data;
     },
 
     async createUser(userData: Partial<UserCreate>): Promise<UserCreate> {

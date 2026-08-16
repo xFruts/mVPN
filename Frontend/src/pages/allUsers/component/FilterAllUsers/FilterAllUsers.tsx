@@ -4,7 +4,7 @@ import styles from "./FilterAllUsers.module.css";
 import useUsersStore from "../../../../store/useUsersStore.ts";
 
 export default function FilterAllUsers() {
-    const { setParams } = useUsersStore();
+    const { fetchUsers } = useUsersStore();
     return (
         <div className={`${styles.allusersFilter} padding`}>
             <div className={styles.filterTable}>
@@ -14,7 +14,11 @@ export default function FilterAllUsers() {
                         type="text"
                         name="search"
                         placeholder="Поиск по имени..."
-                        onChange={(e) => setParams({ search: e.target.value })}
+                        onChange={(e) =>
+                            fetchUsers(
+                                { search: e.target.value }
+                            )
+                        }
                     />
                 </div>
                 <div className={styles.text}>
@@ -22,7 +26,9 @@ export default function FilterAllUsers() {
                         className={styles.filterInput}
                         onChange={(e) => {
                             e.target.blur();
-                            setParams({ role: e.target.value });
+                            fetchUsers(
+                                { role: e.target.value }
+                            );
                         }}
                     >
                         <option value="">Все роли</option>
@@ -40,7 +46,9 @@ export default function FilterAllUsers() {
                         className={styles.filterInput}
                         onChange={(e) => {
                             e.target.blur();
-                            setParams({ subStatus: e.target.value });
+                            fetchUsers(
+                                { subStatus: e.target.value }
+                            );
                         }}
                     >
                         <option value="">Все статусы</option>

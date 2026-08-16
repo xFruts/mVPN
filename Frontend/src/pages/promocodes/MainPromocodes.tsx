@@ -10,7 +10,7 @@ export default function MainPromocodes() {
     const { totalElements, activeCodes, allUsages, fetchPromocodes, isLoading, isInitialized } = usePromocodesStore();
 
     useEffect(() => {
-        fetchPromocodes();
+        void fetchPromocodes({});
     }, [fetchPromocodes]);
 
     if (!isInitialized) {
@@ -18,9 +18,9 @@ export default function MainPromocodes() {
     }
 
     return (
-        <div className={styles.promocode}>
-            <div className={styles.promocodeHeader}>
-                <span className={styles.headerText}>
+        <div className={"component"}>
+            <div className={`componentHeader ${styles.padding}`}>
+                <span className={"componentText"}>
                     Создание и управление промокодами для пользователей
                 </span>
                 <UpdateButton<GetPromocodeData>

@@ -27,7 +27,7 @@ const serviceItems = [
     { state: "servers", icon: <ShieldCheck size={20} />, text: "VPN серверы" },
     { state: "promotional", icon: <Tag size={20} />, text: "Промокоды" },
     { state: "tariffs", icon: <CreditCard size={20} />, text: "Тарифы" },
-    { state: "paying", icon: <Wallet size={20} />, text: "Платежи" },
+    { state: "paying/transactions", icon: <Wallet size={20} />, text: "Платежи" },
     { state: "settings", icon: <Settings size={20} />, text: "Настройки" },
 ];
 
@@ -103,11 +103,11 @@ export default function Sidebar({ isMobileOpen, closeMobile }: SidebarProps) {
                         {serviceItems.map((item) => (
                             <div
                                 key={item.state}
-                                className={`${currentPath === item.state ? styles.border : ""}`}
+                                className={`${item.state.includes(currentPath) ? styles.border : ""}`}
                             >
                                 <NavLink
                                     to={`/${item.state}`}
-                                    className={`navLink ${styles.sidebarUsers} ${currentPath === item.state ? styles.active : ""}`}
+                                    className={`navLink ${styles.sidebarUsers} ${item.state.includes(currentPath) ? styles.active : ""}`}
                                     onClick={() => {
                                         closeMobile();
                                     }}
