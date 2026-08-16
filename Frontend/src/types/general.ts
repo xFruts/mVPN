@@ -22,11 +22,18 @@ export type SortPromocodeFields =
     | "usage"
     | "status"
     | "expirationDate";
+export type SortPayingFields =
+    | "id"
+    | "paidAmount"
+    | "payerFullName"
+    | "paidUntilDate"
+    | "status";
 export type SortDirection = "asc" | "desc";
 
 export type SortUserData = `${SortUserFields},${SortDirection}`;
 export type SortServerData = `${SortServerFields},${SortDirection}`;
 export type SortPromocodeData = `${SortPromocodeFields},${SortDirection}`;
+export type SortPayingData = `${SortPayingFields},${SortDirection}`;
 
 export interface BasePaginationParams {
     page: number;
@@ -58,6 +65,24 @@ export interface GetPromocodeData {
     search?: string;
 }
 
+export interface GetPromocodeData {
+    page: number;
+    size: number;
+    sort: SortPromocodeData;
+    status?: string;
+    search?: string;
+}
+
+export interface GetPayingData {
+    page: number;
+    size: number;
+    sort: SortPayingData;
+    status?: string;
+    fullName?: string;
+    createdFrom?: string;
+    createdTo?: string;
+}
+
 export interface PageResponse<T> {
     content: T[];
     totalElements: number;
@@ -82,4 +107,9 @@ export interface TitlesPromocode {
     name: string;
     api: SortPromocodeFields;
     side: "flex-end" | "flex-start" | "center";
+}
+
+export interface TitlesPaying {
+    name: string;
+    api: SortPayingFields;
 }

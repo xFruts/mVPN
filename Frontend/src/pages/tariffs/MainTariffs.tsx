@@ -49,12 +49,12 @@ export default function MainTariffs() {
     }
 
     return (
-        <div className={styles.tariffs}>
-            <div className={styles.tariffsHeader}>
-                <span className={styles.headerText}>
+        <div className={"component"}>
+            <div className={"componentHeader"}>
+                <span className={"componentText"}>
                     Управление тарифными планами
                 </span>
-                <div className={styles.addTariff}
+                <div className={"addButton"}
                      onClick={() => {
                          setId(-1)
                          setIsOpen(true)

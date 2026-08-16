@@ -1,0 +1,56 @@
+body[data-theme="light"] {
+    --choice-bg: #f3f4f6;
+    --choice-bg-active: #fff;
+    --choice-text-active: #111827;
+}
+
+body[data-theme="dark"] {
+    --choice-bg: #0d1117;
+    --choice-bg-active: #111827;
+    --choice-text-active: #fff;
+}
+
+.padding {
+    padding-top: 32px;
+}
+
+.contentChoice {
+    display: flex;
+    flex-direction: row;
+    padding: 4px;
+    gap: 4px;
+    border-radius: 12px;
+    background-color: var(--choice-bg);
+    border: 1px solid var(--card-border);
+    width: fit-content;
+}
+
+.choice {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 24px;
+    color: #6b7280;
+    font-weight: 700;
+    font-size: 14px;
+}
+
+.active {
+    border-radius: 8px;
+    border: 1px solid var(--card-border);
+    background-color: var(--choice-bg-active);
+    color: var(--choice-text-active);
+}
+
+.payingContent {
+    display: flex;
+    flex-direction: column;
+    gap: 32px;
+}
+
+.updateButton {
+    display: flex;
+    flex-direction: row;
+    gap: 8px;
+}

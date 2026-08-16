@@ -30,49 +30,6 @@ body[data-theme="dark"] {
     --action-delete-bg-hover: #EF44441A;
 }
 
-.tariffs {
-    display: flex;
-    flex-direction: column;
-    padding: 32px;
-}
-
-.tariffsHeader {
-    display: flex;
-    flex-direction: row;
-    justify-content: space-between;
-    align-items: center;
-    gap: 5px;
-}
-
-.headerText {
-    font-size: 14px;
-    color: var(--header-text);
-}
-
-.addTariff {
-    display: flex;
-    flex-direction: row;
-    align-items: center;
-    font-weight: 500;
-    font-size: 14px;
-    gap: 10px;
-    border: 1px solid var(--border-add);
-    border-radius: 10px;
-    padding: 10px 24px;
-    transition: all 0.3s;
-    color: var(--text-add);
-    background-color: var(--bd-add);
-    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1),
-    0 4px 6px -4px rgba(0, 0, 0, 0.1);
-    cursor: pointer;
-}
-
-.addTariff:hover {
-    background: var(--bg-add-hover);
-    border-color: var(--border-add-hover);
-    box-shadow: var(--shadow-add-hover);
-}
-
 .tariffsContent {
     display: grid;
     grid-template-columns: repeat(3, 1fr);

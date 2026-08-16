@@ -5,7 +5,7 @@ import useServersStore from "@store/useServersStore.ts";
 
 
 export default function FilterVpnServers() {
-    const { setParams } = useServersStore();
+    const { fetchServers } = useServersStore();
     return (
         <div className={"padding"}>
             <div className={styles.filterTable}>
@@ -15,7 +15,11 @@ export default function FilterVpnServers() {
                         type="text"
                         name="search"
                         placeholder="Поиск по IP или названию..."
-                        onChange={(e) => setParams({ search: e.target.value })}
+                        onChange={(e) =>
+                            fetchServers(
+                                { search: e.target.value }
+                            )
+                        }
                     />
                 </div>
                 <div className={styles.text}>
@@ -23,7 +27,9 @@ export default function FilterVpnServers() {
                         className={styles.filterInput}
                         onChange={(e) => {
                             e.target.blur();
-                            setParams({ status: e.target.value });
+                            fetchServers(
+                                { status: e.target.value }
+                            );
                         }}
                     >
                         <option value="">Все статусы</option>

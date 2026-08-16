@@ -1,58 +1,7 @@
-.serversContent {
-    display: flex;
-    flex-direction: column;
-    padding: 30px;
-}
-
-.serversHeader {
-    display: flex;
-    flex-direction: row;
-    justify-content: space-between;
-    padding-bottom: 24px;
-}
-
-.headerText {
-    color: #94a3b8;
-    display: inline-flex;
-    align-items: center;
-    font-weight: 500;
-    font-size: 12px;
-}
-
 .serversButton {
     display: flex;
     flex-direction: row;
     gap: 8px;
-}
-
-.addButton {
-    display: flex;
-    flex-direction: row;
-    align-items: center;
-    justify-content: center;
-    font-weight: 500;
-    font-size: 14px;
-    gap: 10px;
-    border: 1px solid var(--border-add);
-    border-radius: 10px;
-    padding: 8px 16px;
-    transition: all 0.3s;
-    color: var(--text-add);
-    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1),
-    0 4px 6px -4px rgba(0, 0, 0, 0.1);
-    background-color: var(--bd-add);
-    cursor: pointer;
-}
-
-.addButton:hover {
-    background: var(--bg-add-hover);
-    border-color: var(--border-add-hover);
-    box-shadow: var(--shadow-add-hover);
-}
-
-.addButton span {
-    margin: 0;
-    padding: 0 !important;
 }
 
 .padding {
@@ -63,19 +12,5 @@
 @media (max-width: 768px) {
     .padding {
         padding: 0 0;
-    }
-
-    .addButton {
-        padding: 8px 12px;
-        gap: 6px;
-    }
-}
-
-@keyframes spin {
-    from {
-        transform: rotate(0deg);
-    }
-    to {
-        transform: rotate(360deg);
     }
 }

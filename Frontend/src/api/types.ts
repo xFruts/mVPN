@@ -5,7 +5,7 @@ export interface ApiResponse<T = unknown> {
     errors?: string[];
 }
 
-export interface ApiError {
+export interface ApiErrorType {
     statusCode: number;
     message: string;
     details?: unknown;

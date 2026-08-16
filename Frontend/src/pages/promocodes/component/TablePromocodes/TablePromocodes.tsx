@@ -47,7 +47,7 @@ const TitlePromocodes: TitlesPromocode[] = [
 ];
 
 export default function TablePromocodes(){
-    const { promocodes, fetchPromocodes, totalPages, totalElements, filters, setParams, setIsInitialized } = usePromocodesStore();
+    const { promocodes, fetchPromocodes, totalPages, totalElements, filters, setIsInitialized } = usePromocodesStore();
     const [currentField, currentDir] = (filters.sort || "id,asc").split(
         ",",
     ) as [SortPromocodeFields, SortDirection];
@@ -72,7 +72,7 @@ export default function TablePromocodes(){
             newSort = "id,asc";
         }
 
-        setParams({ sort: newSort });
+        void fetchPromocodes({ sort: newSort });
     };
 
     const handleDelete = async (id: number) => {
@@ -83,7 +83,7 @@ export default function TablePromocodes(){
         catch (e) {
             console.error(e);
         }
-        void fetchPromocodes();
+        void fetchPromocodes({});
     }
 
     return (
@@ -93,12 +93,16 @@ export default function TablePromocodes(){
                     <input
                         type={"text"}
                         placeholder={"Поиск по коду..."}
-                        onChange={(e) => setParams({ search: e.target.value })}
+                        onChange={(e) =>
+                            fetchPromocodes({ search: e.target.value })
+                        }
                     />
                 </div>
                 <div className={styles.input}>
                     <select
-                        onChange={(e) => setParams({ status: e.target.value })}
+                        onChange={(e) =>
+                            fetchPromocodes({ status: e.target.value })
+                        }
                     >
                         <option value={""}>Все статусы</option>
                         {PROMOCODE_STATUS.map((status, index) => (
@@ -236,7 +240,7 @@ export default function TablePromocodes(){
             {totalElements > 0 && (
                 <Pagination
                     filters={filters as GetPromocodeData}
-                    setParams={setParams}
+                    fetchData={fetchPromocodes}
                     totalElements={totalElements}
                     totalPages={totalPages}
                 />

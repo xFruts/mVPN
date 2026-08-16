@@ -60,7 +60,6 @@ export default function TableVpnServers() {
         totalElements,
         error,
         fetchServers,
-        setParams,
         isOpen,
         setIsOpen,
         setIsChangeOpen,
@@ -96,7 +95,7 @@ export default function TableVpnServers() {
             newSort = "id,asc";
         }
 
-        setParams({ sort: newSort });
+        void fetchServers({ sort: newSort });
     };
 
     const handleDeleteServer = async () => {
@@ -242,9 +241,7 @@ export default function TableVpnServers() {
                                         }}
                                     />
                                     {windowOpen && isOpen === server.id && (
-                                        <div
-                                            className={styles.vpnserversModal}
-                                        >
+                                        <div className={styles.vpnserversModal}>
                                             <div
                                                 className={styles.settings}
                                                 onClick={() => {
@@ -301,9 +298,7 @@ export default function TableVpnServers() {
                                     }}
                                 />
                                 {windowOpen && isOpen === server.id && (
-                                    <div
-                                        className={styles.vpnserversModal}
-                                    >
+                                    <div className={styles.vpnserversModal}>
                                         <div
                                             className={styles.settings}
                                             onClick={() => {
@@ -329,7 +324,7 @@ export default function TableVpnServers() {
             {totalPages > 0 && (
                 <Pagination
                     filters={filters as GetServerData}
-                    setParams={setParams}
+                    fetchData={fetchServers}
                     totalPages={totalPages}
                     totalElements={totalElements}
                 />

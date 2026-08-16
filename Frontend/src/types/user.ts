@@ -49,3 +49,12 @@ export interface UserCreate {
     userTelegramId: number | undefined | null;
     role: UserRole;
 }
+
+export interface AllUsers {
+    id: number;
+    fullName: string;
+    role: UserRole;
+    subscriptionStatus: UserStatus;
+    endDate: string;
+    tariffName: string;
+}

@@ -68,7 +68,7 @@ export default function AddPromocode() {
         catch (error) {
             console.error(error);
         }
-        void fetchPromocodes();
+        void fetchPromocodes({});
     }
 
     const ErrorMsg = (field: keyof FormData) => {

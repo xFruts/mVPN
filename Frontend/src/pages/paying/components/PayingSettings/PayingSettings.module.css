@@ -1,0 +1,84 @@
+body[data-theme="light"] {
+    --settings-icon-text: #06b6d4;
+    --settings-month-scheme: light;
+    --settings-info-text: #6b7280;
+}
+
+body[data-theme="dark"] {
+    --settings-icon-text: #06b6d4;
+    --settings-month-scheme: dark;
+    --settings-info-text: #9ca3af;
+}
+
+
+.settings {
+    display: flex;
+    flex-direction: row;
+    gap: 32px;
+}
+
+.settingsCard {
+    flex: 1;
+    padding: 24px;
+    border-radius: 16px;
+    border: 1px solid var(--card-border);
+    background-color: var(--card-bg);
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+}
+
+.settingsHeader {
+    display: flex;
+    flex-direction: row;
+    gap: 12px;
+    align-items: center;
+    color: var(--text-secondary);
+    font-size: 18px;
+    font-weight: 700;
+}
+
+.settingsContent {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+}
+
+.inputHeader {
+    color: #6b7280;
+    font-weight: 700;
+    font-size: 12px;
+}
+
+.month {
+    color-scheme: var(--settings-month-scheme);
+    font-family: ui-sans-serif,
+    system-ui,
+    sans-serif;;
+}
+
+.settingsInfo {
+    color: var(--settings-info-text);
+    font-size: 12px;
+}
+
+.settingsFooter {
+    display: flex;
+    justify-content: end;
+    padding-top: 24px;
+    border-top: 1px solid var(--card-border);
+}
+
+.button {
+    padding: 10px 24px;
+    border-radius: 12px;
+    font-weight: 700;
+    font-size: 14px;
+    cursor: pointer;
+}
+
+@media (max-width: 768px) {
+    .settings {
+        flex-direction: column;
+    }
+}

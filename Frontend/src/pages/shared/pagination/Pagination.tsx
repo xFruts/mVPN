@@ -4,16 +4,16 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 
 interface PaginationProps<T extends BasePaginationParams> {
     filters: T;
-    setParams: (params: Partial<T>) => void;
+    fetchData: (newParams: Partial<T>) => void;
     totalElements: number;
     totalPages: number;
 }
 
 export const Pagination = <T extends BasePaginationParams>({
     filters,
-    setParams,
+    fetchData,
     totalElements,
-    totalPages
+    totalPages,
 }: PaginationProps<T>) => {
     const { page = 0, size = 20 } = filters;
     return (
@@ -25,7 +25,7 @@ export const Pagination = <T extends BasePaginationParams>({
                 <select
                     value={filters.size}
                     onChange={(e) => {
-                        setParams({
+                        fetchData({
                             size: Number(e.target.value),
                         } as Partial<T>);
                     }}
@@ -47,7 +47,7 @@ export const Pagination = <T extends BasePaginationParams>({
                 <button
                     className={`${styles.chevron} ${page === 0 ? styles.disable : ""}`}
                     disabled={page === 0}
-                    onClick={() => setParams({ page: page - 1 } as Partial<T>)}
+                    onClick={() => fetchData({ page: page - 1 } as Partial<T>)}
                 >
                     <ChevronLeft size={16} />
                 </button>
@@ -57,7 +57,7 @@ export const Pagination = <T extends BasePaginationParams>({
                 <button
                     className={`${styles.chevron} ${page + 1 === totalPages ? styles.disable : ""}`}
                     disabled={page + 1 === totalPages}
-                    onClick={() => setParams({ page: page + 1 } as Partial<T>)}
+                    onClick={() => fetchData({ page: page + 1 } as Partial<T>)}
                 >
                     <ChevronRight size={16} />
                 </button>
