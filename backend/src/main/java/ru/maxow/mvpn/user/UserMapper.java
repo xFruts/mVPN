@@ -26,6 +26,7 @@ public abstract class UserMapper {
   @Mapping(target = "subscriptions", ignore = true)
   @Mapping(target = "xuiId", ignore = true)
   @Mapping(target = "xuiSubscription", ignore = true)
+  @Mapping(target = "deleted", ignore = true)
   public abstract User toUser(CreateUserRequestDto userRequestDto);
 
   public abstract ShortListUserDto toShortListUserDto(User user);
