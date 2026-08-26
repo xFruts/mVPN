@@ -19,6 +19,8 @@ import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 import lombok.experimental.FieldDefaults;
+import org.hibernate.annotations.SQLDelete;
+import org.hibernate.annotations.SQLRestriction;
 import ru.maxow.mvpn.model.UserRole;
 import ru.maxow.mvpn.subscription.Subscription;
 
@@ -28,6 +30,8 @@ import ru.maxow.mvpn.subscription.Subscription;
 @RequiredArgsConstructor
 @Table(name = "users")
 @FieldDefaults(level = AccessLevel.PRIVATE)
+@SQLDelete(sql = "UPDATE users SET is_deleted = true WHERE id = ?")
+@SQLRestriction("is_deleted = false")
 public class User {
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -51,4 +55,7 @@ public class User {
   UUID xuiId = UUID.randomUUID();
 
   UUID xuiSubscription = UUID.randomUUID();
+
+  @Column(name = "is_deleted", nullable = false)
+  boolean isDeleted = false;
 }
