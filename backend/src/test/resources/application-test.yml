@@ -14,6 +14,9 @@ spring:
       hibernate:
         format_sql: true
 
+  liquibase:
+    enabled: false
+
   h2:
     console:
       enabled: false
