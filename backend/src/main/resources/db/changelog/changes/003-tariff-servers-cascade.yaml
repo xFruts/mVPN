@@ -1,0 +1,15 @@
+databaseChangeLog:
+    - changeSet:
+        id: 003-tariff-servers-cascade
+        author: xFruts
+        changes:
+          - dropForeignKeyConstraint:
+              baseTableName: tariff_plan_servers
+              constraintName: fk7ssljuvxcwumk19xfnx81lrfn
+          - addForeignKeyConstraint:
+              baseTableName: tariff_plan_servers
+              baseColumnNames: server_id
+              constraintName: fk_tariff_servers_server
+              referencedTableName: servers
+              referencedColumnNames: id
+              onDelete: CASCADE
