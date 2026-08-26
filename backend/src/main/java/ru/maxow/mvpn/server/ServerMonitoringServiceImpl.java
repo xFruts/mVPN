@@ -30,7 +30,7 @@ public class ServerMonitoringServiceImpl implements ServerMonitoringService {
   @Transactional
   public void updateServerMetrics() {
     List<Server> servers = serverRepository.findAll();
-    log.info("Starting server metrics update for {} servers.", servers.size());
+    log.debug("Starting server metrics update for {} servers.", servers.size());
 
     for (Server server : servers) {
       try {
@@ -49,7 +49,7 @@ public class ServerMonitoringServiceImpl implements ServerMonitoringService {
         updateUptimePercentage(server, isReachable);
 
         serverRepository.save(server);
-        log.info("Updated metrics for server '{}': status={}, ping={}, load={}, uptime={}%",
+        log.debug("Updated metrics for server '{}': status={}, ping={}, load={}, uptime={}%",
             server.getName(), server.getStatus(), server.getPing(),
             server.getLoad(), server.getUptime());
       } catch (Exception e) {
@@ -61,7 +61,7 @@ public class ServerMonitoringServiceImpl implements ServerMonitoringService {
         serverRepository.save(server);
       }
     }
-    log.info("Finished server metrics update.");
+    log.debug("Finished server metrics update.");
   }
 
   private boolean updatePing(Server server) throws Exception {
