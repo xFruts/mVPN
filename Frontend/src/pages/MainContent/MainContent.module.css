@@ -35,3 +35,14 @@ body[data-theme="dark"] {
     font-size: 18px;
     color: red;
 }
+
+.mainPage {
+    display: flex;
+}
+
+
+.main {
+    width: 100%;
+    flex: 6;
+    background-color: var(--bg-main) ;
+}
