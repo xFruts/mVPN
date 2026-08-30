@@ -1,0 +1,116 @@
+.main {
+    padding: 10vh 0 20vh;
+    height: 60vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 32px;
+}
+
+.header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+    padding: 6px 16px;
+    border-radius: 9999px;
+    font-size: 14px;
+    font-weight: 500;
+    color: #22d3ee;
+    background: #06b6d40d;
+    border: 1px solid #06b6d433;
+}
+
+.mainContent {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    font-size: 88px;
+    font-weight: 900;
+    letter-spacing: -4.4px;
+    line-height: 1.05;
+    color: #fff;
+}
+
+.blueText {
+    background-image: linear-gradient(to bottom, #67e8f9, #0891b2);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    display: inline-block;
+}
+
+.mainFooter {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    max-width: 42rem;
+    margin: 0 auto;
+    font-size: 20px;
+    line-height: 28px;
+    color: #9ca3af;
+    font-weight: 500;
+}
+
+.mainButtons {
+    padding-top: 16px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.moreButton {
+    padding: 14px 32px;
+    color: black;
+    font-weight: 700;
+    font-size: 14px;
+    background: #06b6d4;
+    border-radius: 9999px;
+    cursor: pointer;
+    transition: all 0.3s;
+    border: none;
+}
+
+.moreButton:hover {
+    background: #22d3ee;
+    box-shadow: 0 0 25px rgba(0, 240, 255, 0.4);
+}
+
+.loginButton {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: white;
+    font-weight: 600;
+    font-size: 14px;
+    padding: 14px 32px;
+    background: #ffffff0d;
+    border: 1px solid #ffffff1a;
+    border-radius: 9999px;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.loginButton:hover {
+    background: #ffffff1a;
+}
+
+@media (max-width: 768px) {
+    .main {
+        padding-top: 100px;
+    }
+
+    .header {
+        font-size: 12px;
+    }
+    .mainContent {
+        font-size: 60px;
+    }
+
+    .mainFooter {
+        font-size: 18px;
+    }
+}

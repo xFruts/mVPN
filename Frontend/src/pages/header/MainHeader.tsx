@@ -29,6 +29,7 @@ const getInitialTheme = (): string => {
 };
 
 export default function MainHeader({ openMobile }: { openMobile: () => void }) {
+    const { logout } = useAdmin();
     const location = useLocation();
     const rootPath = location.pathname.split("/")[1];
     const admin = useAdmin();
@@ -92,7 +93,10 @@ export default function MainHeader({ openMobile }: { openMobile: () => void }) {
                             <Settings2 size={18} strokeWidth={1.5} />
                             <span>Настройки</span>
                         </div>
-                        <div className={`${styles.menuItem} ${styles.logout}`}>
+                        <div
+                            className={`${styles.menuItem} ${styles.logout}`}
+                            onClick={logout}
+                        >
                             <LogOut size={18} strokeWidth={1.5} />
                             <span>Выйти</span>
                         </div>

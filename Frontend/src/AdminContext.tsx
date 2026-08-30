@@ -2,7 +2,10 @@
 import { createContext, useContext, type ReactNode } from "react";
 
 export interface AdminData {
-    preferred_username: string;
+    preferred_username?: string;
+    authenticated?: boolean;
+    login?: () => void;
+    logout?: () => void;
 }
 
 const UserContext = createContext<AdminData | null>(null);

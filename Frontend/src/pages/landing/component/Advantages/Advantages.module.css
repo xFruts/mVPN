@@ -1,0 +1,100 @@
+.advantages {
+    min-height: 70vh;
+    padding: 10vh 0 20vh;
+    border-top: 1px solid #ffffff0d;
+    width: 100%;
+    opacity: 0;
+    transform: translateX(100px);
+    transition: opacity 0.8s ease-out, transform 0.8s ease-out;
+    will-change: opacity, transform;
+}
+
+.visible {
+    opacity: 1;
+    transform: translateX(0);
+}
+
+.header {
+    display: flex;
+    align-items: center;
+    width: 768px;
+    margin: 0 auto 100px;
+}
+
+.headerText {
+    text-align: center;
+    font-size: 16px;
+    line-height: 24px;
+    color: #9ca3af;
+    font-weight: 500;
+    white-space: normal;
+}
+
+.content {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr 1fr;
+    row-gap: 56px;
+    column-gap: 32px;
+}
+
+.card {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 48px;
+    height: 48px;
+    margin-bottom: 8px;
+    color: #d1d5db;
+    background: #ffffff0d;
+    border: 1px solid #ffffff0d;
+    border-radius: 12px;
+    transition: all 0.3s;
+}
+
+.cardHeader {
+    color: white;
+    font-weight: 700;
+    font-size: 18px;
+    line-height: 28px;
+}
+
+.cardDesc {
+    color: #9ca3af;
+    line-height: 1.625;
+    font-weight: 500;
+    font-size: 13px;
+}
+
+.card:hover .icon {
+    color: #22d3ee;
+    background: #06B6D41A;
+    border-color: #06B6D44D;
+}
+
+@media (max-width: 1000px) {
+    .content {
+        grid-template-columns: 1fr 1fr;
+    }
+}
+
+@media (max-width: 768px) {
+    .header {
+        width: 80vw;
+    }
+
+    .content {
+        grid-template-columns: 1fr;
+    }
+
+    .card:hover .icon {
+        color: #d1d5db;
+        background: #ffffff0d;
+        border: 1px solid #ffffff0d;
+    }
+}

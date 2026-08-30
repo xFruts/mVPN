@@ -1,23 +1,21 @@
-import Sidebar from "./pages/Sidebar/Sidebar.tsx";
-import MainContent from "./pages/MainContent/MainContent.tsx";
-import "./App.css";
-import { useState } from "react";
-import MainHeader from "@pages/header/MainHeader.tsx";
+import { Routes, Route, Navigate } from "react-router";
+import MainLanding from "@pages/landing/MainLanding.tsx";
+import MainContent from "@pages/MainContent/MainContent.tsx";
+import "./App.css"
+import { useAdmin } from "@/AdminContext.tsx";
 
-function App() {
-    const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
+const App = () => {
+    const { authenticated } = useAdmin();
     return (
-        <div className="main-page">
-            <Sidebar
-                isMobileOpen={isMobileMenuOpen}
-                closeMobile={() => setIsMobileMenuOpen(false)}
+        <Routes>
+            <Route path="/" element={<MainLanding />} />
+            <Route
+                path="/*"
+                element={authenticated ? <MainContent /> : <Navigate to="/" />}
             />
-            <div className="main-content">
-                <MainHeader openMobile={() => setIsMobileMenuOpen(true)} />
-                <MainContent />
-            </div>
-        </div>
+        </Routes>
     );
-}
+};
 
 export default App;

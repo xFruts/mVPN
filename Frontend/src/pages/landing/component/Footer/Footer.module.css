@@ -1,0 +1,137 @@
+.footer {
+    padding: 7vh 0 3vh;
+    border-top: 1px solid #ffffff0d;
+}
+
+.footerPanel {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    margin-bottom: 64px;
+    gap: 48px;
+}
+
+.panelHeader {
+    flex: 3;
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+}
+
+.logo {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 8px;
+    color: white;
+    letter-spacing: 2px;
+    line-height: 1;
+    font-weight: 900;
+    font-size: 20px;
+}
+
+.headerDesc {
+    color: #9ca3af;
+    line-height: 1.625;
+    font-weight: 500;
+    font-size: 13px;
+    max-width: 300px;
+}
+
+.panelRedirect {
+    display: flex;
+    flex-direction: row;
+    gap: 125px;
+}
+
+.redirect {
+    flex: 2;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    color: #9ca3af;
+    font-weight: 500;
+    font-size: 13px;
+}
+
+.redirectHeader {
+    margin-bottom: 8px;
+    color: white;
+    font-weight: 700;
+    font-size: 14px;
+    line-height: 20px;
+    cursor: default !important;
+}
+
+.redirect span {
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.redirect span:hover {
+    color: #22d3ee;
+}
+
+.redirectHeader:hover {
+    color: white !important;
+}
+
+.contact {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 12px;
+}
+
+.contact:hover {
+    color: #9ca3af !important;
+    cursor: default !important;
+}
+
+.panelCopyright {
+    border-top: 1px solid #ffffff0d;
+    padding-top: 32px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    color: #6b7280;
+    font-weight: 500;
+    font-size: 11px;
+}
+
+.confidentiality {
+    display: flex;
+    flex-direction: row;
+    gap: 24px;
+}
+
+.confidentiality span {
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.confidentiality span:hover {
+    color: white
+}
+
+@media (max-width: 768px) {
+    .footerPanel {
+        flex-direction: column;
+        gap: 48px;
+    }
+
+    .panelRedirect {
+        flex-direction: column;
+        gap: 48px;
+    }
+
+    .headerDesc {
+        max-width: 90vw;
+    }
+
+    .panelCopyright {
+        flex-direction: column;
+        gap: 16px;
+        padding-bottom: 32px;
+    }
+}

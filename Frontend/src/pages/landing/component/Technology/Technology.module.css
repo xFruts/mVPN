@@ -1,0 +1,94 @@
+.technology {
+    min-height: 80vh;
+    padding: 10vh 0 10vh;
+    border-top: 1px solid #ffffff0d;
+    opacity: 0;
+    transform: translateX(100px);
+    transition: opacity 0.8s ease-out, transform 0.8s ease-out;
+    will-change: opacity, transform;
+}
+
+.visible {
+    opacity: 1;
+    transform: translateX(0);
+}
+
+.header {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+}
+
+.epigraph {
+    letter-spacing: 1.2px;
+    color: #d1d5db;
+    font-weight: 700;
+    font-size: 12px;
+    line-height: 16px;
+    padding: 6px 16px;
+    background-color: #ffffff0d;
+    border: 1px solid #ffffff1a;
+    border-radius: 9999px;
+    display: inline-block;
+}
+
+.headerText {
+    text-align: center;
+    font-size: 48px;
+    line-height: 1;
+    color: white;
+    font-weight: 900;
+    max-width: 700px;
+    margin: 0 auto;
+}
+
+.content {
+    display: flex;
+    flex-direction: row;
+    gap: 80px;
+    margin-top: 64px;
+    height: 52vh;
+}
+
+.contentText {
+    flex: 1 1 0;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.text {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.textHeader {
+    color: white;
+    font-weight: 700;
+    font-size: 20px;
+    line-height: 28px;
+    transition: all 0.3s;
+    cursor: default;
+}
+
+.textHeader:hover {
+    color: #22d3ee;
+}
+
+.textFooter {
+    color: #9ca3af;
+    line-height: 1.625;
+    font-weight: 500;
+    font-size: 14px;
+}
+
+@media (max-width: 960px) {
+    .content {
+        flex-direction: column;
+        height: auto;
+    }
+
+}
