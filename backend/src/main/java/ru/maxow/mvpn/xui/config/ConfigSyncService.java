@@ -34,7 +34,6 @@ public class ConfigSyncService {
   private final ConfigCacheService configCacheService;
 
   @Async
-  @Transactional(readOnly = true)
   public void asyncSyncSubscription(UUID verificationCode) {
     try {
       User user = userRepository.findByVerificationCode(verificationCode).orElse(null);
