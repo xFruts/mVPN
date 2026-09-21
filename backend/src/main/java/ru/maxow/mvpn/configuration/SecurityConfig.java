@@ -61,7 +61,7 @@ public class SecurityConfig {
             .requestMatchers("/api/openapi.yaml", "/api/components/**", "/api/paths/**").permitAll()
 
             // Actuator endpoints
-            .requestMatchers("/actuator/health", "/actuator/info").permitAll()
+            .requestMatchers("/actuator/health", "/actuator/info", "/actuator/prometheus").permitAll()
 
             .requestMatchers("/v1/config/**").permitAll()
 

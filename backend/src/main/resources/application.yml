@@ -70,10 +70,13 @@ app:
     allow-credentials: true
 
 management:
-  endpoint:
+  endpoints:
     web:
       exposure:
-        include: health
+        include: health, info, prometheus
+  endpoint:
+    prometheus:
+      enabled: true
 
 springdoc:
   api-docs:

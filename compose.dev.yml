@@ -23,6 +23,8 @@ services:
       SUPPORT_URL: ${SUPPORT_URL}
       PROFILE_WEB_PAGE_URL: ${PROFILE_WEB_PAGE_URL}
       PROFILE_UPDATE_INTERVAL: ${PROFILE_UPDATE_INTERVAL}
+    volumes:
+      - ./logs:/app/logs
     ports:
       - "8080:8080"
     depends_on:
@@ -35,6 +37,12 @@ services:
     restart: unless-stopped
     networks:
       - internal
+    healthcheck:
+      test: [ "CMD-SHELL", "curl -fsS http://localhost:8080/actuator/health || exit 1" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
   frontend:
     build:
       context: ./Frontend
@@ -122,4 +130,3 @@ volumes:
 networks:
   internal:
     driver: bridge
-

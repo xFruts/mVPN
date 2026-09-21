@@ -64,8 +64,11 @@ services:
       SUPPORT_URL: ${SUPPORT_URL}
       PROFILE_WEB_PAGE_URL: ${PROFILE_WEB_PAGE_URL}
       PROFILE_UPDATE_INTERVAL: ${PROFILE_UPDATE_INTERVAL}
+      LOGGING_FILE_NAME: /app/logs/mvpn.log
     expose:
       - "8080"
+    volumes:
+      - ./logs:/app/logs
     depends_on:
       db:
         condition: service_healthy
@@ -77,15 +80,18 @@ services:
     networks:
       - web_proxy
       - internal
+      - monitoring
     labels:
       - "traefik.enable=true"
       - "traefik.docker.network=web_proxy"
-      - "traefik.http.routers.mvpn-backend.rule=Host(`${API_DOMAIN}`)"
+      - "traefik.http.routers.mvpn-backend.rule=Host(`${API_DOMAIN}`) && !PathPrefix(`/actuator`)"
       - "traefik.http.routers.mvpn-backend.entrypoints=websecure"
       - "traefik.http.routers.mvpn-backend.tls=true"
       - "traefik.http.routers.mvpn-backend.tls.certresolver=le"
       - "traefik.http.routers.mvpn-backend.middlewares=mvpn-security-headers@docker"
       - "traefik.http.services.mvpn-backend.loadbalancer.server.port=8080"
+      - "traefik.http.middlewares.mvpn-security-headers.headers.contentTypeNosniff=true"
+      - "traefik.http.middlewares.mvpn-security-headers.headers.referrerPolicy=no-referrer"
   frontend:
     build:
       context: ./Frontend
@@ -105,6 +111,7 @@ services:
       - "traefik.docker.network=web_proxy"
       - "traefik.http.routers.frontend.rule=Host(`${FRONTEND_DOMAIN}`)"
       - "traefik.http.routers.frontend.entrypoints=websecure"
+      - "traefik.http.routers.frontend.tls=true"
       - "traefik.http.routers.frontend.tls.certresolver=le"
       - "traefik.http.services.frontend.loadbalancer.server.port=80"
   db:
@@ -168,10 +175,59 @@ services:
       timeout: 10s
       retries: 20
 
+  prometheus:
+    image: prom/prometheus:v3.1.0
+    container_name: mvpn-prom-agent
+    restart: unless-stopped
+    environment:
+      - DASH_DOMAIN=${DASH_DOMAIN:-dash.maxow.ru}
+      - MDASH_PUSH_USER=${MDASH_PUSH_USER}
+      - MDASH_PUSH_PASSWORD=${MDASH_PUSH_PASSWORD}
+    entrypoint:
+      - /bin/sh
+      - -c
+      - |
+        printf '%s' "$$MDASH_PUSH_PASSWORD" > /tmp/push_password
+        sed -e "s|\$${MDASH_PUSH_USER}|$${MDASH_PUSH_USER}|g" \
+            -e "s|\$${DASH_DOMAIN}|$${DASH_DOMAIN}|g" \
+            /etc/prometheus/prometheus.yml > /tmp/prometheus.yml
+        exec /bin/prometheus \
+          --config.file=/tmp/prometheus.yml \
+          --storage.agent.path=/prometheus \
+          --agent
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    networks:
+      - monitoring
+    healthcheck:
+      test: [ "CMD", "wget", "-q", "--spider", "http://localhost:9090/-/healthy" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  promtail:
+    image: grafana/promtail:3.3.2
+    container_name: mvpn-promtail
+    restart: unless-stopped
+    command:
+      - -config.file=/etc/promtail/config.yml
+      - -config.expand-env=true
+    volumes:
+      - ./loki/promtail-config.yml:/etc/promtail/config.yml:ro
+      - ./logs:/app/logs:ro
+    networks:
+      - monitoring
+    environment:
+      - DASH_DOMAIN=${DASH_DOMAIN:-dash.maxow.ru}
+      - MDASH_PUSH_USER=${MDASH_PUSH_USER}
+      - MDASH_PUSH_PASSWORD=${MDASH_PUSH_PASSWORD}
+
 volumes:
   postgres-data:
   minio-data:
   letsencrypt:
+  prometheus_data:
 
 networks:
   web_proxy:
@@ -179,4 +235,5 @@ networks:
     driver: bridge
   internal:
     driver: bridge
-
+  monitoring:
+    driver: bridge

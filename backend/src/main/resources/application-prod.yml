@@ -16,6 +16,10 @@ spring:
   liquibase:
     change-log: classpath:db/changelog/db.changelog-master.yaml
 
+logging:
+  file:
+    name: ${LOGGING_FILE_NAME:/app/logs/mvpn.log}
+
 app:
   cors:
     allowed-origins: ${APP_CORS_ALLOWED_ORIGINS:}
