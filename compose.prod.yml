@@ -90,8 +90,6 @@ services:
       - "traefik.http.routers.mvpn-backend.tls.certresolver=le"
       - "traefik.http.routers.mvpn-backend.middlewares=mvpn-security-headers@docker"
       - "traefik.http.services.mvpn-backend.loadbalancer.server.port=8080"
-      - "traefik.http.middlewares.mvpn-security-headers.headers.contentTypeNosniff=true"
-      - "traefik.http.middlewares.mvpn-security-headers.headers.referrerPolicy=no-referrer"
   frontend:
     build:
       context: ./Frontend

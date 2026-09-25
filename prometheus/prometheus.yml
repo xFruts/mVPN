@@ -3,6 +3,7 @@ global:
   evaluation_interval: 15s
   external_labels:
     project: 'mvpn'
+    app: 'mvpn'
     env: 'prod'
 
 remote_write:
@@ -23,3 +24,4 @@ scrape_configs:
       - targets: ['backend:8080']
         labels:
           service: 'backend'
+          app: 'mvpn'

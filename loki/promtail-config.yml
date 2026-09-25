@@ -12,6 +12,7 @@ clients:
       password: ${MDASH_PUSH_PASSWORD}
     external_labels:
       project: mvpn
+      app: mvpn
 
 scrape_configs:
   - job_name: mvpn-file-logs
@@ -21,4 +22,5 @@ scrape_configs:
         labels:
           job: mvpn-logs
           service: backend
+          app: mvpn
           __path__: /app/logs/*.log
