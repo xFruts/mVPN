@@ -7,11 +7,15 @@ import org.springframework.security.oauth2.client.registration.ClientRegistratio
 import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import ru.maxow.mvpn.minio.MinioService;
 import ru.maxow.mvpn.model.BroadcastRequestDto;
 
 @SpringBootTest
 @ActiveProfiles("test")
 class MVpnApplicationTests {
+
+  @MockitoBean
+  private MinioService minioService;
 
   @MockitoBean
   private ClientRegistrationRepository clientRegistrationRepository;
