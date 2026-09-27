@@ -2,6 +2,16 @@ spring:
   application:
     name: mVPN
 
+  datasource:
+    hikari:
+      pool-name: MvpnHikariPool
+      maximum-pool-size: 20
+      minimum-idle: 5
+      connection-timeout: 20000
+      idle-timeout: 300000
+      max-lifetime: 1200000
+      leak-detection-threshold: 5000
+
   data:
     web:
       pageable:
@@ -56,6 +66,9 @@ minio:
     name: vpn-configs
 
 app:
+  http-client:
+    connect-timeout-ms: 5000
+    read-timeout-ms: 8000
   kafka:
     topics:
       broadcast: ${KAFKA_BROADCAST_TOPIC:broadcast-requests}
