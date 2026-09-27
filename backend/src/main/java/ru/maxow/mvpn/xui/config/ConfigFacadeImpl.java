@@ -5,7 +5,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 import ru.maxow.mvpn.model.ServerStatus;
 import ru.maxow.mvpn.model.SubscriptionStatus;
 import ru.maxow.mvpn.server.Server;
@@ -45,13 +44,13 @@ public class ConfigFacadeImpl implements ConfigFacade {
   ConfigSyncService configSyncService;
 
   @Override
-  @Transactional
   public SubscriptionConfigPayload getSubscriptionConfig(UUID verificationCode) {
     User user = userRepository.findByVerificationCode(verificationCode)
         .orElseThrow(() -> new NotFoundException("User by verification code"));
 
     Subscription subscription = subscriptionRepository
-        .findFirstByUser_IdOrderByStartDateDesc(user.getId())
+        .findFirstWithTariffAndServersByUser_IdOrderByStartDateDesc(user.getId())
+        .or(() -> subscriptionRepository.findFirstByUser_IdOrderByStartDateDesc(user.getId()))
         .orElseThrow(() -> new NotFoundException("Subscription for user"));
 
     if (subscription.getStatus() != SubscriptionStatus.ACTIVE ||
@@ -63,12 +62,8 @@ public class ConfigFacadeImpl implements ConfigFacade {
     SubscriptionTrafficState cachedTrafficState = trafficStateService
         .getTrafficStateBySubscriptionId(subscription.getId())
         .orElse(null);
-    if (cachedTrafficState != null && cachedTrafficState.getUsedBytes() >= trafficLimitBytes) {
-      throw new BadRequestException("Traffic limit exceeded for subscription");
-    }
-
-    SubscriptionTrafficState trafficState = trafficStateService.syncTrafficForSubscription(user, subscription);
-    if (trafficState.getUsedBytes() >= trafficLimitBytes) {
+    if (cachedTrafficState != null && cachedTrafficState.getUsedBytes() != null
+        && cachedTrafficState.getUsedBytes() >= trafficLimitBytes) {
       throw new BadRequestException("Traffic limit exceeded for subscription");
     }
 
@@ -76,7 +71,14 @@ public class ConfigFacadeImpl implements ConfigFacade {
     if (cached != null) {
       log.debug("Returning cached subscription payload for verificationCode={}", verificationCode);
       configSyncService.asyncSyncSubscription(verificationCode);
-      return cached;
+      String info = formatSubscriptionInfo(subscription, cachedTrafficState);
+      return new SubscriptionConfigPayload(cached.body(), cached.format(), info);
+    }
+
+    SubscriptionTrafficState trafficState = trafficStateService.syncTrafficForSubscription(user, subscription);
+    if (trafficState != null && trafficState.getUsedBytes() != null
+        && trafficState.getUsedBytes() >= trafficLimitBytes) {
+      throw new BadRequestException("Traffic limit exceeded for subscription");
     }
 
     List<ResolvedServerConfig> configs = getActiveServersByUserSubscription(subscription).stream()
@@ -105,7 +107,8 @@ public class ConfigFacadeImpl implements ConfigFacade {
       throw new NotFoundException("No configs found for user");
     }
 
-    SubscriptionConfigPayload payload = resolvePayload(configs);
+    String subscriptionInfo = formatSubscriptionInfo(subscription, trafficState);
+    SubscriptionConfigPayload payload = resolvePayload(configs, subscriptionInfo);
     try {
       configCacheService.put(user.getId(), payload);
       configSyncService.asyncSyncSubscription(verificationCode);
@@ -117,13 +120,30 @@ public class ConfigFacadeImpl implements ConfigFacade {
     return payload;
   }
 
+  private String formatSubscriptionInfo(Subscription subscription, SubscriptionTrafficState trafficState) {
+    long trafficLimitBytes = subscription.getTariff().getTrafficLimitGb() * 1024L * 1024L * 1024L;
+    long expireSec = subscription.getEndDate().toInstant().getEpochSecond();
+    long upload = trafficState != null && trafficState.getUsedUploadBytes() != null
+        ? trafficState.getUsedUploadBytes() : 0L;
+    long download = trafficState != null && trafficState.getUsedDownloadBytes() != null
+        ? trafficState.getUsedDownloadBytes() : 0L;
+
+    return String.format(
+        "upload=%d; download=%d; total=%d; expire=%d",
+        upload,
+        download,
+        trafficLimitBytes,
+        expireSec
+    );
+  }
+
   private List<Server> getActiveServersByUserSubscription(Subscription subscription) {
     return subscription.getTariff().getServers().stream()
         .filter(server -> server.getStatus() == ServerStatus.ACTIVE)
         .toList();
   }
 
-  private SubscriptionConfigPayload resolvePayload(List<ResolvedServerConfig> configs) {
+  private SubscriptionConfigPayload resolvePayload(List<ResolvedServerConfig> configs, String subscriptionInfo) {
     Set<SubscriptionFormat> formats = configs.stream()
         .map(ResolvedServerConfig::format)
         .collect(Collectors.toSet());
@@ -153,7 +173,7 @@ public class ConfigFacadeImpl implements ConfigFacade {
 
         String combinedConfigs = objectMapper.writeValueAsString(jsonArray);
         log.debug("Combined {} JSON configs into array", jsonArray.size());
-        return new SubscriptionConfigPayload(combinedConfigs, SubscriptionFormat.JSON);
+        return new SubscriptionConfigPayload(combinedConfigs, SubscriptionFormat.JSON, subscriptionInfo);
       } catch (BadRequestException e) {
         throw e;
       } catch (Exception e) {
@@ -167,7 +187,7 @@ public class ConfigFacadeImpl implements ConfigFacade {
         .collect(Collectors.joining("\n"));
     String encoded = Base64.getEncoder().encodeToString(
         combinedConfigs.getBytes(StandardCharsets.UTF_8));
-    return new SubscriptionConfigPayload(encoded, SubscriptionFormat.VLESS);
+    return new SubscriptionConfigPayload(encoded, SubscriptionFormat.VLESS, subscriptionInfo);
   }
 
   private SubscriptionFormat resolveSubscriptionFormat(Server server) {

@@ -3,7 +3,12 @@ package ru.maxow.mvpn.xui.dto;
 import org.springframework.http.MediaType;
 import ru.maxow.mvpn.server.SubscriptionFormat;
 
-public record SubscriptionConfigPayload(String body, SubscriptionFormat format) {
+public record SubscriptionConfigPayload(String body, SubscriptionFormat format, String subscriptionInfo) {
+
+  public SubscriptionConfigPayload(String body, SubscriptionFormat format) {
+    this(body, format, null);
+  }
+
   public String contentType() {
     return format == SubscriptionFormat.JSON
         ? MediaType.APPLICATION_JSON_VALUE
@@ -14,4 +19,3 @@ public record SubscriptionConfigPayload(String body, SubscriptionFormat format) 
     return format == SubscriptionFormat.JSON;
   }
 }
-

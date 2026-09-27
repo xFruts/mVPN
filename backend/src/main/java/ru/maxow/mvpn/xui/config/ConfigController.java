@@ -58,8 +58,9 @@ public class ConfigController implements ConfigApi {
 
   public String getConfigByVerificationCode(UUID verificationCode) {
     SubscriptionConfigPayload config = configFacade.getSubscriptionConfig(verificationCode);
-    String subscriptionInfo = subscriptionService
-        .getSubscriptionInfoForUserByCode(verificationCode);
+    String subscriptionInfo = config.subscriptionInfo() != null
+        ? config.subscriptionInfo()
+        : subscriptionService.getSubscriptionInfoForUserByCode(verificationCode);
 
     HttpServletResponse response = getCurrentResponse();
     response.setContentType(config.contentType() + ";charset=UTF-8");

@@ -124,13 +124,13 @@ public class SubscriptionServiceImpl implements SubscriptionService {
   }
 
   @Override
-  @Transactional(readOnly = true)
   public String getSubscriptionInfoForUserByCode(UUID verificationCode) {
     User user = userRepository.findByVerificationCode(verificationCode)
         .orElseThrow(() -> new NotFoundException("User by verification code"));
 
     Subscription subscription = subscriptionRepository
-        .findFirstByUser_IdOrderByStartDateDesc(user.getId())
+        .findFirstWithTariffAndServersByUser_IdOrderByStartDateDesc(user.getId())
+        .or(() -> subscriptionRepository.findFirstByUser_IdOrderByStartDateDesc(user.getId()))
         .orElseThrow(() -> new NotFoundException("Subscription for user", user.getId()));
 
     SubscriptionTrafficState trafficState = trafficStateService
