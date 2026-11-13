@@ -160,13 +160,32 @@ All uncaught exceptions are intercepted by [`GlobalExceptionHandler`](file:///E:
 
 ### 4.3 Database Migrations & Cryptography
 
-1. **Liquibase Exclusivity**:
+1. **Liquibase Exclusivity & Master Changelog Registry**:
    - `spring.jpa.hibernate.ddl-auto` must remain `validate` in production environments.
-   - All schema alterations, index additions, and table drops must be authored as reversible YAML/SQL changesets under `backend/src/main/resources/db/changelog/changes/`.
+   - All schema alterations, table additions, column additions, and foreign keys must be
+     authored as reversible YAML/SQL changesets under `backend/src/main/resources/db/changelog/changes/`.
+   - Every single changelog file in `changes/` **MUST** be explicitly included via
+     `- include: file: ...` in `backend/src/main/resources/db/changelog/db.changelog-master.yaml`.
+     Orphaned changelogs that are never executed in production are strictly prohibited.
    - Never alter an already committed and executed changeset; always create an incremental changeset.
-2. **Attribute Encryption (AES-256-GCM)**:
-   - Sensitive columns (such as node access tokens, passwords, and private parameters) must use JPA `@Convert(converter = AttributeEncryptor.class)`.
-   - The [`AttributeEncryptor`](file:///E:/Programs/Java/mVPN/backend/src/main/java/ru/maxow/mvpn/util/converter/AttributeEncryptor.java) applies authenticated encryption (`AES/GCM/NoPadding`) using a 12-byte cryptographically random IV generated via `SecureRandom` and a 128-bit authentication tag.
+2. **Preconditions Syntax Guardrails**:
+   - In YAML changelogs, specify `onFail: "MARK_RAN"` (or other failure handling) **once** per
+     `preConditions` container. Never place multiple `onFail` directives at the same YAML
+     mapping level (which causes `ChangeLogParseException: Multiple nodes match null/onFail`).
+   - Use `tableExists` when altering existing tables and `not: tableExists` when creating tables
+     to guarantee safe, idempotent execution on both fresh and pre-existing databases.
+3. **Mandatory Schema & Migration Contract Testing**:
+   - Every entity or schema modification must be verified against `LiquibaseSchemaValidationTest`.
+   - The test suite strictly validates:
+     a) **Changelog Completeness**: Asserts all files in `changes/` are included in master changelog.
+     b) **Fresh DB Execution**: Verifies Liquibase executes cleanly from scratch without parser errors.
+     c) **JPA Entity Schema Validation**: Starts Spring with `hibernate.ddl-auto: validate` and
+        Liquibase enabled to guarantee 100% sync between JPA `@Entity` definitions and Liquibase.
+4. **Attribute Encryption (AES-256-GCM)**:
+   - Sensitive columns (such as node access tokens, passwords, and private parameters) must use
+     JPA `@Convert(converter = AttributeEncryptor.class)`.
+   - The [`AttributeEncryptor`](file:///E:/Programs/Java/mVPN/backend/src/main/java/ru/maxow/mvpn/util/converter/AttributeEncryptor.java) applies authenticated encryption (`AES/GCM/NoPadding`) using a 12-byte cryptographically
+     random IV generated via `SecureRandom` and a 128-bit authentication tag.
 
 ### 4.4 Concurrency & Asynchronous Resilience
 
@@ -291,6 +310,7 @@ In centralized Grafana/mDash log viewers, always scope queries with the applicat
 ./mvnw org.owasp:dependency-check-maven:check -DfailBuildOnCVSS=9 -DfailOnError=false
 ```
 
+- **Liquibase Schema Contract Gate**: All builds must pass `LiquibaseSchemaValidationTest`, ensuring zero syntax errors in YAML changelogs, zero orphaned changelogs, and complete alignment between Liquibase and JPA entities with `ddl-auto: validate`.
 - **JaCoCo Thresholds**: Minimum 55% instruction coverage and 35-40% branch coverage on domain service packages. Exclude generated OpenAPI DTOs and MapStruct implementations.
 - **Checkstyle & Line Length**: Adheres to Google Java Style conventions (`google_checks.xml`). Enforce a strict **100-character column limit** for all Java source and test files to ensure comfortable reading in dual-split editor panes without horizontal scrolling.
 
