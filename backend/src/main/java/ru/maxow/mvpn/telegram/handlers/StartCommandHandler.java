@@ -49,7 +49,8 @@ public class StartCommandHandler implements CommandHandler {
         UUID token = UUID.fromString(tokenStr);
         boolean authenticated = userService.authenticateUser(token, chatId);
         if (authenticated) {
-          String text = "✅ Вы успешно аутентифицированы!\n\n"
+          String text = messageFormatter.formatAuthSuccess()
+              + "\n\n"
               + messageFormatter.formatWelcome(firstName, true);
           return List.of(SendMessage.builder()
               .chatId(chatId.toString())

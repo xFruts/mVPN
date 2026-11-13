@@ -10,6 +10,7 @@ import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import ru.maxow.mvpn.telegram.service.TelegramKeyboardFactory;
+import ru.maxow.mvpn.telegram.service.TelegramMessageFormatter;
 import ru.maxow.mvpn.user.User;
 import ru.maxow.mvpn.user.UserService;
 
@@ -20,6 +21,7 @@ import ru.maxow.mvpn.user.UserService;
 public class AuthCommandHandler implements CommandHandler {
 
   UserService userService;
+  TelegramMessageFormatter messageFormatter;
   TelegramKeyboardFactory keyboardFactory;
 
   @Override
@@ -39,7 +41,7 @@ public class AuthCommandHandler implements CommandHandler {
       return List.of(
           SendMessage.builder()
               .chatId(chatId.toString())
-              .text("✅ Вы уже аутентифицированы.")
+              .text(messageFormatter.formatAuthAlready())
               .replyMarkup(keyboardFactory.buildMainMenuKeyboard())
               .build()
       );
@@ -54,17 +56,16 @@ public class AuthCommandHandler implements CommandHandler {
         boolean isValid = userService.checkVerificationCode(token);
         if (isValid) {
           userService.updateUserTelegramId(token, chatId);
-          responseText = "✅ Вы успешно аутентифицированы!";
+          responseText = messageFormatter.formatAuthSuccess();
           authenticated = true;
         } else {
-          responseText = "❌ Неверный токен аутентификации. Пожалуйста, попробуйте снова.";
+          responseText = messageFormatter.formatAuthInvalidToken();
         }
       } catch (IllegalArgumentException e) {
-        responseText = "❌ Неверный формат токена. Пожалуйста, проверьте правильность ввода.";
+        responseText = messageFormatter.formatAuthInvalidFormat();
       }
     } else {
-      responseText = "❌ Пожалуйста, предоставьте токен аутентификации после команды /auth. "
-          + "Например: /auth your_token_here";
+      responseText = messageFormatter.formatAuthTokenRequired();
     }
 
     return List.of(

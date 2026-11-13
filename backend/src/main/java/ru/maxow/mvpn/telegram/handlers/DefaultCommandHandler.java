@@ -9,6 +9,7 @@ import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import ru.maxow.mvpn.telegram.service.TelegramKeyboardFactory;
+import ru.maxow.mvpn.telegram.service.TelegramMessageFormatter;
 import ru.maxow.mvpn.telegram.service.TelegramUserService;
 
 @Component
@@ -18,6 +19,7 @@ import ru.maxow.mvpn.telegram.service.TelegramUserService;
 public class DefaultCommandHandler implements CommandHandler {
 
   TelegramUserService userService;
+  TelegramMessageFormatter messageFormatter;
   TelegramKeyboardFactory keyboardFactory;
 
   @Override
@@ -32,7 +34,7 @@ public class DefaultCommandHandler implements CommandHandler {
         ? update.getMessage().getFrom().getUserName()
         : null;
     boolean isAuthenticated = userService.findAuthenticatedUser(chatId, username).isPresent();
-    String text = "❓ Неизвестная команда. Посмотреть список доступных команд: /help";
+    String text = messageFormatter.formatUnknownCommand();
 
     return List.of(
         SendMessage.builder()

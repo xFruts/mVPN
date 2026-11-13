@@ -5,6 +5,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.List;
+import java.util.Locale;
 import java.util.Optional;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -130,5 +131,53 @@ class TelegramMessageFormatterTest {
     String withoutKey = formatter.formatVlessKey(Optional.empty(), url);
     assertThat(withoutKey).contains("Не удалось");
     assertThat(withoutKey).contains(url);
+  }
+
+  @Test
+  @DisplayName("formatUnknownCommand resolves from MessageSource in Russian and English")
+  void shouldFormatUnknownCommandWithLocales() {
+    assertThat(formatter.formatUnknownCommand())
+        .contains("Неизвестная команда")
+        .contains("/help");
+
+    assertThat(formatter.formatUnknownCommand(Locale.ENGLISH))
+        .contains("Unknown command")
+        .contains("/help");
+  }
+
+  @Test
+  @DisplayName("formatUnauthorized resolves localized message")
+  void shouldFormatUnauthorized() {
+    assertThat(formatter.formatUnauthorized())
+        .contains("Вы ещё не авторизованы")
+        .contains("/auth");
+
+    assertThat(formatter.formatUnauthorized(Locale.ENGLISH))
+        .contains("You are not authorized yet")
+        .contains("/auth");
+  }
+
+  @Test
+  @DisplayName("formatAuth messages resolve properly")
+  void shouldFormatAuthMessages() {
+    assertThat(formatter.formatAuthAlready()).contains("уже аутентифицированы");
+    assertThat(formatter.formatAuthSuccess()).contains("успешно аутентифицированы");
+    assertThat(formatter.formatAuthInvalidToken()).contains("Неверный токен");
+    assertThat(formatter.formatAuthInvalidFormat()).contains("Неверный формат токена");
+    assertThat(formatter.formatAuthTokenRequired()).contains("предоставьте токен");
+  }
+
+  @Test
+  @DisplayName("formatWelcome resolves personalized messages in Russian and English")
+  void shouldFormatWelcome() {
+    assertThat(formatter.formatWelcome("Max", true))
+        .contains("С возвращением, Max!");
+    assertThat(formatter.formatWelcome("Max", true, Locale.ENGLISH))
+        .contains("Welcome back, Max!");
+
+    assertThat(formatter.formatWelcome(null, false))
+        .contains("Привет, друг!");
+    assertThat(formatter.formatWelcome(null, false, Locale.ENGLISH))
+        .contains("Hello, friend!");
   }
 }

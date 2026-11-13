@@ -19,6 +19,7 @@ import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.Message;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import ru.maxow.mvpn.telegram.service.TelegramKeyboardFactory;
+import ru.maxow.mvpn.telegram.service.TelegramMessageFormatter;
 import ru.maxow.mvpn.telegram.service.TelegramUserService;
 import ru.maxow.mvpn.user.User;
 
@@ -29,13 +30,14 @@ class DefaultCommandHandlerTest {
   @Mock
   private TelegramUserService userService;
 
+  private final TelegramMessageFormatter messageFormatter = new TelegramMessageFormatter();
   private final TelegramKeyboardFactory keyboardFactory = new TelegramKeyboardFactory();
 
   private DefaultCommandHandler handler;
 
   @BeforeEach
   void setUp() {
-    handler = new DefaultCommandHandler(userService, keyboardFactory);
+    handler = new DefaultCommandHandler(userService, messageFormatter, keyboardFactory);
   }
 
   @Test

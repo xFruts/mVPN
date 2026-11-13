@@ -56,16 +56,9 @@ public class ConnectionCommandHandler implements CommandHandler {
 
     Optional<User> userOpt = userService.findAuthenticatedUser(chatId, username);
     if (userOpt.isEmpty()) {
-      String text = """
-          ⚠️ Вы ещё не авторизованы.
-
-          Для привязки аккаунта введите:
-          `/auth <ваш_токен>`
-          (токен можно получить в личном кабинете mVPN)
-          """;
       return List.of(SendMessage.builder()
           .chatId(chatId.toString())
-          .text(text)
+          .text(messageFormatter.formatUnauthorized())
           .replyMarkup(keyboardFactory.buildAuthKeyboard())
           .build());
     }
@@ -75,11 +68,7 @@ public class ConnectionCommandHandler implements CommandHandler {
     if (subOpt.isEmpty() || !subOpt.get().isActive()) {
       return List.of(SendMessage.builder()
           .chatId(chatId.toString())
-          .text("""
-              ⚠️ У вас нет активной подписки.
-
-              Для получения настроек подключения оформите подписку в личном кабинете mVPN.
-              """)
+          .text(messageFormatter.formatNoActiveSubscription())
           .replyMarkup(keyboardFactory.buildMainMenuKeyboard())
           .build());
     }

@@ -23,6 +23,7 @@ import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.Message;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import ru.maxow.mvpn.telegram.service.TelegramKeyboardFactory;
+import ru.maxow.mvpn.telegram.service.TelegramMessageFormatter;
 import ru.maxow.mvpn.user.User;
 import ru.maxow.mvpn.user.UserService;
 
@@ -33,6 +34,9 @@ class AuthCommandHandlerTest {
 
   @Mock
   private UserService userService;
+
+  @Spy
+  private TelegramMessageFormatter messageFormatter = new TelegramMessageFormatter();
 
   @Spy
   private TelegramKeyboardFactory keyboardFactory = new TelegramKeyboardFactory();

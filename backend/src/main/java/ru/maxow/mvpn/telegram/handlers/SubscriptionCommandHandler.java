@@ -48,16 +48,9 @@ public class SubscriptionCommandHandler implements CommandHandler {
     Optional<User> userOpt = userService.findAuthenticatedUser(chatId, username);
 
     if (userOpt.isEmpty()) {
-      String text = """
-          ⚠️ Вы ещё не авторизованы.
-
-          Для привязки аккаунта введите:
-          `/auth <ваш_токен>`
-          (токен можно получить в личном кабинете mVPN)
-          """;
       return List.of(SendMessage.builder()
           .chatId(chatId.toString())
-          .text(text)
+          .text(messageFormatter.formatUnauthorized())
           .replyMarkup(keyboardFactory.buildAuthKeyboard())
           .build());
     }

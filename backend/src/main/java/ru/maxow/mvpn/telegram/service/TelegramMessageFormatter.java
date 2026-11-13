@@ -6,6 +6,11 @@ import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
+import lombok.AccessLevel;
+import lombok.experimental.FieldDefaults;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.MessageSource;
+import org.springframework.context.support.ResourceBundleMessageSource;
 import org.springframework.stereotype.Component;
 import ru.maxow.mvpn.model.ServerStatus;
 import ru.maxow.mvpn.server.Server;
@@ -15,56 +20,139 @@ import ru.maxow.mvpn.tariff.Tariff;
 import ru.maxow.mvpn.user.User;
 
 @Component
+@FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class TelegramMessageFormatter {
 
+  private static final Locale DEFAULT_LOCALE = Locale.forLanguageTag("ru");
   private static final DateTimeFormatter DATE_FORMATTER =
       DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm 'UTC'");
+
+  MessageSource messageSource;
+
+  @Autowired
+  public TelegramMessageFormatter(MessageSource messageSource) {
+    this.messageSource = messageSource;
+  }
+
+  public TelegramMessageFormatter() {
+    ResourceBundleMessageSource bundleSource = new ResourceBundleMessageSource();
+    bundleSource.setBasenames("messages");
+    bundleSource.setDefaultEncoding("UTF-8");
+    bundleSource.setUseCodeAsDefaultMessage(true);
+    this.messageSource = bundleSource;
+  }
+
+  public String formatUnknownCommand() {
+    return formatUnknownCommand(DEFAULT_LOCALE);
+  }
+
+  public String formatUnknownCommand(Locale locale) {
+    return msg("bot.command.unknown", locale).strip();
+  }
+
+  public String formatUnauthorized() {
+    return formatUnauthorized(DEFAULT_LOCALE);
+  }
+
+  public String formatUnauthorized(Locale locale) {
+    return msg("bot.auth.required", locale).strip();
+  }
+
+  public String formatNoActiveSubscription() {
+    return formatNoActiveSubscription(DEFAULT_LOCALE);
+  }
+
+  public String formatNoActiveSubscription(Locale locale) {
+    return msg("bot.subscription.none", locale).strip();
+  }
+
+  public String formatAuthAlready() {
+    return formatAuthAlready(DEFAULT_LOCALE);
+  }
+
+  public String formatAuthAlready(Locale locale) {
+    return msg("bot.auth.already", locale).strip();
+  }
+
+  public String formatAuthSuccess() {
+    return formatAuthSuccess(DEFAULT_LOCALE);
+  }
+
+  public String formatAuthSuccess(Locale locale) {
+    return msg("bot.auth.success", locale).strip();
+  }
+
+  public String formatAuthInvalidToken() {
+    return formatAuthInvalidToken(DEFAULT_LOCALE);
+  }
+
+  public String formatAuthInvalidToken(Locale locale) {
+    return msg("bot.auth.invalid-token", locale).strip();
+  }
+
+  public String formatAuthInvalidFormat() {
+    return formatAuthInvalidFormat(DEFAULT_LOCALE);
+  }
+
+  public String formatAuthInvalidFormat(Locale locale) {
+    return msg("bot.auth.invalid-format", locale).strip();
+  }
+
+  public String formatAuthTokenRequired() {
+    return formatAuthTokenRequired(DEFAULT_LOCALE);
+  }
+
+  public String formatAuthTokenRequired(Locale locale) {
+    return msg("bot.auth.token-required", locale).strip();
+  }
 
   public String formatSubscriptionStatus(
       User user,
       Optional<Subscription> subscriptionOpt,
       Optional<SubscriptionTrafficState> trafficOpt
   ) {
-    if (subscriptionOpt.isEmpty()) {
-      return """
-          ℹ️ Информация о подписке
+    return formatSubscriptionStatus(user, subscriptionOpt, trafficOpt, DEFAULT_LOCALE);
+  }
 
-          У вас пока нет активной подписки.
-          Оформить подписку можно в личном кабинете mVPN.
-          """;
+  public String formatSubscriptionStatus(
+      User user,
+      Optional<Subscription> subscriptionOpt,
+      Optional<SubscriptionTrafficState> trafficOpt,
+      Locale locale
+  ) {
+    if (subscriptionOpt.isEmpty()) {
+      return msg("bot.subscription.info.none", locale).strip();
     }
 
     Subscription sub = subscriptionOpt.get();
     Tariff tariff = sub.getTariff();
-    String tariffName = tariff != null ? tariff.getName() : "Не указан";
+    String tariffName = tariff != null
+        ? tariff.getName()
+        : msg("bot.subscription.tariff.unspecified", locale);
     boolean isActive = sub.isActive();
-    String statusBadge = isActive ? "🟢 Активна" : "🔴 Истекла / Неактивна";
+    String statusBadge = isActive
+        ? msg("bot.subscription.status.active", locale)
+        : msg("bot.subscription.status.inactive", locale);
 
     OffsetDateTime endDate = sub.getEndDate();
-    String formattedDate = endDate != null ? endDate.format(DATE_FORMATTER) : "Бессрочно";
-    String durationNote = calculateDurationNote(endDate);
+    String formattedDate = endDate != null
+        ? endDate.format(DATE_FORMATTER)
+        : msg("bot.subscription.date.permanent", locale);
+    String durationNote = calculateDurationNote(endDate, locale);
 
     long limitBytes = sub.getTrafficLimitBytes();
     long usedBytes = trafficOpt
         .map(SubscriptionTrafficState::getEffectiveUsedBytes)
         .orElse(0L);
 
-    String trafficInfo = formatTrafficSection(usedBytes, limitBytes);
+    String trafficInfo = formatTrafficSection(usedBytes, limitBytes, locale);
     int maxDevices = tariff != null && tariff.getMaxDevices() != null
         ? tariff.getMaxDevices()
         : 1;
 
-    return String.format(
-        """
-        📊 Ваша подписка:
-
-        ⭐️ Тариф: %s
-        Статус: %s
-        🗓 Действует до: %s %s
-        📱 Устройств: до %d
-
-        %s
-        """,
+    return msg(
+        "bot.subscription.info.details",
+        locale,
         tariffName,
         statusBadge,
         formattedDate,
@@ -75,31 +163,27 @@ public class TelegramMessageFormatter {
   }
 
   public String formatServersStatus(List<Server> servers) {
+    return formatServersStatus(servers, DEFAULT_LOCALE);
+  }
+
+  public String formatServersStatus(List<Server> servers, Locale locale) {
     if (servers == null || servers.isEmpty()) {
-      return "🌐 В данный момент список доступных серверов пуст.";
+      return msg("bot.servers.empty", locale).strip();
     }
 
-    StringBuilder sb = new StringBuilder("🌐 Доступные сервера и локации:\n\n");
+    StringBuilder sb = new StringBuilder(msg("bot.servers.header", locale));
     for (Server server : servers) {
       String emoji = server.getCountryEmoji() != null ? server.getCountryEmoji() : "🌐";
       String name = server.getName() != null ? server.getName() : "Сервер";
       String location = server.getLocation() != null && !server.getLocation().isBlank()
           ? " (" + server.getLocation() + ")"
           : "";
-      String statusBadge = formatServerBadge(server.getStatus());
+      String statusBadge = formatServerBadge(server.getStatus(), locale);
 
       sb.append(String.format("%s %s%s — %s\n", emoji, name, location, statusBadge));
     }
 
-    sb.append("""
-
-        ───────────────────────
-        💡 Если сервер со статусом 🟢 у вас не работает:
-        1. Проверьте подключение к сети без VPN.
-        2. Обновите подписку в приложении (Happ, v2rayTun, v2rayNG, Streisand).
-        3. Если локация недоступна, переключитесь на другую рабочую страну.
-        """);
-
+    sb.append(msg("bot.servers.footer", locale));
     return sb.toString().strip();
   }
 
@@ -108,185 +192,88 @@ public class TelegramMessageFormatter {
       Optional<Subscription> subscriptionOpt,
       String subscriptionUrl
   ) {
-    if (subscriptionOpt.isEmpty() || !subscriptionOpt.get().isActive()) {
-      return """
-          ⚠️ У вас нет активной подписки.
+    return formatConnectionGuide(user, subscriptionOpt, subscriptionUrl, DEFAULT_LOCALE);
+  }
 
-          Для получения ссылки на подключение оформите подписку в личном кабинете.
-          """;
+  public String formatConnectionGuide(
+      User user,
+      Optional<Subscription> subscriptionOpt,
+      String subscriptionUrl,
+      Locale locale
+  ) {
+    if (subscriptionOpt.isEmpty() || !subscriptionOpt.get().isActive()) {
+      return msg("bot.connection.no-subscription", locale).strip();
     }
 
-    return String.format(
-        """
-        🔗 Подключение к mVPN
-
-        Ваша персональная ссылка на подписку:
-        %s
-
-        💡 Рекомендуем использовать ссылку на подписку:
-        Она объединяет все ваши серверы и автоматически обновляет их без ручной настройки.
-
-        Выберите инструкцию для вашего приложения или получите прямой VLESS-ключ:
-        """,
-        subscriptionUrl
-    ).strip();
+    return msg("bot.connection.guide", locale, subscriptionUrl).strip();
   }
 
   public String formatHappGuide(String subscriptionUrl) {
-    return String.format(
-        """
-        📱 Пошаговая инструкция для Happ (iOS / Android / Mac / Windows)
+    return formatHappGuide(subscriptionUrl, DEFAULT_LOCALE);
+  }
 
-        Happ — быстрый и удобный клиент с поддержкой VLESS Reality.
-
-        1️⃣ Скопируйте вашу ссылку на подписку:
-        %s
-
-        2️⃣ Установите приложение Happ:
-        • iOS: найдите «Happ Proxy Utility» в App Store
-        • Android: установите из Google Play или GitHub
-
-        3️⃣ Откройте Happ и перейдите во вкладку «Конфигурации» (значок «➕» вверху).
-
-        4️⃣ Нажмите «Добавить подписку» (Add Subscription) и вставьте скопированную ссылку.
-
-        5️⃣ Нажмите иконку 🔄 (Обновить) рядом с mVPN для загрузки списка серверов.
-
-        6️⃣ Выберите нужную страну из списка и нажмите центральную кнопку подключения.
-
-        🎉 Готово! Соединение установлено.
-        """,
-        subscriptionUrl
-    ).strip();
+  public String formatHappGuide(String subscriptionUrl, Locale locale) {
+    return msg("bot.guide.happ", locale, subscriptionUrl).strip();
   }
 
   public String formatV2rayTunGuide(String subscriptionUrl) {
-    return String.format(
-        """
-        📱 Пошаговая инструкция для v2rayTun (Android / iOS)
+    return formatV2rayTunGuide(subscriptionUrl, DEFAULT_LOCALE);
+  }
 
-        v2rayTun — надежный клиент для протокола VLESS Reality.
-
-        Способ 1 — Автообновляемая подписка (Рекомендуется):
-        1️⃣ Скопируйте ссылку на подписку:
-        %s
-
-        2️⃣ Откройте v2rayTun и нажмите значок «➕» в правом верхнем углу.
-
-        3️⃣ Выберите «Добавить подписку» (Add Subscription URL):
-        • Название: mVPN
-        • URL подписки: вставьте скопированную ссылку
-        Нажмите галочку/кнопку «Сохранить».
-
-        4️⃣ В меню (три точки вверху) выберите «Обновить подписку».
-
-        5️⃣ Нажмите на нужный сервер из списка и запустите подключение кнопкой внизу.
-
-        ───────────────────────
-        Способ 2 — Прямой VLESS-ключ:
-        1. Получите ключ командой /key или кнопкой «Скопировать VLESS-ключ».
-        2. В v2rayTun нажмите «➕» ➔ «Импорт из буфера обмена».
-        3. Нажмите кнопку подключения.
-        """,
-        subscriptionUrl
-    ).strip();
+  public String formatV2rayTunGuide(String subscriptionUrl, Locale locale) {
+    return msg("bot.guide.v2raytun", locale, subscriptionUrl).strip();
   }
 
   public String formatVlessKey(Optional<String> vlessKeyOpt, String subscriptionUrl) {
+    return formatVlessKey(vlessKeyOpt, subscriptionUrl, DEFAULT_LOCALE);
+  }
+
+  public String formatVlessKey(
+      Optional<String> vlessKeyOpt,
+      String subscriptionUrl,
+      Locale locale
+  ) {
     if (vlessKeyOpt.isEmpty()) {
-      return String.format(
-          """
-          ⚠️ Не удалось сформировать прямой VLESS-ключ (сервера временно на обслуживании).
-
-          Пожалуйста, используйте вашу ссылку на подписку:
-          %s
-
-          Она автоматически загрузит доступные узлы при восстановлении работы серверов.
-          """,
-          subscriptionUrl
-      ).strip();
+      return msg("bot.vless.unavailable", locale, subscriptionUrl).strip();
     }
 
-    return String.format(
-        """
-        🔑 Ваш персональный VLESS-ключ:
-
-        %s
-
-        💡 Как использовать:
-        1. Скопируйте ключ выше.
-        2. Откройте приложение (Happ, v2rayTun, v2rayNG, Streisand, Hiddify).
-        3. Нажмите «➕» ➔ «Импорт из буфера обмена» (Import from clipboard).
-        4. Выберите добавленный сервер и нажмите «Подключить».
-        """,
-        vlessKeyOpt.get()
-    ).strip();
+    return msg("bot.vless.key", locale, vlessKeyOpt.get()).strip();
   }
 
   public String formatWelcome(String firstName, boolean isAuthenticated) {
-    String name = firstName != null && !firstName.isBlank() ? firstName : "друг";
+    return formatWelcome(firstName, isAuthenticated, DEFAULT_LOCALE);
+  }
+
+  public String formatWelcome(String firstName, boolean isAuthenticated, Locale locale) {
+    String defaultName = (locale != null && locale.getLanguage().equalsIgnoreCase("en"))
+        ? "friend"
+        : "друг";
+    String name = firstName != null && !firstName.isBlank() ? firstName : defaultName;
     if (isAuthenticated) {
-      return String.format(
-          """
-          👋 С возвращением, %s!
-
-          Вы авторизованы в сервисе mVPN.
-          Используйте кнопки меню ниже для управления доступом.
-          """,
-          name
-      ).strip();
+      return msg("bot.welcome.authenticated", locale, name).strip();
     }
-    return String.format(
-        """
-        👋 Привет, %s!
-        Я официальный бот VPN-сервиса mVPN.
-
-        Для привязки аккаунта введите команду:
-        `/auth <код_авторизации>`
-        (код можно скопировать в личном кабинете на сайте)
-
-        Справка по командам: /help
-        """,
-        name
-    ).strip();
+    return msg("bot.welcome.unauthenticated", locale, name).strip();
   }
 
   public String formatHelp(boolean isAuthenticated) {
-    if (isAuthenticated) {
-      return """
-          ℹ️ Доступные команды mVPN бота:
-
-          📊 /status — Информация о тарифе, сроке действия и остатке ГБ
-          🌐 /servers — Список доступных стран и статус их работы
-          🔗 /connect — Ссылка на подписку и выбор инструкций
-          🔑 /key — Получить прямой VLESS-ключ для быстрой вставки
-          📱 /happ — Пошаговая инструкция для приложения Happ
-          📱 /v2raytun — Пошаговая инструкция для приложения v2rayTun
-          ❓ /help — Показать эту справку
-
-          Вы также можете пользоваться кнопками меню на клавиатуре.
-          """;
-    }
-    return """
-        ℹ️ Справка по боту:
-
-        Для начала работы необходимо привязать Telegram к вашему аккаунту mVPN:
-        `/auth <ваш_токен>`
-
-        После успешной привязки вам станут доступны:
-        • Просмотр тарифа и остатка ГБ
-        • Проверка доступности серверов
-        • Получение ссылок для подключения и ключей VLESS
-        • Пошаговые инструкции для Happ и v2rayTun
-        """;
+    return formatHelp(isAuthenticated, DEFAULT_LOCALE);
   }
 
-  private String formatTrafficSection(long usedBytes, long limitBytes) {
+  public String formatHelp(boolean isAuthenticated, Locale locale) {
+    if (isAuthenticated) {
+      return msg("bot.help.authenticated", locale).strip();
+    }
+    return msg("bot.help.unauthenticated", locale).strip();
+  }
+
+  private String msg(String code, Locale locale, Object... args) {
+    Locale target = locale != null ? locale : DEFAULT_LOCALE;
+    return messageSource.getMessage(code, args, target);
+  }
+
+  private String formatTrafficSection(long usedBytes, long limitBytes, Locale locale) {
     if (limitBytes <= 0) {
-      return String.format(
-          "📈 Трафик:\nИспользовано: %s\nЛимит: Безлимитный",
-          formatBytes(usedBytes)
-      );
+      return msg("bot.subscription.traffic.unlimited", locale, formatBytes(usedBytes));
     }
 
     long remainingBytes = Math.max(0, limitBytes - usedBytes);
@@ -296,8 +283,9 @@ public class TelegramMessageFormatter {
     );
     String bar = renderProgressBar(remainingBytes, limitBytes);
 
-    return String.format(
-        "📈 Трафик:\nИспользовано: %s из %s\n⏳ Осталось: %s (%d%%)\n%s",
+    return msg(
+        "bot.subscription.traffic.limited",
+        locale,
         formatBytes(usedBytes),
         formatBytes(limitBytes),
         formatBytes(remainingBytes),
@@ -328,26 +316,26 @@ public class TelegramMessageFormatter {
     return String.format(Locale.US, "%.1f МБ", bytes / (1024.0 * 1024.0));
   }
 
-  private String calculateDurationNote(OffsetDateTime endDate) {
+  private String calculateDurationNote(OffsetDateTime endDate, Locale locale) {
     if (endDate == null) {
       return "";
     }
     OffsetDateTime now = OffsetDateTime.now();
     if (endDate.isBefore(now)) {
       long pastDays = Duration.between(endDate, now).toDays();
-      return String.format("(истекла %d дн. назад)", Math.max(1, pastDays));
+      return msg("bot.subscription.duration.expired", locale, Math.max(1, pastDays));
     }
     long remainingDays = Duration.between(now, endDate).toDays();
-    return String.format("(осталось %d дн.)", remainingDays);
+    return msg("bot.subscription.duration.remaining", locale, remainingDays);
   }
 
-  private String formatServerBadge(ServerStatus status) {
+  private String formatServerBadge(ServerStatus status, Locale locale) {
     if (status == ServerStatus.ACTIVE) {
-      return "🟢 Работает стабильно";
+      return msg("bot.server.status.active", locale);
     }
     if (status == ServerStatus.MAINTENANCE) {
-      return "🟡 Технические работы";
+      return msg("bot.server.status.maintenance", locale);
     }
-    return "🔴 Временно недоступен";
+    return msg("bot.server.status.inactive", locale);
   }
 }
