@@ -96,6 +96,29 @@ class XuiClientApiClient {
     }
   }
 
+  void deleteClient(RestClient restClient, String sessionCookie, String email, Server server) {
+    String encodedEmail = UriUtils.encodePathSegment(email, StandardCharsets.UTF_8);
+
+    log.debug("XUI deleteClient: email={}, serverId={}", email, server.getId());
+
+    try {
+      XuiApiResponse<?> response = sendPostRequest(
+          restClient, sessionCookie,
+          "/panel/api/clients/del/" + encodedEmail,
+          null
+      );
+
+      if (response == null || !response.success()) {
+        String msg = response != null ? response.msg() : "empty response";
+        log.warn("XUI deleteClient failed: serverId={}, email={}, msg={}",
+            server.getId(), email, msg);
+      }
+    } catch (Exception e) {
+      log.warn("Failed to delete client '{}' on XUI server '{}': {}",
+          email, server.getName(), e.getMessage());
+    }
+  }
+
   private <T> XuiApiResponse<T> sendGetRequest(
       RestClient restClient,
       String sessionCookie,
