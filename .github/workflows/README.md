@@ -1,32 +1,47 @@
-# CI/CD пайплайны
+# CI/CD пайплайны mVPN
 
-В этой директории находятся базовые workflow в enterprise-стиле для проекта.
+В этой директории находятся базовые workflow в enterprise-стиле для проекта **mVPN**, спроектированные по стандартам безопасности цепочки поставок (Supply Chain Security, OpenSSF), монорепозиторной оптимизации (Selective Change Detection) и автоматического код-ревью с помощью ИИ.
 
-## Workflow
+---
 
-- `ci.yml`
-  - `backend-verify`: обязательный базовый Maven gate (`verify`) для backend.
-  - `backend-quality-preview`: preview строгого backend-профиля (`-Pci`) в неблокирующем режиме.
-  - `frontend-lint-build`: обязательный gate для frontend (lint + build).
+## Архитектура Workflow
 
-- `security.yml`
-  - `dependency-review`: проверяет изменения зависимостей в pull request.
-  - `codeql`: статический анализ для Java и JS/TS.
-  - `backend-dependency-check`: OWASP CVE-скан зависимостей с HTML-отчетом в артефактах.
+### 1. `ci.yml` (Непрерывная интеграция и гейты качества)
+- **`detect-changes`**: Определяет изменившиеся файлы с помощью `dorny/paths-filter`. Если изменен только `Frontend/`, сборка бэкенда пропускается, и наоборот (экономия времени и раннер-минут).
+- **`backend-verify`**: Базовый гейт бэкенда (`mvn verify`). Запускает модульные тесты, формирует отчеты Surefire и JaCoCo, валидирует сборку через `maven-enforcer`.
+  - Автоматически публикует визуальную таблицу покрытия кода JaCoCo напрямую в **GitHub Step Summary**.
+  - Запускает предварительную проверку строгого порога качества (`-Pci jacoco:check@check`) в неблокирующем режиме (`continue-on-error: true`).
+- **`frontend-lint-build`**: Гейт фронтенда. Выполняет установку зависимостей (`npm ci`), статический анализ (`npm run lint` с ESLint 9) и production-сборку (`npm run build` с Vite).
+- **`docker-smoke`**: Smoke-тест контейнеризации. Проверяет корректность синтаксиса `compose.dev.yml`, `compose.prod.yml` и выполняет тестовую сборку Dockerfile фронтенда и бэкенда.
+- **`CI Gate` (`ci-gate`)**: Финальный агрегирующий гейт. Служит единым обязательным чек-поинтом для Branch Protection Rules.
 
-## Почему строгий backend gate пока только в preview
+### 2. `security.yml` (Безопасность и SAST)
+- **`detect-changes`**: Определяет изменившиеся файлы для селективного запуска проверок безопасности.
+- **`secret-scan`**: Автоматическое сканирование кодовой базы и коммитов в pull request на утечки секретов и токенов (Gitleaks).
+- **`codeql (java-kotlin)`**: SAST-анализ уязвимостей бэкенда (запускается только при изменениях `backend/**` или по расписанию/пушу в master).
+- **`codeql (javascript-typescript)`**: SAST-анализ уязвимостей фронтенда (запускается только при изменениях `Frontend/**` или по расписанию/пушу в master).
+- **`backend-dependency-check`**: Сканирование транзитивных зависимостей Maven с помощью OWASP Dependency-Check с кэшированием базы NIST NVD (только для бэкенда).
+- **`Security Gate` (`security-gate`)**: Финальный агрегирующий гейт безопасности. Служит единым обязательным чек-поинтом для Branch Protection Rules.
 
-Текущий строгий порог JaCoCo в `backend/pom.xml` (`LINE 0.55`, `BRANCH 0.35` в профиле `ci`)
-выше фактического покрытия. Неблокирующий режим позволяет команде повышать покрытие,
-не останавливая все PR.
+### 3. `ai-review.yml` (Автоматическое код-ревью с Google Gemini)
+- **Триггеры**: Запускается через безопасный `pull_request_target` (enterprise-стандарт безопасности для PR, включая безопасный запуск для форков) при открытии (`opened`), обновлении (`synchronize`) или переоткрытии (`reopened`) в ветки `master` и `main`.
+- **Контекст и стандарты**: Проводит глубокий аудит изменений кода в строгом соответствии с инженерными стандартами проекта из [`AGENTS.md`](../../AGENTS.md) (React 19, Spring Boot 3, JPA, Zustand, 3X-UI, VLESS, Web & API Security).
+- **Интеллектуальный роутинг моделей**: Автоматически определяет поддерживаемые модели в рамках переданного API-ключа (с приоритетом `gemini-2.5-flash`, `gemini-1.5-flash`, `gemini-2.5-pro` и динамическим fallback).
+- **Защита от спама в PR**: Ищет существующий комментарий AI-ревьюера в PR и обновляет его (in-place update) вместо создания дублирующих сообщений при каждом новом пуше.
+- **Конфигурация**: Требуется указать секрет `GEMINI_API_KEY` в **Settings → Secrets and variables → Actions** репозитория. При отсутствии секрета в PR публикуется аккуратное уведомление-напоминание.
 
-Когда покрытие стабилизируется, сделайте `backend-quality-preview` обязательной проверкой
-в branch protection.
+---
 
-## Рекомендуемые обязательные проверки в branch protection
+## Автоматизация обновлений (Dependabot)
 
-- `backend-verify`
-- `frontend-lint-build`
-- `dependency-review`
-- `codeql (java-kotlin)`
-- `codeql (javascript-typescript)`
+Конфигурация расположена в [`.github/dependabot.yml`](../dependabot.yml):
+- **Группировка PR**: Обновления группируются по экосистемам (`github-actions`, `spring-boot`, `jackson`, `test-dependencies`, `react`, `vite`, `linters`), предотвращая спам pull request'ов.
+- **Conventional Commits**: PR и коммиты создаются с понятными префиксами: `chore(deps-ci)`, `chore(deps-backend)`, `chore(deps-frontend)`.
+
+---
+
+## Рекомендуемые обязательные проверки в Branch Protection Rules
+
+Благодаря агрегирующим шагам-гейтам (`ci-gate` и `security-gate`) нет необходимости выбирать отдельные джобы под каждый язык:
+- **`CI Gate`** (автоматически учитывает выборочный запуск бэкенда/фронтенда/докера)
+- **`Security Gate`** (автоматически учитывает выборочный запуск SAST бэкенда/фронтенда и секретов)

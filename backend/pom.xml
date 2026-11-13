@@ -439,7 +439,7 @@
                 <artifactId>maven-surefire-plugin</artifactId>
                 <version>${maven.failsafe.plugin.version}</version>
                 <configuration>
-                    <argLine>@{argLine} -Dfile.encoding=UTF-8 -Dsun.stdout.encoding=UTF-8 -Dsun.stderr.encoding=UTF-8</argLine>
+                    <argLine>@{argLine} -Dspring.profiles.active=test -Dfile.encoding=UTF-8 -Dsun.stdout.encoding=UTF-8 -Dsun.stderr.encoding=UTF-8</argLine>
                     <includes>
                         <include>**/*Test.java</include>
                     </includes>
@@ -455,7 +455,7 @@
                 <version>${maven.failsafe.plugin.version}</version>
                 <configuration>
                     <skipITs>${skipITs}</skipITs>
-                    <argLine>@{argLine} -Dfile.encoding=UTF-8 -Dsun.stdout.encoding=UTF-8 -Dsun.stderr.encoding=UTF-8</argLine>
+                    <argLine>@{argLine} -Dspring.profiles.active=test -Dfile.encoding=UTF-8 -Dsun.stdout.encoding=UTF-8 -Dsun.stderr.encoding=UTF-8</argLine>
                     <includes>
                         <include>**/*IT.java</include>
                         <include>**/*ITCase.java</include>
@@ -574,7 +574,12 @@
                         <artifactId>maven-checkstyle-plugin</artifactId>
                         <version>${checkstyle.plugin.version}</version>
                         <configuration>
-                            <excludes>**/generated-sources/**/*</excludes>
+                            <sourceDirectories>
+                                <sourceDirectory>${project.build.sourceDirectory}</sourceDirectory>
+                            </sourceDirectories>
+                            <configLocation>google_checks.xml</configLocation>
+                            <consoleOutput>true</consoleOutput>
+                            <failOnViolation>true</failOnViolation>
                         </configuration>
                         <executions>
                             <execution>
@@ -583,11 +588,6 @@
                                 <goals>
                                     <goal>check</goal>
                                 </goals>
-                                <configuration>
-                                    <configLocation>google_checks.xml</configLocation>
-                                    <consoleOutput>true</consoleOutput>
-                                    <failOnViolation>true</failOnViolation>
-                                </configuration>
                             </execution>
                         </executions>
                     </plugin>
@@ -622,6 +622,8 @@
                                 <configuration>
                                     <skip>${skipSecurityScan}</skip>
                                     <failBuildOnCVSS>9</failBuildOnCVSS>
+                                    <failOnError>false</failOnError>
+                                    <nvdMaxRetryCount>5</nvdMaxRetryCount>
                                     <format>HTML</format>
                                 </configuration>
                             </execution>

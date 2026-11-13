@@ -5,19 +5,64 @@ on:
     branches:
       - main
       - master
+    paths-ignore:
+      - '**.md'
+      - 'docs/**'
+      - '.gitignore'
   push:
     branches:
       - main
       - master
+    paths-ignore:
+      - '**.md'
+      - 'docs/**'
+      - '.gitignore'
   workflow_dispatch:
+
+permissions:
+  contents: read
 
 concurrency:
   group: ci-${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: ${{ github.ref != 'refs/heads/master' && github.ref != 'refs/heads/main' }}
 
 jobs:
+  changes:
+    name: detect-changes
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: read
+    outputs:
+      backend: ${{ steps.filter.outputs.backend }}
+      frontend: ${{ steps.filter.outputs.frontend }}
+      docker: ${{ steps.filter.outputs.docker }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Paths Filter
+        id: filter
+        uses: dorny/paths-filter@ceb8a2b8f2d89434be7ff52d3de7ec3738c5cc9d # v4.0.3
+        with:
+          filters: |
+            backend:
+              - 'backend/**'
+              - '.github/workflows/ci.yml'
+            frontend:
+              - 'Frontend/**'
+              - '.github/workflows/ci.yml'
+            docker:
+              - 'compose*.yml'
+              - '**/Dockerfile*'
+              - 'backend/**'
+              - 'Frontend/**'
+              - '.github/workflows/ci.yml'
+
   backend-verify:
     name: backend-verify
+    needs: changes
+    if: needs.changes.outputs.backend == 'true' || github.event_name == 'push' || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -26,25 +71,57 @@ jobs:
         working-directory: backend
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Set up JDK 21
-        uses: actions/setup-java@v5
+        uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad # v6.1.0
         with:
           distribution: temurin
           java-version: '21'
           cache: maven
+          cache-dependency-path: backend/pom.xml
 
-      - name: Ensure Maven wrapper is executable (if present)
-        run: |
-          if [ -f "./mvnw" ]; then chmod +x ./mvnw; fi
+      - name: Ensure Maven wrapper is executable
+        run: if [ -f "./mvnw" ]; then chmod +x ./mvnw; fi
 
       - name: Maven verify (baseline gate)
-        run: ./mvnw -B -ntp -DskipITs=true -DskipSecurityScan=true verify
+        run: ./mvnw -B -ntp -DskipITs=true -DskipSecurityScan=true -Dspring.profiles.active=test verify
+
+      - name: Publish Coverage to Step Summary
+        if: always()
+        run: |
+          python3 -c '
+          import csv, os
+          csv_path = "target/site/jacoco/jacoco.csv"
+          if os.path.exists(csv_path):
+              with open(csv_path, encoding="utf-8") as f:
+                  r = csv.DictReader(f)
+                  im = ic = bm = bc = lm = lc = 0
+                  for row in r:
+                      im += int(row["INSTRUCTION_MISSED"]); ic += int(row["INSTRUCTION_COVERED"])
+                      bm += int(row["BRANCH_MISSED"]); bc += int(row["BRANCH_COVERED"])
+                      lm += int(row["LINE_MISSED"]); lc += int(row["LINE_COVERED"])
+                  inst = ic / (ic + im) * 100 if (ic + im) else 0
+                  branch = bc / (bc + bm) * 100 if (bc + bm) else 0
+                  line = lc / (lc + lm) * 100 if (lc + lm) else 0
+                  summary_file = os.environ.get("GITHUB_STEP_SUMMARY")
+                  if summary_file:
+                      with open(summary_file, "a", encoding="utf-8") as s:
+                          s.write("### 📊 Backend JaCoCo Coverage Summary\n\n")
+                          s.write("| Metric | Covered | Missed | Total | Coverage % |\n")
+                          s.write("| :--- | :--- | :--- | :--- | :--- |\n")
+                          s.write(f"| Instructions | {ic:,} | {im:,} | {ic+im:,} | **{inst:.2f}%** |\n")
+                          s.write(f"| Branches | {bc:,} | {bm:,} | {bc+bm:,} | **{branch:.2f}%** |\n")
+                          s.write(f"| Lines | {lc:,} | {lm:,} | {lc+lm:,} | **{line:.2f}%** |\n")
+          '
+
+      - name: Strict JaCoCo Quality Check (Preview / Non-blocking)
+        continue-on-error: true
+        run: ./mvnw -B -ntp -Pci -Dspring.profiles.active=test jacoco:check@check
 
       - name: Upload backend test and coverage reports
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: backend-reports
           path: |
@@ -53,35 +130,10 @@ jobs:
             backend/target/site/jacoco/**
           if-no-files-found: ignore
 
-  backend-quality-preview:
-    name: backend-quality-preview
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-    continue-on-error: true
-    defaults:
-      run:
-        working-directory: backend
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v5
-
-      - name: Set up JDK 21
-        uses: actions/setup-java@v5
-        with:
-          distribution: temurin
-          java-version: '21'
-          cache: maven
-
-      - name: Ensure Maven wrapper is executable (if present)
-        run: |
-          if [ -f "./mvnw" ]; then chmod +x ./mvnw; fi
-
-      - name: Maven verify (strict CI profile preview)
-        run: ./mvnw -B -ntp -Pci -DskipITs=true -DskipSecurityScan=true verify
-
   frontend-lint-build:
     name: frontend-lint-build
+    needs: changes
+    if: needs.changes.outputs.frontend == 'true' || github.event_name == 'push' || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -90,10 +142,10 @@ jobs:
         working-directory: Frontend
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Set up Node.js 24
-        uses: actions/setup-node@v5
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: '24'
           cache: npm
@@ -108,3 +160,48 @@ jobs:
       - name: Build
         run: npm run build
 
+  docker-smoke:
+    name: docker-smoke
+    needs: changes
+    if: needs.changes.outputs.docker == 'true' || github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Validate Compose Configurations
+        run: |
+          docker compose -f compose.dev.yml config --quiet
+          docker compose -f compose.prod.yml config --quiet
+
+      - name: Build Frontend Dockerfile
+        run: docker build -t mvpn-frontend:test -f Frontend/Dockerfile Frontend/
+
+      - name: Build Backend Dockerfile
+        run: docker build -t mvpn-backend:test -f backend/Dockerfile backend/
+
+  ci-gate:
+    name: CI Gate
+    needs: [changes, backend-verify, frontend-lint-build, docker-smoke]
+    if: always()
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Evaluate Pipeline Status
+        run: |
+          echo "Evaluating CI job results..."
+          echo "backend-verify: ${{ needs.backend-verify.result }}"
+          echo "frontend-lint-build: ${{ needs.frontend-lint-build.result }}"
+          echo "docker-smoke: ${{ needs.docker-smoke.result }}"
+
+          if [ "${{ needs.backend-verify.result }}" == "failure" ] || \
+             [ "${{ needs.frontend-lint-build.result }}" == "failure" ] || \
+             [ "${{ needs.docker-smoke.result }}" == "failure" ]; then
+            echo "❌ One or more required CI gates failed!"
+            exit 1
+          fi
+
+          echo "✅ All required CI gates passed or were selectively skipped."
