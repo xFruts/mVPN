@@ -10,6 +10,7 @@ import static org.mockito.Mockito.when;
 import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import org.junit.jupiter.api.BeforeEach;
@@ -80,11 +81,14 @@ class SubscriptionTrafficStateServiceImplTest {
   }
 
   @Test
-  @DisplayName("1. Первый синк: устанавливает baseline серверов, использованный трафик = 0")
+  @DisplayName("1. Первый синк: ставит baseline серверов, использованный трафик = 0")
   void shouldInitializeBaselineOnFirstSync() {
-    when(trafficStateRepository.findBySubscriptionId(2L)).thenReturn(Optional.empty());
-    when(serverTrafficRepository.findBySubscriptionIdAndServerId(2L, 10L)).thenReturn(Optional.empty());
-    when(serverTrafficRepository.findBySubscriptionIdAndServerId(2L, 20L)).thenReturn(Optional.empty());
+    when(trafficStateRepository.findBySubscriptionId(2L))
+        .thenReturn(Optional.empty());
+    when(serverTrafficRepository.findBySubscriptionIdAndServerId(2L, 10L))
+        .thenReturn(Optional.empty());
+    when(serverTrafficRepository.findBySubscriptionIdAndServerId(2L, 20L))
+        .thenReturn(Optional.empty());
 
     when(xuiPanelService.getClientTraffic(serverA, testUser.getFullName()))
         .thenReturn(new XuiClientTraffic(testUser.getFullName(), 1_000L, 5_000L, 6_000L, 0L));
@@ -94,14 +98,16 @@ class SubscriptionTrafficStateServiceImplTest {
     when(trafficStateRepository.save(any(SubscriptionTrafficState.class)))
         .thenAnswer(inv -> inv.getArgument(0));
 
-    SubscriptionTrafficState state = trafficStateService.syncTrafficForSubscription(testUser, testSubscription);
+    SubscriptionTrafficState state =
+        trafficStateService.syncTrafficForSubscription(testUser, testSubscription);
 
     assertThat(state).isNotNull();
     assertThat(state.getUsedBytes()).isEqualTo(0L);
     assertThat(state.getUsedUploadBytes()).isEqualTo(0L);
     assertThat(state.getUsedDownloadBytes()).isEqualTo(0L);
 
-    verify(serverTrafficRepository, times(2)).save(any(SubscriptionServerTraffic.class));
+    verify(serverTrafficRepository, times(2))
+        .save(any(SubscriptionServerTraffic.class));
   }
 
   @Test
@@ -129,9 +135,12 @@ class SubscriptionTrafficStateServiceImplTest {
     stB.setLastUploadBytes(2_000L);
     stB.setLastDownloadBytes(8_000L);
 
-    when(trafficStateRepository.findBySubscriptionId(2L)).thenReturn(Optional.of(existingState));
-    when(serverTrafficRepository.findBySubscriptionIdAndServerId(2L, 10L)).thenReturn(Optional.of(stA));
-    when(serverTrafficRepository.findBySubscriptionIdAndServerId(2L, 20L)).thenReturn(Optional.of(stB));
+    when(trafficStateRepository.findBySubscriptionId(2L))
+        .thenReturn(Optional.of(existingState));
+    when(serverTrafficRepository.findBySubscriptionIdAndServerId(2L, 10L))
+        .thenReturn(Optional.of(stA));
+    when(serverTrafficRepository.findBySubscriptionIdAndServerId(2L, 20L))
+        .thenReturn(Optional.of(stB));
 
     // Server A: +500 up, +1500 down -> +2000 bytes
     when(xuiPanelService.getClientTraffic(serverA, testUser.getFullName()))
@@ -143,7 +152,8 @@ class SubscriptionTrafficStateServiceImplTest {
     when(trafficStateRepository.save(any(SubscriptionTrafficState.class)))
         .thenAnswer(inv -> inv.getArgument(0));
 
-    SubscriptionTrafficState state = trafficStateService.syncTrafficForSubscription(testUser, testSubscription);
+    SubscriptionTrafficState state =
+        trafficStateService.syncTrafficForSubscription(testUser, testSubscription);
 
     // Initial 1000 + 2000 (from A) + 1000 (from B) = 4000
     assertThat(state.getUsedBytes()).isEqualTo(4_000L);
@@ -152,7 +162,7 @@ class SubscriptionTrafficStateServiceImplTest {
   }
 
   @Test
-  @DisplayName("3. Сброс ноды 3X-UI (XUI reset): не зависает в fallback, считает новую дельту от 0")
+  @DisplayName("3. Сброс ноды 3X-UI: не зависает в fallback, считает новую дельту от 0")
   void shouldHandleXuiResetGracefullyWithoutLosingTraffic() {
     SubscriptionTrafficState existingState = new SubscriptionTrafficState();
     existingState.setId(1L);
@@ -169,19 +179,23 @@ class SubscriptionTrafficStateServiceImplTest {
     stA.setLastUploadBytes(10_000_000_000L);
     stA.setLastDownloadBytes(40_000_000_000L);
 
-    testTariff.setServers(Set.of(serverA)); // single server for simplicity
+    testTariff.setServers(Set.of(serverA));
 
-    when(trafficStateRepository.findBySubscriptionId(2L)).thenReturn(Optional.of(existingState));
-    when(serverTrafficRepository.findBySubscriptionIdAndServerId(2L, 10L)).thenReturn(Optional.of(stA));
+    when(trafficStateRepository.findBySubscriptionId(2L))
+        .thenReturn(Optional.of(existingState));
+    when(serverTrafficRepository.findBySubscriptionIdAndServerId(2L, 10L))
+        .thenReturn(Optional.of(stA));
 
     // Server A was reset! Returns 100 MB up and 200 MB down (much less than previous 10GB/40GB)
     when(xuiPanelService.getClientTraffic(serverA, testUser.getFullName()))
-        .thenReturn(new XuiClientTraffic(testUser.getFullName(), 100_000_000L, 200_000_000L, 300_000_000L, 0L));
+        .thenReturn(new XuiClientTraffic(
+            testUser.getFullName(), 100_000_000L, 200_000_000L, 300_000_000L, 0L));
 
     when(trafficStateRepository.save(any(SubscriptionTrafficState.class)))
         .thenAnswer(inv -> inv.getArgument(0));
 
-    SubscriptionTrafficState state = trafficStateService.syncTrafficForSubscription(testUser, testSubscription);
+    SubscriptionTrafficState state =
+        trafficStateService.syncTrafficForSubscription(testUser, testSubscription);
 
     // Accumulated 50 GB + new delta (100MB + 200MB = 300MB) = 50.3 GB
     assertThat(state.getUsedBytes()).isEqualTo(50_300_000_000L);
@@ -203,8 +217,10 @@ class SubscriptionTrafficStateServiceImplTest {
 
     testTariff.setServers(Set.of(serverA));
 
-    when(trafficStateRepository.findBySubscriptionId(2L)).thenReturn(Optional.of(pastMonthState));
-    when(serverTrafficRepository.findBySubscriptionIdAndServerId(2L, 10L)).thenReturn(Optional.empty());
+    when(trafficStateRepository.findBySubscriptionId(2L))
+        .thenReturn(Optional.of(pastMonthState));
+    when(serverTrafficRepository.findBySubscriptionIdAndServerId(2L, 10L))
+        .thenReturn(Optional.empty());
 
     when(xuiPanelService.getClientTraffic(serverA, testUser.getFullName()))
         .thenReturn(new XuiClientTraffic(testUser.getFullName(), 0L, 0L, 0L, 0L));
@@ -212,7 +228,8 @@ class SubscriptionTrafficStateServiceImplTest {
     when(trafficStateRepository.save(any(SubscriptionTrafficState.class)))
         .thenAnswer(inv -> inv.getArgument(0));
 
-    SubscriptionTrafficState state = trafficStateService.syncTrafficForSubscription(testUser, testSubscription);
+    SubscriptionTrafficState state =
+        trafficStateService.syncTrafficForSubscription(testUser, testSubscription);
 
     // Old 270GB wiped for the new month, resets to 0
     assertThat(state.getUsedBytes()).isEqualTo(0L);
@@ -230,10 +247,13 @@ class SubscriptionTrafficStateServiceImplTest {
     cachedState.setUsedBytes(12345L);
     cachedState.setPeriodStartAt(Instant.now());
 
-    when(trafficStateRepository.findBySubscriptionId(2L)).thenReturn(Optional.of(cachedState));
-    when(xuiPanelService.getClientTraffic(any(), any())).thenThrow(new RuntimeException("Connection refused"));
+    when(trafficStateRepository.findBySubscriptionId(2L))
+        .thenReturn(Optional.of(cachedState));
+    when(xuiPanelService.getClientTraffic(any(), any()))
+        .thenThrow(new RuntimeException("Connection refused"));
 
-    SubscriptionTrafficState state = trafficStateService.syncTrafficForSubscription(testUser, testSubscription);
+    SubscriptionTrafficState state =
+        trafficStateService.syncTrafficForSubscription(testUser, testSubscription);
 
     assertThat(state).isSameAs(cachedState);
     assertThat(state.getUsedBytes()).isEqualTo(12345L);
@@ -242,15 +262,18 @@ class SubscriptionTrafficStateServiceImplTest {
   @Test
   @DisplayName("6. Ошибка всех серверов без кэша: выбрасывает XuiUnavailableException")
   void shouldThrowWhenAllServersFailAndNoCache() {
-    when(trafficStateRepository.findBySubscriptionId(2L)).thenReturn(Optional.empty());
-    when(xuiPanelService.getClientTraffic(any(), any())).thenThrow(new RuntimeException("Connection refused"));
+    when(trafficStateRepository.findBySubscriptionId(2L))
+        .thenReturn(Optional.empty());
+    when(xuiPanelService.getClientTraffic(any(), any()))
+        .thenThrow(new RuntimeException("Connection refused"));
 
-    assertThatThrownBy(() -> trafficStateService.syncTrafficForSubscription(testUser, testSubscription))
+    assertThatThrownBy(() ->
+        trafficStateService.syncTrafficForSubscription(testUser, testSubscription))
         .isInstanceOf(XuiUnavailableException.class);
   }
 
   @Test
-  @DisplayName("7. resetTrafficPeriod: принудительно обнуляет состояние подписки и серверов")
+  @DisplayName("7. resetTrafficPeriod: принудительно обнуляет состояние подписки")
   void shouldResetTrafficPeriodManually() {
     SubscriptionTrafficState state = new SubscriptionTrafficState();
     state.setId(1L);
@@ -258,8 +281,10 @@ class SubscriptionTrafficStateServiceImplTest {
     state.setUsedBytes(9999L);
     state.setPeriodStartAt(Instant.now());
 
-    when(trafficStateRepository.findBySubscriptionId(2L)).thenReturn(Optional.of(state));
-    when(trafficStateRepository.save(any(SubscriptionTrafficState.class))).thenAnswer(inv -> inv.getArgument(0));
+    when(trafficStateRepository.findBySubscriptionId(2L))
+        .thenReturn(Optional.of(state));
+    when(trafficStateRepository.save(any(SubscriptionTrafficState.class)))
+        .thenAnswer(inv -> inv.getArgument(0));
 
     SubscriptionTrafficState result = trafficStateService.resetTrafficPeriod(2L);
 
@@ -269,7 +294,7 @@ class SubscriptionTrafficStateServiceImplTest {
   }
 
   @Test
-  @DisplayName("8. isLimitExceeded: безлимит (0 или отрицательный лимит) никогда не считается превышенным")
+  @DisplayName("8. isLimitExceeded: безлимит (0 или отрицательный) никогда не превышен")
   void shouldHandleUnlimitedTrafficCorrectly() {
     SubscriptionTrafficState state = new SubscriptionTrafficState();
     state.setUsedBytes(500_000_000_000L); // 500 GB
@@ -277,5 +302,33 @@ class SubscriptionTrafficStateServiceImplTest {
     assertThat(state.isLimitExceeded(0L)).isFalse();
     assertThat(state.isLimitExceeded(-1L)).isFalse();
     assertThat(state.isLimitExceeded(100_000_000_000L)).isTrue();
+  }
+
+  @Test
+  @DisplayName("9. resetAllExpiredPeriods: обнуляет только подписки с истекшим месяцем")
+  void shouldResetOnlyExpiredPeriodsInScheduledJob() {
+    SubscriptionTrafficState expiredState = new SubscriptionTrafficState();
+    expiredState.setId(1L);
+    expiredState.setSubscriptionId(10L);
+    expiredState.setUsedBytes(50_000_000_000L);
+    expiredState.setPeriodStartAt(Instant.parse("2026-08-01T00:00:00Z"));
+
+    SubscriptionTrafficState currentState = new SubscriptionTrafficState();
+    currentState.setId(2L);
+    currentState.setSubscriptionId(20L);
+    currentState.setUsedBytes(10_000_000_000L);
+    currentState.setPeriodStartAt(Instant.now());
+
+    when(trafficStateRepository.findAll()).thenReturn(List.of(expiredState, currentState));
+    when(trafficStateRepository.findBySubscriptionId(10L)).thenReturn(Optional.of(expiredState));
+    when(trafficStateRepository.save(any(SubscriptionTrafficState.class)))
+        .thenAnswer(inv -> inv.getArgument(0));
+
+    trafficStateService.resetAllExpiredPeriods();
+
+    verify(trafficStateRepository).findBySubscriptionId(10L);
+    verify(trafficStateRepository, times(0)).findBySubscriptionId(20L);
+    assertThat(expiredState.getUsedBytes()).isEqualTo(0L);
+    assertThat(currentState.getUsedBytes()).isEqualTo(10_000_000_000L);
   }
 }

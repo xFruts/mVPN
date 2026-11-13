@@ -116,6 +116,10 @@ When interacting with this codebase, every agent **MUST** observe these non-nego
    - **NEVER** pollute Git history with dozens of micro-commits (`fix`, `fix test`, `typo`, `wip`).
    - Prior to merging into `main`/`master`, squash or amend iterative fixes into the parent commit where those files/features originated (`git commit --fixup`, interactive rebase).
    - Only create a new commit when introducing a distinctly new capability or touching a separate responsibility. Keep the branch history atomic, clean, and linear.
+8. **Column Limit & Line Wrapping (Google / FAANG Benchmark)**:
+   - Enforce a strict **100-character column limit** across all Java files and tests per Google Java Style Guide (Section 4.4).
+   - Any statement, method signature, lambda, log call, annotation, or comment exceeding 100 characters must be line-wrapped.
+   - This ensures readable side-by-side diffing and review in split editor panes on standard displays without horizontal scrolling.
 
 ---
 
@@ -127,13 +131,13 @@ Each feature package (e.g. `ru.maxow.mvpn.server`, `ru.maxow.mvpn.user`) must st
 
 ```
 [ HTTP / REST Ingress ] -> Controller (Implements generated OpenAPI interface)
-                                    |
+                                     |
 [ DTO Conversion ]      -> MapStruct Mapper
-                                    |
+                                     |
 [ Business Logic ]      -> Service / ServiceImpl (@Transactional boundaries)
-                                    |
+                                     |
 [ Data Access ]         -> Spring Data JPA Repository (Specifications, JpaRepository)
-                                    |
+                                     |
 [ Database ]            -> PostgreSQL (Liquibase managed schema)
 ```
 
@@ -260,7 +264,7 @@ In centralized Grafana/mDash log viewers, always scope queries with the applicat
 ### 7.3 Micrometer & Golden Signals
 
 - **Latency & Throughput**: Monitored via custom AOP metrics in [`RepositoryMetricsAspect`](file:///E:/Programs/Java/mVPN/backend/src/main/java/ru/maxow/mvpn/metrics/RepositoryMetricsAspect.java) emitting `repository.method.duration` with percentile histograms enabled.
-- **Errors**: Emitted as `repository.errors` with tags `[repository, method, exception]`.
+- **Errors**: Emitted as `repository.errors` with tags `[repository, method, exception]``.
 - **Health Checks**: `/actuator/health` exposes readiness and liveness states without disclosing internal component topologies to unauthenticated requests.
 
 ---

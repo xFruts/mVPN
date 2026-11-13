@@ -11,7 +11,8 @@ public interface SubscriptionServerTrafficRepository
 
   List<SubscriptionServerTraffic> findBySubscriptionId(Long subscriptionId);
 
-  Optional<SubscriptionServerTraffic> findBySubscriptionIdAndServerId(Long subscriptionId, Long serverId);
+  Optional<SubscriptionServerTraffic> findBySubscriptionIdAndServerId(
+      Long subscriptionId, Long serverId);
 
   void deleteBySubscriptionId(Long subscriptionId);
 }

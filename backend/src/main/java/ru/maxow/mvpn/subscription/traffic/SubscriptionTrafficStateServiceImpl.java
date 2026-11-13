@@ -27,7 +27,7 @@ import ru.maxow.mvpn.xui.dto.TrafficSyncSource;
  * Бэкенд выступает как единый источник истины (Single Source of Truth, SSOT):
  * 1. Сохраняет суммарный использованный трафик за текущий расчетный период (месяц).
  * 2. С серверов 3X-UI считывает локальные дельты (Rate/Counter ingestion pattern).
- *    При сбросе ноды 3X-UI накопленный трафик на бэкенде сохраняется, а новые байты считаются от нуля.
+ *    При сбросе ноды 3X-UI накопленный трафик сохраняется, новые байты считаются от нуля.
  * 3. Автоматически обнуляет использованный трафик при наступлении нового расчетного месяца.
  */
 @Slf4j
@@ -102,7 +102,7 @@ public class SubscriptionTrafficStateServiceImpl implements SubscriptionTrafficS
         if (currentUp >= serverTraffic.getLastUploadBytes()) {
           deltaUp = currentUp - serverTraffic.getLastUploadBytes();
         } else {
-          log.info("Server upload counter reset detected on server {} for subId={}. previous={}, current={}",
+          log.info("Server upload reset on server {} for subId={}. previous={}, current={}",
               server.getName(), subId, serverTraffic.getLastUploadBytes(), currentUp);
           deltaUp = currentUp;
         }
@@ -110,7 +110,7 @@ public class SubscriptionTrafficStateServiceImpl implements SubscriptionTrafficS
         if (currentDown >= serverTraffic.getLastDownloadBytes()) {
           deltaDown = currentDown - serverTraffic.getLastDownloadBytes();
         } else {
-          log.info("Server download counter reset detected on server {} for subId={}. previous={}, current={}",
+          log.info("Server download reset on server {} for subId={}. previous={}, current={}",
               server.getName(), subId, serverTraffic.getLastDownloadBytes(), currentDown);
           deltaDown = currentDown;
         }
@@ -131,13 +131,15 @@ public class SubscriptionTrafficStateServiceImpl implements SubscriptionTrafficS
       if (state.getId() != null) {
         return state;
       }
-      throw new XuiUnavailableException("Cannot sync traffic: all servers unavailable and no cached data");
+      throw new XuiUnavailableException(
+          "Cannot sync traffic: all servers unavailable and no cached data");
     }
 
     // Auto-reconciliation: If legacy state had huge traffic (e.g. from previous bugs)
     // and no server traffic was ever recorded, but current servers are empty (0 bytes),
     // align state with reality.
-    if (!isNewPeriod && totalServerBytes == 0L && serverTrafficRepository.findBySubscriptionId(subId).isEmpty()) {
+    boolean hasNoServerHistory = serverTrafficRepository.findBySubscriptionId(subId).isEmpty();
+    if (!isNewPeriod && totalServerBytes == 0L && hasNoServerHistory) {
       log.info("Reconciling traffic state with zeroed servers for subId={}", subId);
       resetStateCounters(state, now);
     } else if (!isNewPeriod) {
