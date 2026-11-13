@@ -9,7 +9,6 @@ import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.UUID;
-
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
@@ -25,8 +24,8 @@ import ru.maxow.mvpn.tariff.Tariff;
 import ru.maxow.mvpn.tariff.TariffRepository;
 import ru.maxow.mvpn.user.User;
 import ru.maxow.mvpn.user.UserRepository;
-import ru.maxow.mvpn.util.exception.NotFoundException;
 import ru.maxow.mvpn.util.exception.BadRequestException;
+import ru.maxow.mvpn.util.exception.NotFoundException;
 
 @Slf4j
 @Service
@@ -140,9 +139,7 @@ public class SubscriptionServiceImpl implements SubscriptionService {
       trafficState = trafficStateService.syncTrafficForSubscription(user, subscription);
     }
 
-    Tariff tariff = subscription.getTariff();
-    long trafficLimitBytes = tariff.getTrafficLimitGb() * 1024L * 1024L * 1024L;
-
+    long trafficLimitBytes = subscription.getTrafficLimitBytes();
     long expireSec = subscription.getEndDate().toInstant().getEpochSecond();
 
     return String.format(

@@ -1,6 +1,16 @@
 package ru.maxow.mvpn.subscription;
 
-import jakarta.persistence.*;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.Table;
 import java.time.OffsetDateTime;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -37,4 +47,16 @@ public class Subscription {
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "tariff_id", nullable = false)
   Tariff tariff;
+
+  public boolean isExpired() {
+    return endDate != null && endDate.isBefore(OffsetDateTime.now());
+  }
+
+  public boolean isActive() {
+    return status == SubscriptionStatus.ACTIVE && !isExpired();
+  }
+
+  public long getTrafficLimitBytes() {
+    return tariff != null ? tariff.getTrafficLimitBytes() : 0L;
+  }
 }
