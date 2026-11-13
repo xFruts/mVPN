@@ -18,12 +18,14 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
+import org.springframework.test.context.ActiveProfiles;
 import ru.maxow.mvpn.model.SubscriptionStatus;
 import ru.maxow.mvpn.model.UserRole;
 import ru.maxow.mvpn.subscription.Subscription;
 import ru.maxow.mvpn.tariff.Tariff;
 
 @DataJpaTest
+@ActiveProfiles("test")
 @DisplayName("UserSpecifications")
 class UserSpecificationsTest {
 
@@ -100,7 +102,8 @@ class UserSpecificationsTest {
     @Test
     @DisplayName("does not duplicate users with multiple matching subscriptions")
     void noDuplicates() {
-      long charlieCount = userRepository.findAll(Specification.where(hasSubscriptionStatus("ACTIVE")))
+      long charlieCount = userRepository
+          .findAll(Specification.where(hasSubscriptionStatus("ACTIVE")))
           .stream()
           .filter(u -> u.getFullName().equals("Charlie Brown"))
           .count();
@@ -118,8 +121,10 @@ class UserSpecificationsTest {
     @Test
     @DisplayName("treats null/blank as no filter")
     void nullOrBlank() {
-      assertThat(userRepository.findAll(Specification.where(hasSubscriptionStatus(null)))).hasSize(3);
-      assertThat(userRepository.findAll(Specification.where(hasSubscriptionStatus("")))).hasSize(3);
+      assertThat(userRepository.findAll(Specification.where(hasSubscriptionStatus(null))))
+          .hasSize(3);
+      assertThat(userRepository.findAll(Specification.where(hasSubscriptionStatus(""))))
+          .hasSize(3);
     }
   }
 
