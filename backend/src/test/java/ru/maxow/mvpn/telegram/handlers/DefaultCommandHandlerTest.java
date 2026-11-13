@@ -1,25 +1,46 @@
 package ru.maxow.mvpn.telegram.handlers;
 
-import java.util.List;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Test;
-import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
-import org.telegram.telegrambots.meta.api.objects.Message;
-import org.telegram.telegrambots.meta.api.objects.Update;
-
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import java.util.List;
+import java.util.Optional;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
+import org.telegram.telegrambots.meta.api.objects.Message;
+import org.telegram.telegrambots.meta.api.objects.Update;
+import ru.maxow.mvpn.telegram.service.TelegramKeyboardFactory;
+import ru.maxow.mvpn.telegram.service.TelegramUserService;
+import ru.maxow.mvpn.user.User;
+
+@ExtendWith(MockitoExtension.class)
 @DisplayName("DefaultCommandHandler - unit tests")
 class DefaultCommandHandlerTest {
 
-  private final DefaultCommandHandler handler = new DefaultCommandHandler();
+  @Mock
+  private TelegramUserService userService;
+
+  private final TelegramKeyboardFactory keyboardFactory = new TelegramKeyboardFactory();
+
+  private DefaultCommandHandler handler;
+
+  @BeforeEach
+  void setUp() {
+    handler = new DefaultCommandHandler(userService, keyboardFactory);
+  }
 
   @Test
   @DisplayName("Given unknown command When handle Then return fallback message")
   void givenUnknownCommandWhenHandleThenFallbackMessage() {
     Update update = updateWithText(42L, "/unknown");
+    when(userService.findAuthenticatedUser(42L)).thenReturn(Optional.of(new User()));
 
     List<SendMessage> result = handler.handle(update);
 
@@ -27,6 +48,7 @@ class DefaultCommandHandlerTest {
       assertThat(message.getChatId()).isEqualTo("42");
       assertThat(message.getText()).contains("Неизвестная команда");
       assertThat(message.getText()).contains("/help");
+      assertThat(message.getReplyMarkup()).isNotNull();
     });
   }
 
@@ -49,13 +71,12 @@ class DefaultCommandHandlerTest {
     Update update = mock(Update.class);
     Message message = mock(Message.class);
 
-    when(update.hasMessage()).thenReturn(true);
-    when(update.getMessage()).thenReturn(message);
-    when(message.hasText()).thenReturn(true);
-    when(message.getText()).thenReturn(text);
-    when(message.getChatId()).thenReturn(chatId);
+    lenient().when(update.hasMessage()).thenReturn(true);
+    lenient().when(update.getMessage()).thenReturn(message);
+    lenient().when(message.hasText()).thenReturn(true);
+    lenient().when(message.getText()).thenReturn(text);
+    lenient().when(message.getChatId()).thenReturn(chatId);
 
     return update;
   }
 }
-

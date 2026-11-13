@@ -1,17 +1,29 @@
 package ru.maxow.mvpn.telegram.handlers;
 
 import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
+import lombok.AccessLevel;
+import lombok.RequiredArgsConstructor;
+import lombok.experimental.FieldDefaults;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.Update;
+import ru.maxow.mvpn.telegram.service.TelegramKeyboardFactory;
+import ru.maxow.mvpn.telegram.service.TelegramMessageFormatter;
+import ru.maxow.mvpn.telegram.service.TelegramUserService;
+import ru.maxow.mvpn.user.User;
 
-/**
- * Handler for /start command.
- */
 @Component
 @Order(1)
+@RequiredArgsConstructor
+@FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class StartCommandHandler implements CommandHandler {
+
+  TelegramUserService userService;
+  TelegramMessageFormatter messageFormatter;
+  TelegramKeyboardFactory keyboardFactory;
 
   @Override
   public boolean supports(Update update) {
@@ -27,16 +39,36 @@ public class StartCommandHandler implements CommandHandler {
         ? update.getMessage().getFrom().getFirstName()
         : null;
 
-    String text = String.format(
-        "👋Привет %s! Я бот, который поможет получить доступ к VPN.%n"
-            + "ℹ️Подробнее обо мне и как подключить VPN в /help%n",
-        firstName != null ? ", " + firstName : " друг"
-    );
-    return List.of(
-        SendMessage.builder()
-            .chatId(chatId.toString())
-            .text(text)
-            .build()
-    );
+    String[] parts = update.getMessage().getText().trim().split("\\s+");
+    if (parts.length > 1) {
+      String tokenStr = parts[1];
+      try {
+        UUID token = UUID.fromString(tokenStr);
+        boolean authenticated = userService.authenticateUser(token, chatId);
+        if (authenticated) {
+          String text = "✅ Вы успешно аутентифицированы!\n\n"
+              + messageFormatter.formatWelcome(firstName, true);
+          return List.of(SendMessage.builder()
+              .chatId(chatId.toString())
+              .text(text)
+              .replyMarkup(keyboardFactory.buildMainMenuKeyboard())
+              .build());
+        }
+      } catch (IllegalArgumentException ignored) {
+        // Невалидный UUID переходит к стандартному приветствию
+      }
+    }
+
+    Optional<User> userOpt = userService.findAuthenticatedUser(chatId);
+    boolean isAuthenticated = userOpt.isPresent();
+    String text = messageFormatter.formatWelcome(firstName, isAuthenticated);
+
+    return List.of(SendMessage.builder()
+        .chatId(chatId.toString())
+        .text(text)
+        .replyMarkup(isAuthenticated
+            ? keyboardFactory.buildMainMenuKeyboard()
+            : keyboardFactory.buildAuthKeyboard())
+        .build());
   }
 }
