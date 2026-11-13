@@ -1,0 +1,124 @@
+databaseChangeLog:
+  - changeSet:
+      id: "004-create-subscription-traffic-state"
+      author: "maxow"
+      preConditions:
+        - onFail: "MARK_RAN"
+          not:
+            tableExists:
+              tableName: "subscription_traffic_state"
+      changes:
+        - createTable:
+            tableName: "subscription_traffic_state"
+            columns:
+              - column:
+                  name: id
+                  type: bigint
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: subscription_id
+                  type: bigint
+                  constraints:
+                    nullable: false
+                    unique: true
+              - column:
+                  name: used_bytes
+                  type: bigint
+                  defaultValueNumeric: 0
+                  constraints:
+                    nullable: false
+              - column:
+                  name: used_upload_bytes
+                  type: bigint
+                  defaultValueNumeric: 0
+                  constraints:
+                    nullable: false
+              - column:
+                  name: used_download_bytes
+                  type: bigint
+                  defaultValueNumeric: 0
+                  constraints:
+                    nullable: false
+              - column:
+                  name: period_start_total_bytes
+                  type: bigint
+              - column:
+                  name: period_start_upload_bytes
+                  type: bigint
+              - column:
+                  name: period_start_download_bytes
+                  type: bigint
+              - column:
+                  name: period_start_at
+                  type: timestamp with time zone
+              - column:
+                  name: last_synced_at
+                  type: timestamp with time zone
+                  constraints:
+                    nullable: false
+              - column:
+                  name: source
+                  type: varchar(50)
+                  defaultValue: "XUI_SYNC"
+                  constraints:
+                    nullable: false
+
+  - changeSet:
+      id: "005-create-subscription-server-traffic"
+      author: "maxow"
+      preConditions:
+        - onFail: "MARK_RAN"
+          not:
+            tableExists:
+              tableName: "subscription_server_traffic"
+      changes:
+        - createTable:
+            tableName: "subscription_server_traffic"
+            columns:
+              - column:
+                  name: id
+                  type: bigint
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: subscription_id
+                  type: bigint
+                  constraints:
+                    nullable: false
+              - column:
+                  name: server_id
+                  type: bigint
+                  constraints:
+                    nullable: false
+              - column:
+                  name: last_upload_bytes
+                  type: bigint
+                  defaultValueNumeric: 0
+                  constraints:
+                    nullable: false
+              - column:
+                  name: last_download_bytes
+                  type: bigint
+                  defaultValueNumeric: 0
+                  constraints:
+                    nullable: false
+              - column:
+                  name: last_synced_at
+                  type: timestamp with time zone
+                  constraints:
+                    nullable: false
+        - addUniqueConstraint:
+            tableName: "subscription_server_traffic"
+            columnNames: "subscription_id, server_id"
+            constraintName: "uk_sub_server_traffic"
+        - createIndex:
+            tableName: "subscription_server_traffic"
+            indexName: "idx_sub_server_traffic_sub_id"
+            columns:
+              - column:
+                  name: subscription_id

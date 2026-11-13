@@ -20,5 +20,10 @@ public interface SubscriptionRepository extends JpaRepository<Subscription, Long
   Optional<Subscription> findFirstWithTariffByUserOrderByStartDateDesc(User user);
 
   @EntityGraph(attributePaths = {"tariff", "tariff.servers"})
-  Optional<Subscription> findFirstWithTariffAndServersByUser_IdOrderByStartDateDesc(Long userId);
+  Optional<Subscription> findWithTariffAndServersById(Long id);
+
+  default Optional<Subscription> findFirstWithTariffAndServersByUser_IdOrderByStartDateDesc(Long userId) {
+    return findFirstByUser_IdOrderByStartDateDesc(userId)
+        .flatMap(subscription -> findWithTariffAndServersById(subscription.getId()));
+  }
 }

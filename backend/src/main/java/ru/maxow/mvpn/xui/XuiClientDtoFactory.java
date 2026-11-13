@@ -22,6 +22,15 @@ public class XuiClientDtoFactory {
       Subscription subscription,
       Tariff tariff,
       XuiClientDto existing) {
+    return createClientDto(user, subscription, tariff, existing, true);
+  }
+
+  public XuiClientDto createClientDto(
+      User user,
+      Subscription subscription,
+      Tariff tariff,
+      XuiClientDto existing,
+      boolean enable) {
 
     return new XuiClientDto(
         String.valueOf(user.getXuiId()),
@@ -29,7 +38,7 @@ public class XuiClientDtoFactory {
         String.valueOf(user.getXuiSubscription()),
         tariff.getTrafficLimitBytes(),
         subscription.getEndDate().toInstant().toEpochMilli(),
-        true,
+        enable,
         null,
         tariff.getMaxDevices(),
         DEFAULT_FLOW,

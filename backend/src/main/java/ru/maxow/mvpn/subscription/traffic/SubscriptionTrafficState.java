@@ -69,6 +69,9 @@ public class SubscriptionTrafficState {
   }
 
   public boolean isLimitExceeded(long limitBytes) {
+    if (limitBytes <= 0) {
+      return false;
+    }
     return getEffectiveUsedBytes() >= limitBytes;
   }
 }

@@ -35,6 +35,11 @@ public interface XuiPanelService {
   void createOrUpdateClient(Server server, User user, Subscription subscription);
 
   /**
+   * Создаёт или обновляет клиента на панели 3X-UI с явным указанием активности.
+   */
+  void createOrUpdateClient(Server server, User user, Subscription subscription, boolean enable);
+
+  /**
    * Возвращает трафик клиента по email.
    *
    * @param server      целевой сервер

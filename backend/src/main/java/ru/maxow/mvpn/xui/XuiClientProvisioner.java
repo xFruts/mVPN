@@ -1,5 +1,6 @@
 package ru.maxow.mvpn.xui;
 
+import java.util.List;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
@@ -12,8 +13,6 @@ import ru.maxow.mvpn.tariff.Tariff;
 import ru.maxow.mvpn.user.User;
 import ru.maxow.mvpn.util.exception.XuiUnavailableException;
 import ru.maxow.mvpn.xui.dto.XuiClientDto;
-
-import java.util.List;
 
 /**
  * Сервис управления жизненным циклом (provisioning) клиентов в 3X-UI.
@@ -38,6 +37,26 @@ public class XuiClientProvisioner {
       Server server,
       User user,
       Subscription subscription) {
+    upsertClientInternal(restClient, sessionCookie, server, user, subscription, null);
+  }
+
+  public void upsertClient(
+      RestClient restClient,
+      String sessionCookie,
+      Server server,
+      User user,
+      Subscription subscription,
+      boolean enable) {
+    upsertClientInternal(restClient, sessionCookie, server, user, subscription, enable);
+  }
+
+  private void upsertClientInternal(
+      RestClient restClient,
+      String sessionCookie,
+      Server server,
+      User user,
+      Subscription subscription,
+      Boolean enable) {
 
     String clientEmail = user.getFullName();
     Tariff tariff = subscription.getTariff();
@@ -52,8 +71,9 @@ public class XuiClientProvisioner {
 
     XuiClientDto existingClient =
         clientApiClient.getClient(restClient, sessionCookie, clientEmail);
-    XuiClientDto clientDto =
-        clientDtoFactory.createClientDto(user, subscription, tariff, existingClient);
+    XuiClientDto clientDto = enable == null
+        ? clientDtoFactory.createClientDto(user, subscription, tariff, existingClient)
+        : clientDtoFactory.createClientDto(user, subscription, tariff, existingClient, enable);
 
     if (existingClient != null) {
       clientApiClient.updateClient(restClient, sessionCookie, clientEmail, clientDto, server);
