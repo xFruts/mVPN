@@ -1,6 +1,7 @@
 package ru.maxow.mvpn.telegram.handlers;
 
 import java.util.List;
+import java.util.Locale;
 import java.util.UUID;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
@@ -10,6 +11,7 @@ import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import ru.maxow.mvpn.telegram.service.TelegramKeyboardFactory;
+import ru.maxow.mvpn.telegram.service.TelegramLocaleResolver;
 import ru.maxow.mvpn.telegram.service.TelegramMessageFormatter;
 import ru.maxow.mvpn.user.User;
 import ru.maxow.mvpn.user.UserService;
@@ -34,6 +36,7 @@ public class AuthCommandHandler implements CommandHandler {
   @Override
   public List<SendMessage> handle(Update update) {
     Long chatId = update.getMessage().getChatId();
+    Locale locale = TelegramLocaleResolver.resolveLocale(update);
     String[] parts = update.getMessage().getText().trim().split("\\s+");
 
     User existingUser = userService.findByTelegramId(chatId);
@@ -41,8 +44,8 @@ public class AuthCommandHandler implements CommandHandler {
       return List.of(
           SendMessage.builder()
               .chatId(chatId.toString())
-              .text(messageFormatter.formatAuthAlready())
-              .replyMarkup(keyboardFactory.buildMainMenuKeyboard())
+              .text(messageFormatter.formatAuthAlready(locale))
+              .replyMarkup(keyboardFactory.buildMainMenuKeyboard(locale))
               .build()
       );
     }
@@ -56,16 +59,16 @@ public class AuthCommandHandler implements CommandHandler {
         boolean isValid = userService.checkVerificationCode(token);
         if (isValid) {
           userService.updateUserTelegramId(token, chatId);
-          responseText = messageFormatter.formatAuthSuccess();
+          responseText = messageFormatter.formatAuthSuccess(locale);
           authenticated = true;
         } else {
-          responseText = messageFormatter.formatAuthInvalidToken();
+          responseText = messageFormatter.formatAuthInvalidToken(locale);
         }
       } catch (IllegalArgumentException e) {
-        responseText = messageFormatter.formatAuthInvalidFormat();
+        responseText = messageFormatter.formatAuthInvalidFormat(locale);
       }
     } else {
-      responseText = messageFormatter.formatAuthTokenRequired();
+      responseText = messageFormatter.formatAuthTokenRequired(locale);
     }
 
     return List.of(
@@ -73,8 +76,8 @@ public class AuthCommandHandler implements CommandHandler {
             .chatId(chatId.toString())
             .text(responseText)
             .replyMarkup(authenticated
-                ? keyboardFactory.buildMainMenuKeyboard()
-                : keyboardFactory.buildAuthKeyboard())
+                ? keyboardFactory.buildMainMenuKeyboard(locale)
+                : keyboardFactory.buildAuthKeyboard(locale))
             .build()
     );
   }

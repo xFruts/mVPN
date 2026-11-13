@@ -39,6 +39,7 @@ public class TelegramMessageFormatter {
     bundleSource.setBasenames("messages");
     bundleSource.setDefaultEncoding("UTF-8");
     bundleSource.setUseCodeAsDefaultMessage(true);
+    bundleSource.setFallbackToSystemLocale(false);
     this.messageSource = bundleSource;
   }
 
@@ -126,29 +127,27 @@ public class TelegramMessageFormatter {
 
     Subscription sub = subscriptionOpt.get();
     Tariff tariff = sub.getTariff();
-    String tariffName = tariff != null
+
+    String tariffName = (tariff != null && tariff.getName() != null)
         ? tariff.getName()
         : msg("bot.subscription.tariff.unspecified", locale);
-    boolean isActive = sub.isActive();
-    String statusBadge = isActive
+
+    String statusBadge = sub.isActive()
         ? msg("bot.subscription.status.active", locale)
         : msg("bot.subscription.status.inactive", locale);
 
-    OffsetDateTime endDate = sub.getEndDate();
-    String formattedDate = endDate != null
-        ? endDate.format(DATE_FORMATTER)
+    String durationNote = calculateDurationNote(sub.getEndDate(), locale);
+    String formattedDate = sub.getEndDate() != null
+        ? sub.getEndDate().format(DATE_FORMATTER)
         : msg("bot.subscription.date.permanent", locale);
-    String durationNote = calculateDurationNote(endDate, locale);
 
-    long limitBytes = sub.getTrafficLimitBytes();
-    long usedBytes = trafficOpt
-        .map(SubscriptionTrafficState::getEffectiveUsedBytes)
-        .orElse(0L);
+    String maxDevices = (tariff != null && tariff.getMaxDevices() != null)
+        ? String.valueOf(tariff.getMaxDevices())
+        : "1";
 
-    String trafficInfo = formatTrafficSection(usedBytes, limitBytes, locale);
-    int maxDevices = tariff != null && tariff.getMaxDevices() != null
-        ? tariff.getMaxDevices()
-        : 1;
+    long limitBytes = tariff != null ? tariff.getTrafficLimitBytes() : 0L;
+    long usedBytes = trafficOpt.map(SubscriptionTrafficState::getEffectiveUsedBytes).orElse(0L);
+    String trafficSection = formatTrafficSection(usedBytes, limitBytes, locale);
 
     return msg(
         "bot.subscription.info.details",
@@ -158,7 +157,7 @@ public class TelegramMessageFormatter {
         formattedDate,
         durationNote,
         maxDevices,
-        trafficInfo
+        trafficSection
     ).strip();
   }
 
@@ -204,7 +203,6 @@ public class TelegramMessageFormatter {
     if (subscriptionOpt.isEmpty() || !subscriptionOpt.get().isActive()) {
       return msg("bot.connection.no-subscription", locale).strip();
     }
-
     return msg("bot.connection.guide", locale, subscriptionUrl).strip();
   }
 
@@ -233,11 +231,10 @@ public class TelegramMessageFormatter {
       String subscriptionUrl,
       Locale locale
   ) {
-    if (vlessKeyOpt.isEmpty()) {
-      return msg("bot.vless.unavailable", locale, subscriptionUrl).strip();
+    if (vlessKeyOpt.isPresent() && !vlessKeyOpt.get().isBlank()) {
+      return msg("bot.vless.key", locale, vlessKeyOpt.get()).strip();
     }
-
-    return msg("bot.vless.key", locale, vlessKeyOpt.get()).strip();
+    return msg("bot.vless.unavailable", locale, subscriptionUrl).strip();
   }
 
   public String formatWelcome(String firstName, boolean isAuthenticated) {
@@ -248,7 +245,7 @@ public class TelegramMessageFormatter {
     String defaultName = (locale != null && locale.getLanguage().equalsIgnoreCase("en"))
         ? "friend"
         : "друг";
-    String name = firstName != null && !firstName.isBlank() ? firstName : defaultName;
+    String name = (firstName != null && !firstName.isBlank()) ? firstName : defaultName;
     if (isAuthenticated) {
       return msg("bot.welcome.authenticated", locale, name).strip();
     }
@@ -279,9 +276,9 @@ public class TelegramMessageFormatter {
     long remainingBytes = Math.max(0, limitBytes - usedBytes);
     int percentRemaining = (int) Math.min(
         100,
-        Math.round((double) remainingBytes / limitBytes * 100)
+        Math.max(0, Math.round(((double) remainingBytes / limitBytes) * 100))
     );
-    String bar = renderProgressBar(remainingBytes, limitBytes);
+    String progressBar = buildProgressBar(percentRemaining);
 
     return msg(
         "bot.subscription.traffic.limited",
@@ -290,26 +287,20 @@ public class TelegramMessageFormatter {
         formatBytes(limitBytes),
         formatBytes(remainingBytes),
         percentRemaining,
-        bar
+        progressBar
     );
   }
 
-  private String renderProgressBar(long remainingBytes, long totalBytes) {
-    if (totalBytes <= 0) {
-      return "[██████████] 100%";
-    }
-    int totalBlocks = 10;
-    int filledBlocks = (int) Math.min(
-        totalBlocks,
-        Math.max(0, Math.round((double) remainingBytes / totalBytes * totalBlocks))
-    );
-    int emptyBlocks = totalBlocks - filledBlocks;
-    int percent = (int) Math.min(100, Math.round((double) remainingBytes / totalBytes * 100));
-
-    return "[" + "█".repeat(filledBlocks) + "░".repeat(emptyBlocks) + "] " + percent + "%";
+  private String buildProgressBar(int percent) {
+    int totalBars = 10;
+    int filledBars = Math.max(0, Math.min(totalBars, (int) Math.round(percent / 10.0)));
+    return "▰".repeat(filledBars) + "▱".repeat(totalBars - filledBars);
   }
 
   private String formatBytes(long bytes) {
+    if (bytes < 1024 * 1024) {
+      return (bytes / 1024) + " КБ";
+    }
     if (bytes >= 1024L * 1024L * 1024L) {
       return String.format(Locale.US, "%.2f ГБ", bytes / (1024.0 * 1024.0 * 1024.0));
     }
@@ -322,20 +313,21 @@ public class TelegramMessageFormatter {
     }
     OffsetDateTime now = OffsetDateTime.now();
     if (endDate.isBefore(now)) {
-      long pastDays = Duration.between(endDate, now).toDays();
-      return msg("bot.subscription.duration.expired", locale, Math.max(1, pastDays));
+      long daysAgo = Math.max(1, Duration.between(endDate, now).toDays());
+      return msg("bot.subscription.duration.expired", locale, daysAgo);
     }
-    long remainingDays = Duration.between(now, endDate).toDays();
-    return msg("bot.subscription.duration.remaining", locale, remainingDays);
+    long daysLeft = Math.max(0, Duration.between(now, endDate).toDays());
+    return msg("bot.subscription.duration.remaining", locale, daysLeft);
   }
 
   private String formatServerBadge(ServerStatus status, Locale locale) {
-    if (status == ServerStatus.ACTIVE) {
+    if (status == null) {
       return msg("bot.server.status.active", locale);
     }
-    if (status == ServerStatus.MAINTENANCE) {
-      return msg("bot.server.status.maintenance", locale);
-    }
-    return msg("bot.server.status.inactive", locale);
+    return switch (status) {
+      case ACTIVE -> msg("bot.server.status.active", locale);
+      case MAINTENANCE -> msg("bot.server.status.maintenance", locale);
+      case INACTIVE -> msg("bot.server.status.inactive", locale);
+    };
   }
 }

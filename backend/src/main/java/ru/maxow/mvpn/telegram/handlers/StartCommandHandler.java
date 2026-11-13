@@ -1,6 +1,7 @@
 package ru.maxow.mvpn.telegram.handlers;
 
 import java.util.List;
+import java.util.Locale;
 import java.util.Optional;
 import java.util.UUID;
 import lombok.AccessLevel;
@@ -11,6 +12,7 @@ import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import ru.maxow.mvpn.telegram.service.TelegramKeyboardFactory;
+import ru.maxow.mvpn.telegram.service.TelegramLocaleResolver;
 import ru.maxow.mvpn.telegram.service.TelegramMessageFormatter;
 import ru.maxow.mvpn.telegram.service.TelegramUserService;
 import ru.maxow.mvpn.user.User;
@@ -35,6 +37,7 @@ public class StartCommandHandler implements CommandHandler {
   @Override
   public List<SendMessage> handle(Update update) {
     Long chatId = update.getMessage().getChatId();
+    Locale locale = TelegramLocaleResolver.resolveLocale(update);
     String firstName = update.getMessage().getFrom() != null
         ? update.getMessage().getFrom().getFirstName()
         : null;
@@ -49,13 +52,13 @@ public class StartCommandHandler implements CommandHandler {
         UUID token = UUID.fromString(tokenStr);
         boolean authenticated = userService.authenticateUser(token, chatId);
         if (authenticated) {
-          String text = messageFormatter.formatAuthSuccess()
+          String text = messageFormatter.formatAuthSuccess(locale)
               + "\n\n"
-              + messageFormatter.formatWelcome(firstName, true);
+              + messageFormatter.formatWelcome(firstName, true, locale);
           return List.of(SendMessage.builder()
               .chatId(chatId.toString())
               .text(text)
-              .replyMarkup(keyboardFactory.buildMainMenuKeyboard())
+              .replyMarkup(keyboardFactory.buildMainMenuKeyboard(locale))
               .build());
         }
       } catch (IllegalArgumentException ignored) {
@@ -65,14 +68,14 @@ public class StartCommandHandler implements CommandHandler {
 
     Optional<User> userOpt = userService.findAuthenticatedUser(chatId, username);
     boolean isAuthenticated = userOpt.isPresent();
-    String text = messageFormatter.formatWelcome(firstName, isAuthenticated);
+    String text = messageFormatter.formatWelcome(firstName, isAuthenticated, locale);
 
     return List.of(SendMessage.builder()
         .chatId(chatId.toString())
         .text(text)
         .replyMarkup(isAuthenticated
-            ? keyboardFactory.buildMainMenuKeyboard()
-            : keyboardFactory.buildAuthKeyboard())
+            ? keyboardFactory.buildMainMenuKeyboard(locale)
+            : keyboardFactory.buildAuthKeyboard(locale))
         .build());
   }
 }

@@ -1,6 +1,7 @@
 package ru.maxow.mvpn.telegram.handlers;
 
 import java.util.List;
+import java.util.Locale;
 import java.util.Optional;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
@@ -12,6 +13,7 @@ import org.telegram.telegrambots.meta.api.objects.Update;
 import ru.maxow.mvpn.subscription.Subscription;
 import ru.maxow.mvpn.subscription.traffic.SubscriptionTrafficState;
 import ru.maxow.mvpn.telegram.service.TelegramKeyboardFactory;
+import ru.maxow.mvpn.telegram.service.TelegramLocaleResolver;
 import ru.maxow.mvpn.telegram.service.TelegramMessageFormatter;
 import ru.maxow.mvpn.telegram.service.TelegramUserService;
 import ru.maxow.mvpn.user.User;
@@ -32,7 +34,8 @@ public class SubscriptionCommandHandler implements CommandHandler {
       return false;
     }
     String text = update.getMessage().getText().trim();
-    return text.equals(TelegramKeyboardFactory.BTN_SUBSCRIPTION)
+    return text.equals(TelegramKeyboardFactory.BTN_SUBSCRIPTION_RU)
+        || text.equals(TelegramKeyboardFactory.BTN_SUBSCRIPTION_EN)
         || text.equals("/status")
         || text.equals("/subscription")
         || text.equals("/sub")
@@ -42,6 +45,7 @@ public class SubscriptionCommandHandler implements CommandHandler {
   @Override
   public List<SendMessage> handle(Update update) {
     Long chatId = update.getMessage().getChatId();
+    Locale locale = TelegramLocaleResolver.resolveLocale(update);
     String username = update.getMessage().getFrom() != null
         ? update.getMessage().getFrom().getUserName()
         : null;
@@ -50,8 +54,8 @@ public class SubscriptionCommandHandler implements CommandHandler {
     if (userOpt.isEmpty()) {
       return List.of(SendMessage.builder()
           .chatId(chatId.toString())
-          .text(messageFormatter.formatUnauthorized())
-          .replyMarkup(keyboardFactory.buildAuthKeyboard())
+          .text(messageFormatter.formatUnauthorized(locale))
+          .replyMarkup(keyboardFactory.buildAuthKeyboard(locale))
           .build());
     }
 
@@ -61,12 +65,12 @@ public class SubscriptionCommandHandler implements CommandHandler {
         .flatMap(s -> userService.getTrafficState(s.getId()));
 
     String responseText = messageFormatter
-        .formatSubscriptionStatus(user, subOpt, trafficOpt);
+        .formatSubscriptionStatus(user, subOpt, trafficOpt, locale);
 
     return List.of(SendMessage.builder()
         .chatId(chatId.toString())
         .text(responseText)
-        .replyMarkup(keyboardFactory.buildMainMenuKeyboard())
+        .replyMarkup(keyboardFactory.buildMainMenuKeyboard(locale))
         .build());
   }
 }

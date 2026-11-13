@@ -1,6 +1,7 @@
 package ru.maxow.mvpn.telegram.handlers;
 
 import java.util.List;
+import java.util.Locale;
 import java.util.Optional;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
@@ -11,6 +12,7 @@ import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import ru.maxow.mvpn.subscription.Subscription;
 import ru.maxow.mvpn.telegram.service.TelegramKeyboardFactory;
+import ru.maxow.mvpn.telegram.service.TelegramLocaleResolver;
 import ru.maxow.mvpn.telegram.service.TelegramMessageFormatter;
 import ru.maxow.mvpn.telegram.service.TelegramUserService;
 import ru.maxow.mvpn.user.User;
@@ -37,7 +39,8 @@ public class ConnectionCommandHandler implements CommandHandler {
       return false;
     }
     String text = update.getMessage().getText().trim();
-    return text.equals(TelegramKeyboardFactory.BTN_CONNECTION)
+    return text.equals(TelegramKeyboardFactory.BTN_CONNECTION_RU)
+        || text.equals(TelegramKeyboardFactory.BTN_CONNECTION_EN)
         || text.equals("/connect")
         || text.equals("/config")
         || text.equals("/link")
@@ -51,6 +54,7 @@ public class ConnectionCommandHandler implements CommandHandler {
   @Override
   public List<SendMessage> handle(Update update) {
     Long chatId = extractChatId(update);
+    Locale locale = TelegramLocaleResolver.resolveLocale(update);
     String action = extractAction(update);
     String username = extractUsername(update);
 
@@ -58,8 +62,8 @@ public class ConnectionCommandHandler implements CommandHandler {
     if (userOpt.isEmpty()) {
       return List.of(SendMessage.builder()
           .chatId(chatId.toString())
-          .text(messageFormatter.formatUnauthorized())
-          .replyMarkup(keyboardFactory.buildAuthKeyboard())
+          .text(messageFormatter.formatUnauthorized(locale))
+          .replyMarkup(keyboardFactory.buildAuthKeyboard(locale))
           .build());
     }
 
@@ -68,8 +72,8 @@ public class ConnectionCommandHandler implements CommandHandler {
     if (subOpt.isEmpty() || !subOpt.get().isActive()) {
       return List.of(SendMessage.builder()
           .chatId(chatId.toString())
-          .text(messageFormatter.formatNoActiveSubscription())
-          .replyMarkup(keyboardFactory.buildMainMenuKeyboard())
+          .text(messageFormatter.formatNoActiveSubscription(locale))
+          .replyMarkup(keyboardFactory.buildMainMenuKeyboard(locale))
           .build());
     }
 
@@ -78,16 +82,16 @@ public class ConnectionCommandHandler implements CommandHandler {
     if (isHappRequest(action)) {
       return List.of(SendMessage.builder()
           .chatId(chatId.toString())
-          .text(messageFormatter.formatHappGuide(subscriptionUrl))
-          .replyMarkup(keyboardFactory.buildConnectionInlineKeyboard())
+          .text(messageFormatter.formatHappGuide(subscriptionUrl, locale))
+          .replyMarkup(keyboardFactory.buildConnectionInlineKeyboard(locale))
           .build());
     }
 
     if (isV2rayTunRequest(action)) {
       return List.of(SendMessage.builder()
           .chatId(chatId.toString())
-          .text(messageFormatter.formatV2rayTunGuide(subscriptionUrl))
-          .replyMarkup(keyboardFactory.buildConnectionInlineKeyboard())
+          .text(messageFormatter.formatV2rayTunGuide(subscriptionUrl, locale))
+          .replyMarkup(keyboardFactory.buildConnectionInlineKeyboard(locale))
           .build());
     }
 
@@ -95,17 +99,18 @@ public class ConnectionCommandHandler implements CommandHandler {
       Optional<String> vlessKeyOpt = userService.getDirectVlessKey(user);
       return List.of(SendMessage.builder()
           .chatId(chatId.toString())
-          .text(messageFormatter.formatVlessKey(vlessKeyOpt, subscriptionUrl))
-          .replyMarkup(keyboardFactory.buildConnectionInlineKeyboard())
+          .text(messageFormatter.formatVlessKey(vlessKeyOpt, subscriptionUrl, locale))
+          .replyMarkup(keyboardFactory.buildConnectionInlineKeyboard(locale))
           .build());
     }
 
     String responseText = messageFormatter.formatConnectionGuide(
-        user, subOpt, subscriptionUrl);
+        user, subOpt, subscriptionUrl, locale
+    );
     return List.of(SendMessage.builder()
         .chatId(chatId.toString())
         .text(responseText)
-        .replyMarkup(keyboardFactory.buildConnectionInlineKeyboard())
+        .replyMarkup(keyboardFactory.buildConnectionInlineKeyboard(locale))
         .build());
   }
 
