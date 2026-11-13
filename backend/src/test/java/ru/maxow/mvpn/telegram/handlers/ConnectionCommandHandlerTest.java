@@ -17,8 +17,10 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
+import org.telegram.telegrambots.meta.api.objects.CallbackQuery;
 import org.telegram.telegrambots.meta.api.objects.Message;
 import org.telegram.telegrambots.meta.api.objects.Update;
+import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
 import ru.maxow.mvpn.model.SubscriptionStatus;
 import ru.maxow.mvpn.subscription.Subscription;
 import ru.maxow.mvpn.telegram.service.TelegramKeyboardFactory;
@@ -79,9 +81,9 @@ class ConnectionCommandHandlerTest {
 
     assertThat(result).singleElement().satisfies(message -> {
       assertThat(message.getChatId()).isEqualTo("200");
-      assertThat(message.getText()).contains("Подключение к VPN");
+      assertThat(message.getText()).contains("Подключение к mVPN");
       assertThat(message.getText()).contains("https://api.example.com/v1/config/uuid-code");
-      assertThat(message.getText()).contains("v2rayNG");
+      assertThat(message.getReplyMarkup()).isInstanceOf(InlineKeyboardMarkup.class);
     });
   }
 
@@ -102,13 +104,119 @@ class ConnectionCommandHandlerTest {
   }
 
   @Test
-  @DisplayName("Given supported texts When supports Then return true")
+  @DisplayName("Given /happ command When handle Then return Happ guide")
+  void givenHappCommandWhenHandleThenReturnHappGuide() {
+    Update update = updateWithText(200L, "/happ");
+    User user = new User();
+    Subscription sub = new Subscription();
+    sub.setStatus(SubscriptionStatus.ACTIVE);
+    sub.setStartDate(OffsetDateTime.now(ZoneOffset.UTC));
+    sub.setEndDate(OffsetDateTime.now(ZoneOffset.UTC).plusDays(30));
+
+    when(userService.findAuthenticatedUser(200L)).thenReturn(Optional.of(user));
+    when(userService.findLatestSubscription(user)).thenReturn(Optional.of(sub));
+    when(userService.buildSubscriptionUrl(user))
+        .thenReturn("https://api.example.com/v1/config/uuid-code");
+
+    List<SendMessage> result = handler.handle(update);
+
+    assertThat(result).singleElement().satisfies(message -> {
+      assertThat(message.getText()).contains("Happ");
+      assertThat(message.getText()).contains("Добавить подписку");
+      assertThat(message.getReplyMarkup()).isInstanceOf(InlineKeyboardMarkup.class);
+    });
+  }
+
+  @Test
+  @DisplayName("Given /v2raytun command When handle Then return v2rayTun guide")
+  void givenV2rayTunCommandWhenHandleThenReturnV2rayTunGuide() {
+    Update update = updateWithText(200L, "/v2raytun");
+    User user = new User();
+    Subscription sub = new Subscription();
+    sub.setStatus(SubscriptionStatus.ACTIVE);
+    sub.setStartDate(OffsetDateTime.now(ZoneOffset.UTC));
+    sub.setEndDate(OffsetDateTime.now(ZoneOffset.UTC).plusDays(30));
+
+    when(userService.findAuthenticatedUser(200L)).thenReturn(Optional.of(user));
+    when(userService.findLatestSubscription(user)).thenReturn(Optional.of(sub));
+    when(userService.buildSubscriptionUrl(user))
+        .thenReturn("https://api.example.com/v1/config/uuid-code");
+
+    List<SendMessage> result = handler.handle(update);
+
+    assertThat(result).singleElement().satisfies(message -> {
+      assertThat(message.getText()).contains("v2rayTun");
+      assertThat(message.getText()).contains("Обновить подписку");
+      assertThat(message.getReplyMarkup()).isInstanceOf(InlineKeyboardMarkup.class);
+    });
+  }
+
+  @Test
+  @DisplayName("Given /key command When handle Then return direct VLESS key")
+  void givenKeyCommandWhenHandleThenReturnVlessKey() {
+    Update update = updateWithText(200L, "/key");
+    User user = new User();
+    Subscription sub = new Subscription();
+    sub.setStatus(SubscriptionStatus.ACTIVE);
+    sub.setStartDate(OffsetDateTime.now(ZoneOffset.UTC));
+    sub.setEndDate(OffsetDateTime.now(ZoneOffset.UTC).plusDays(30));
+
+    when(userService.findAuthenticatedUser(200L)).thenReturn(Optional.of(user));
+    when(userService.findLatestSubscription(user)).thenReturn(Optional.of(sub));
+    when(userService.buildSubscriptionUrl(user))
+        .thenReturn("https://api.example.com/v1/config/uuid-code");
+    when(userService.getDirectVlessKey(user))
+        .thenReturn(Optional.of("vless://user-uuid@host:443?type=tcp"));
+
+    List<SendMessage> result = handler.handle(update);
+
+    assertThat(result).singleElement().satisfies(message -> {
+      assertThat(message.getText()).contains("vless://user-uuid@host:443?type=tcp");
+      assertThat(message.getText()).contains("Импорт из буфера обмена");
+    });
+  }
+
+  @Test
+  @DisplayName("Given callback query When handle Then return appropriate guide")
+  void givenCallbackQueryWhenHandleThenReturnGuide() {
+    Update update = updateWithCallback(200L, TelegramKeyboardFactory.CB_GUIDE_HAPP);
+    User user = new User();
+    Subscription sub = new Subscription();
+    sub.setStatus(SubscriptionStatus.ACTIVE);
+    sub.setStartDate(OffsetDateTime.now(ZoneOffset.UTC));
+    sub.setEndDate(OffsetDateTime.now(ZoneOffset.UTC).plusDays(30));
+
+    when(userService.findAuthenticatedUser(200L)).thenReturn(Optional.of(user));
+    when(userService.findLatestSubscription(user)).thenReturn(Optional.of(sub));
+    when(userService.buildSubscriptionUrl(user))
+        .thenReturn("https://api.example.com/v1/config/uuid-code");
+
+    List<SendMessage> result = handler.handle(update);
+
+    assertThat(result).singleElement().satisfies(message -> {
+      assertThat(message.getText()).contains("Happ");
+      assertThat(message.getReplyMarkup()).isInstanceOf(InlineKeyboardMarkup.class);
+    });
+  }
+
+  @Test
+  @DisplayName("Given supported texts and callbacks When supports Then return true")
   void givenSupportedTextsWhenSupportsThenTrue() {
     assertThat(handler.supports(updateWithText(1L, "/connect"))).isTrue();
     assertThat(handler.supports(updateWithText(1L, "/config"))).isTrue();
     assertThat(handler.supports(updateWithText(1L, "/link"))).isTrue();
     assertThat(handler.supports(updateWithText(1L, "/getkey"))).isTrue();
+    assertThat(handler.supports(updateWithText(1L, "/key"))).isTrue();
+    assertThat(handler.supports(updateWithText(1L, "/vless"))).isTrue();
+    assertThat(handler.supports(updateWithText(1L, "/happ"))).isTrue();
+    assertThat(handler.supports(updateWithText(1L, "/v2raytun"))).isTrue();
     assertThat(handler.supports(updateWithText(1L, TelegramKeyboardFactory.BTN_CONNECTION)))
+        .isTrue();
+    assertThat(handler.supports(updateWithCallback(1L, TelegramKeyboardFactory.CB_GUIDE_HAPP)))
+        .isTrue();
+    assertThat(handler.supports(updateWithCallback(1L, TelegramKeyboardFactory.CB_GUIDE_V2RAYTUN)))
+        .isTrue();
+    assertThat(handler.supports(updateWithCallback(1L, TelegramKeyboardFactory.CB_GET_VLESS_KEY)))
         .isTrue();
     assertThat(handler.supports(updateWithText(1L, "/other"))).isFalse();
   }
@@ -121,6 +229,20 @@ class ConnectionCommandHandlerTest {
     when(update.getMessage()).thenReturn(message);
     when(message.hasText()).thenReturn(true);
     when(message.getText()).thenReturn(text);
+    when(message.getChatId()).thenReturn(chatId);
+
+    return update;
+  }
+
+  private Update updateWithCallback(Long chatId, String callbackData) {
+    Update update = mock(Update.class);
+    CallbackQuery callbackQuery = mock(CallbackQuery.class);
+    Message message = mock(Message.class);
+
+    when(update.hasCallbackQuery()).thenReturn(true);
+    when(update.getCallbackQuery()).thenReturn(callbackQuery);
+    when(callbackQuery.getData()).thenReturn(callbackData);
+    when(callbackQuery.getMessage()).thenReturn(message);
     when(message.getChatId()).thenReturn(chatId);
 
     return update;

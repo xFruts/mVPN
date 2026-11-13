@@ -7,6 +7,7 @@ import java.util.Set;
 import java.util.UUID;
 import lombok.AccessLevel;
 import lombok.experimental.FieldDefaults;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -19,7 +20,9 @@ import ru.maxow.mvpn.subscription.traffic.SubscriptionTrafficState;
 import ru.maxow.mvpn.subscription.traffic.SubscriptionTrafficStateService;
 import ru.maxow.mvpn.user.User;
 import ru.maxow.mvpn.user.UserService;
+import ru.maxow.mvpn.xui.XuiPanelService;
 
+@Slf4j
 @Service
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class TelegramUserService {
@@ -28,6 +31,7 @@ public class TelegramUserService {
   SubscriptionRepository subscriptionRepository;
   SubscriptionTrafficStateService trafficStateService;
   ServerRepository serverRepository;
+  XuiPanelService xuiPanelService;
   String profileWebPageUrl;
 
   public TelegramUserService(
@@ -35,12 +39,14 @@ public class TelegramUserService {
       SubscriptionRepository subscriptionRepository,
       SubscriptionTrafficStateService trafficStateService,
       ServerRepository serverRepository,
+      XuiPanelService xuiPanelService,
       @Value("${vpn.config.profile-web-page-url:}") String profileWebPageUrl
   ) {
     this.userService = userService;
     this.subscriptionRepository = subscriptionRepository;
     this.trafficStateService = trafficStateService;
     this.serverRepository = serverRepository;
+    this.xuiPanelService = xuiPanelService;
     this.profileWebPageUrl = profileWebPageUrl;
   }
 
@@ -111,6 +117,27 @@ public class TelegramUserService {
       return trimmed + "/" + user.getVerificationCode();
     }
     return "/v1/config/" + user.getVerificationCode();
+  }
+
+  public Optional<String> getDirectVlessKey(User user) {
+    if (user == null) {
+      return Optional.empty();
+    }
+    List<Server> servers = getAvailableServers(user);
+    for (Server server : servers) {
+      if (server.getStatus() == ServerStatus.ACTIVE) {
+        try {
+          String vless = xuiPanelService.getVlessConfig(server, user);
+          if (vless != null && !vless.isBlank()) {
+            return Optional.of(vless);
+          }
+        } catch (Exception e) {
+          log.warn("Failed to get direct VLESS config from server {}: {}",
+              server.getName(), e.getMessage());
+        }
+      }
+    }
+    return Optional.empty();
   }
 
   private int statusOrder(Server server) {

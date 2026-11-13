@@ -94,4 +94,41 @@ class TelegramMessageFormatterTest {
     String result = formatter.formatServersStatus(List.of());
     assertThat(result).contains("список доступных серверов пуст");
   }
+
+  @Test
+  @DisplayName("formatHappGuide contains Happ instructions and subscription URL")
+  void shouldFormatHappGuide() {
+    String url = "https://sub.example.com/v1/config/test-uuid";
+    String result = formatter.formatHappGuide(url);
+
+    assertThat(result).contains("Happ");
+    assertThat(result).contains(url);
+    assertThat(result).contains("Добавить подписку");
+  }
+
+  @Test
+  @DisplayName("formatV2rayTunGuide contains v2rayTun instructions and subscription URL")
+  void shouldFormatV2rayTunGuide() {
+    String url = "https://sub.example.com/v1/config/test-uuid";
+    String result = formatter.formatV2rayTunGuide(url);
+
+    assertThat(result).contains("v2rayTun");
+    assertThat(result).contains(url);
+    assertThat(result).contains("Обновить подписку");
+  }
+
+  @Test
+  @DisplayName("formatVlessKey returns key when present and fallback when empty")
+  void shouldFormatVlessKey() {
+    String key = "vless://uuid@host:443?type=tcp";
+    String url = "https://sub.example.com/v1/config/test-uuid";
+
+    String withKey = formatter.formatVlessKey(Optional.of(key), url);
+    assertThat(withKey).contains(key);
+    assertThat(withKey).contains("Импорт из буфера обмена");
+
+    String withoutKey = formatter.formatVlessKey(Optional.empty(), url);
+    assertThat(withoutKey).contains("Не удалось");
+    assertThat(withoutKey).contains(url);
+  }
 }

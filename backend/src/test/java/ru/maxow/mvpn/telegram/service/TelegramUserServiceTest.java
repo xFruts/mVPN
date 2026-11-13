@@ -24,6 +24,7 @@ import ru.maxow.mvpn.subscription.traffic.SubscriptionTrafficStateService;
 import ru.maxow.mvpn.tariff.Tariff;
 import ru.maxow.mvpn.user.User;
 import ru.maxow.mvpn.user.UserService;
+import ru.maxow.mvpn.xui.XuiPanelService;
 
 @ExtendWith(MockitoExtension.class)
 @DisplayName("TelegramUserService - unit tests")
@@ -41,6 +42,9 @@ class TelegramUserServiceTest {
   @Mock
   private ServerRepository serverRepository;
 
+  @Mock
+  private XuiPanelService xuiPanelService;
+
   private TelegramUserService telegramUserService;
 
   @BeforeEach
@@ -50,6 +54,7 @@ class TelegramUserServiceTest {
         subscriptionRepository,
         trafficStateService,
         serverRepository,
+        xuiPanelService,
         "https://sub.example.com"
     );
   }
@@ -142,5 +147,32 @@ class TelegramUserServiceTest {
     String url = telegramUserService.buildSubscriptionUrl(user);
 
     assertThat(url).isEqualTo("https://sub.example.com/" + code);
+  }
+
+  @Test
+  @DisplayName("getDirectVlessKey returns VLESS string when active server available")
+  void shouldReturnDirectVlessKey() {
+    User user = new User();
+    user.setId(1L);
+
+    Server activeServer = new Server();
+    activeServer.setName("NL-Node");
+    activeServer.setStatus(ServerStatus.ACTIVE);
+
+    Tariff tariff = new Tariff();
+    tariff.setServers(Set.of(activeServer));
+
+    Subscription sub = new Subscription();
+    sub.setTariff(tariff);
+
+    when(subscriptionRepository
+        .findFirstWithTariffAndServersByUser_IdOrderByStartDateDesc(1L))
+        .thenReturn(Optional.of(sub));
+    when(xuiPanelService.getVlessConfig(activeServer, user))
+        .thenReturn("vless://test-uuid@nl.example.com:443?type=tcp");
+
+    Optional<String> result = telegramUserService.getDirectVlessKey(user);
+
+    assertThat(result).contains("vless://test-uuid@nl.example.com:443?type=tcp");
   }
 }

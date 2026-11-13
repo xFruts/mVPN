@@ -27,6 +27,12 @@ public class ConnectionCommandHandler implements CommandHandler {
 
   @Override
   public boolean supports(Update update) {
+    if (update.hasCallbackQuery()) {
+      String data = update.getCallbackQuery().getData();
+      return TelegramKeyboardFactory.CB_GUIDE_HAPP.equals(data)
+          || TelegramKeyboardFactory.CB_GUIDE_V2RAYTUN.equals(data)
+          || TelegramKeyboardFactory.CB_GET_VLESS_KEY.equals(data);
+    }
     if (!update.hasMessage() || !update.getMessage().hasText()) {
       return false;
     }
@@ -35,14 +41,19 @@ public class ConnectionCommandHandler implements CommandHandler {
         || text.equals("/connect")
         || text.equals("/config")
         || text.equals("/link")
-        || text.equals("/getkey");
+        || text.equals("/getkey")
+        || text.equals("/key")
+        || text.equals("/vless")
+        || text.equals("/happ")
+        || text.equals("/v2raytun");
   }
 
   @Override
   public List<SendMessage> handle(Update update) {
-    Long chatId = update.getMessage().getChatId();
-    Optional<User> userOpt = userService.findAuthenticatedUser(chatId);
+    Long chatId = extractChatId(update);
+    String action = extractAction(update);
 
+    Optional<User> userOpt = userService.findAuthenticatedUser(chatId);
     if (userOpt.isEmpty()) {
       String text = """
           ⚠️ Вы ещё не авторизованы.
@@ -60,14 +71,82 @@ public class ConnectionCommandHandler implements CommandHandler {
 
     User user = userOpt.get();
     Optional<Subscription> subOpt = userService.findLatestSubscription(user);
+    if (subOpt.isEmpty() || !subOpt.get().isActive()) {
+      return List.of(SendMessage.builder()
+          .chatId(chatId.toString())
+          .text("""
+              ⚠️ У вас нет активной подписки.
+
+              Для получения настроек подключения оформите подписку в личном кабинете mVPN.
+              """)
+          .replyMarkup(keyboardFactory.buildMainMenuKeyboard())
+          .build());
+    }
+
     String subscriptionUrl = userService.buildSubscriptionUrl(user);
+
+    if (isHappRequest(action)) {
+      return List.of(SendMessage.builder()
+          .chatId(chatId.toString())
+          .text(messageFormatter.formatHappGuide(subscriptionUrl))
+          .replyMarkup(keyboardFactory.buildConnectionInlineKeyboard())
+          .build());
+    }
+
+    if (isV2rayTunRequest(action)) {
+      return List.of(SendMessage.builder()
+          .chatId(chatId.toString())
+          .text(messageFormatter.formatV2rayTunGuide(subscriptionUrl))
+          .replyMarkup(keyboardFactory.buildConnectionInlineKeyboard())
+          .build());
+    }
+
+    if (isVlessKeyRequest(action)) {
+      Optional<String> vlessKeyOpt = userService.getDirectVlessKey(user);
+      return List.of(SendMessage.builder()
+          .chatId(chatId.toString())
+          .text(messageFormatter.formatVlessKey(vlessKeyOpt, subscriptionUrl))
+          .replyMarkup(keyboardFactory.buildConnectionInlineKeyboard())
+          .build());
+    }
+
     String responseText = messageFormatter.formatConnectionGuide(
         user, subOpt, subscriptionUrl);
-
     return List.of(SendMessage.builder()
         .chatId(chatId.toString())
         .text(responseText)
-        .replyMarkup(keyboardFactory.buildMainMenuKeyboard())
+        .replyMarkup(keyboardFactory.buildConnectionInlineKeyboard())
         .build());
+  }
+
+  private Long extractChatId(Update update) {
+    if (update.hasCallbackQuery()) {
+      return update.getCallbackQuery().getMessage().getChatId();
+    }
+    return update.getMessage().getChatId();
+  }
+
+  private String extractAction(Update update) {
+    if (update.hasCallbackQuery()) {
+      return update.getCallbackQuery().getData();
+    }
+    return update.getMessage().getText().trim();
+  }
+
+  private boolean isHappRequest(String action) {
+    return "/happ".equals(action)
+        || TelegramKeyboardFactory.CB_GUIDE_HAPP.equals(action);
+  }
+
+  private boolean isV2rayTunRequest(String action) {
+    return "/v2raytun".equals(action)
+        || TelegramKeyboardFactory.CB_GUIDE_V2RAYTUN.equals(action);
+  }
+
+  private boolean isVlessKeyRequest(String action) {
+    return "/key".equals(action)
+        || "/vless".equals(action)
+        || "/getkey".equals(action)
+        || TelegramKeyboardFactory.CB_GET_VLESS_KEY.equals(action);
   }
 }
