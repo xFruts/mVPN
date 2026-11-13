@@ -4,10 +4,9 @@ databaseChangeLog:
       author: xFruts
       preConditions:
         - onFail: "MARK_RAN"
-          tableExists:
+        - tableExists:
             tableName: "tariff_plan_servers"
-        - onFail: "MARK_RAN"
-          foreignKeyConstraintExists:
+        - foreignKeyConstraintExists:
             foreignKeyTableName: "tariff_plan_servers"
             foreignKeyName: "fk7ssljuvxcwumk19xfnx81lrfn"
       changes:

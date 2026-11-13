@@ -4,10 +4,9 @@ databaseChangeLog:
       author: "xFruts"
       preConditions:
         - onFail: "MARK_RAN"
-          tableExists:
+        - tableExists:
             tableName: "users"
-        - onFail: "MARK_RAN"
-          not:
+        - not:
             columnExists:
               tableName: "users"
               columnName: "is_deleted"
