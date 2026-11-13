@@ -9,12 +9,14 @@ export interface UsersGet {
     startDate: string | null;
     subscriptionStatus: UserStatus | null;
     endDate: string | null;
+    telegramUsername?: string | null;
 }
 
 export interface UserServerResponse {
     id: number;
     fullName: string;
     userTelegramId: number;
+    telegramUsername?: string | null;
     role: string;
     subscription: {
         startDate: string;
@@ -29,6 +31,7 @@ export interface UserServerResponse {
 export interface UserGet {
     fullName: string;
     userTelegramId: number | undefined;
+    telegramUsername?: string | null;
     role: UserRole;
     startDate: string | undefined;
     subscriptionEndDate: string | undefined;
@@ -38,7 +41,8 @@ export interface UserGet {
 
 export interface UserUpdate {
     fullName: string;
-    userTelegramId: number;
+    userTelegramId: number | undefined | null;
+    telegramUsername?: string | null;
     role: UserRole;
     subscriptionStatus: UserStatus | undefined | null;
     subscriptionEndDate: string | undefined | null;
@@ -47,6 +51,7 @@ export interface UserUpdate {
 export interface UserCreate {
     fullName: string;
     userTelegramId: number | undefined | null;
+    telegramUsername?: string | null;
     role: UserRole;
 }
 
@@ -57,4 +62,5 @@ export interface AllUsers {
     subscriptionStatus: UserStatus;
     endDate: string;
     tariffName: string;
+    telegramUsername?: string | null;
 }
