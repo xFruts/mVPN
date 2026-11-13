@@ -1,21 +1,21 @@
 package ru.maxow.mvpn.xui;
 
-import tools.jackson.core.JacksonException;
-import tools.jackson.databind.JsonNode;
-import tools.jackson.databind.ObjectMapper;
-import tools.jackson.databind.node.ObjectNode;
+import java.nio.charset.StandardCharsets;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
+import org.springframework.web.client.ResourceAccessException;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.util.UriUtils;
 import ru.maxow.mvpn.server.Server;
 import ru.maxow.mvpn.user.User;
 import ru.maxow.mvpn.util.exception.XuiUnavailableException;
-
-import java.nio.charset.StandardCharsets;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.node.ObjectNode;
 
 @Slf4j
 @Component
@@ -51,9 +51,13 @@ class XuiJsonConfigClient {
         return DEFAULT_SUBSCRIPTION_PORT;
       }
       return subPort;
+    } catch (ResourceAccessException e) {
+      log.warn("Cannot connect to XUI server {} to resolve subPort ({}), fallback={}",
+          server.getId(), e.getMessage(), DEFAULT_SUBSCRIPTION_PORT);
+      return DEFAULT_SUBSCRIPTION_PORT;
     } catch (Exception e) {
-      log.warn("Failed to resolve subPort from XUI settings. serverId={}, fallback={}",
-          server.getId(), DEFAULT_SUBSCRIPTION_PORT, e);
+      log.warn("Failed to resolve subPort from XUI settings. serverId={}, fallback={}: {}",
+          server.getId(), DEFAULT_SUBSCRIPTION_PORT, e.getMessage());
       return DEFAULT_SUBSCRIPTION_PORT;
     }
   }

@@ -3,7 +3,11 @@ package ru.maxow.mvpn.xui.dto;
 import org.springframework.http.MediaType;
 import ru.maxow.mvpn.server.SubscriptionFormat;
 
-public record SubscriptionConfigPayload(String body, SubscriptionFormat format, String subscriptionInfo) {
+public record SubscriptionConfigPayload(
+    String body,
+    SubscriptionFormat format,
+    String subscriptionInfo
+) {
 
   public SubscriptionConfigPayload(String body, SubscriptionFormat format) {
     this(body, format, null);

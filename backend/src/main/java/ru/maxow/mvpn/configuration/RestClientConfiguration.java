@@ -11,6 +11,10 @@ import tools.jackson.databind.ObjectMapper;
 @Configuration
 public class RestClientConfiguration {
 
+  /**
+   * Базовый строитель RestClient с настроенными таймаутами сокетов.
+   * Сервисы клонируют его (.clone()) для добавления адресов серверов и авторизации.
+   */
   @Bean
   public RestClient.Builder restClientBuilder(
       @Value("${app.http-client.connect-timeout-ms:5000}") int connectTimeoutMs,

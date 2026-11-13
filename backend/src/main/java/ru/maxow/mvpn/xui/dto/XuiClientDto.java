@@ -8,7 +8,7 @@ import java.util.List;
 /**
  * Типизированная модель клиента 3X-UI Panel API (v3).
  * Маппится из {@code GET /panel/api/clients/get/{email}} и {@code GET /panel/api/clients/list}.
- * При создании/обновлении серверные поля (uuid, password, auth) генерируются сервером, если не переданы.
+ * Секреты (uuid, password, auth) генерируются сервером, если не переданы.
  */
 @JsonIgnoreProperties(ignoreUnknown = true)
 @JsonInclude(JsonInclude.Include.NON_NULL)

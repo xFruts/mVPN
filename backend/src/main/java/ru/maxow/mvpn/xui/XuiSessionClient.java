@@ -1,5 +1,8 @@
 package ru.maxow.mvpn.xui;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 import lombok.AccessLevel;
 import lombok.experimental.FieldDefaults;
 import org.springframework.http.HttpHeaders;
@@ -11,17 +14,13 @@ import org.springframework.web.client.RestClient;
 import ru.maxow.mvpn.server.Server;
 import ru.maxow.mvpn.util.exception.XuiUnavailableException;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-
 /**
  * Управление HTTP-сессиями с 3X-UI Panel.
  * <p>
  * Поддерживает два режима аутентификации:
  * <ul>
- *   <li><b>Cookie</b> — логин через {@code POST /login}, session cookie для дальнейших запросов</li>
- *   <li><b>Bearer token</b> — токен из настроек панели, подставляется в {@code Authorization} header</li>
+ *   <li><b>Cookie</b> — логин через {@code POST /login}, session cookie для запросов</li>
+ *   <li><b>Bearer token</b> — токен панели, подставляется в {@code Authorization}</li>
  * </ul>
  * При наличии {@code xuiAuthToken} на сервере логин не выполняется.
  */

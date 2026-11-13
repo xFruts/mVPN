@@ -4,6 +4,7 @@ global:
   external_labels:
     project: 'mvpn'
     app: 'mvpn'
+    application: 'mVPN'
     env: 'prod'
 
 remote_write:
@@ -25,3 +26,4 @@ scrape_configs:
         labels:
           service: 'backend'
           app: 'mvpn'
+          application: 'mVPN'

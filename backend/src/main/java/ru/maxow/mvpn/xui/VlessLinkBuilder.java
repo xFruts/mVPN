@@ -1,14 +1,13 @@
 package ru.maxow.mvpn.xui;
 
-import tools.jackson.databind.JsonNode;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
+import java.time.Instant;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import org.springframework.web.util.UriUtils;
 import ru.maxow.mvpn.util.exception.XuiUnavailableException;
-
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
-import java.time.Instant;
+import tools.jackson.databind.JsonNode;
 
 @Slf4j
 @Component
@@ -64,24 +63,29 @@ class VlessLinkBuilder {
           JsonNode nestedRealitySettings = realitySettings.get("settings");
           if (nestedRealitySettings != null) {
             if (nestedRealitySettings.has("publicKey")) {
-              queryParams.append("&pbk=").append(nestedRealitySettings.get("publicKey").asString());
+              queryParams.append("&pbk=")
+                  .append(nestedRealitySettings.get("publicKey").asString());
             }
             if (nestedRealitySettings.has("fingerprint")) {
-              queryParams.append("&fp=").append(nestedRealitySettings.get("fingerprint").asString());
+              queryParams.append("&fp=")
+                  .append(nestedRealitySettings.get("fingerprint").asString());
             }
             if (nestedRealitySettings.has("spiderX")) {
               String spx = nestedRealitySettings.get("spiderX").asString();
-              queryParams.append("&spx=").append(URLEncoder.encode(spx, StandardCharsets.UTF_8));
+              queryParams.append("&spx=")
+                  .append(URLEncoder.encode(spx, StandardCharsets.UTF_8));
             }
           }
 
           if (realitySettings.has("serverNames")
               && !realitySettings.get("serverNames").isEmpty()) {
-            queryParams.append("&sni=").append(realitySettings.get("serverNames").get(0).asString());
+            queryParams.append("&sni=")
+                .append(realitySettings.get("serverNames").get(0).asString());
           }
           if (realitySettings.has("shortIds")
               && !realitySettings.get("shortIds").isEmpty()) {
-            queryParams.append("&sid=").append(realitySettings.get("shortIds").get(0).asString());
+            queryParams.append("&sid=")
+                .append(realitySettings.get("shortIds").get(0).asString());
           }
         }
       } else if ("tls".equalsIgnoreCase(security)) {
