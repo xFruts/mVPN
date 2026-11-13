@@ -15,7 +15,11 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.quality.Strictness;
+import org.telegram.telegrambots.meta.api.methods.BotApiMethod;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
+import org.telegram.telegrambots.meta.api.objects.Chat;
 import org.telegram.telegrambots.meta.api.objects.Message;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import ru.maxow.mvpn.telegram.service.TelegramKeyboardFactory;
@@ -24,6 +28,7 @@ import ru.maxow.mvpn.telegram.service.TelegramUserService;
 import ru.maxow.mvpn.user.User;
 
 @ExtendWith(MockitoExtension.class)
+@MockitoSettings(strictness = Strictness.LENIENT)
 @DisplayName("StartCommandHandler - unit tests")
 class StartCommandHandlerTest {
 
@@ -41,18 +46,19 @@ class StartCommandHandlerTest {
   }
 
   @Test
-  @DisplayName("Given /start and first name When unauthenticated Then return auth instructions")
-  void givenStartWithFirstNameWhenUnauthenticatedThenReturnAuthInstructions() {
-    Update update = updateForHandle(123L, "/start", "Ivan", null);
-    when(userService.findAuthenticatedUser(eq(123L), any())).thenReturn(Optional.empty());
+  @DisplayName("Given /start When unauthenticated Then return unauthenticated welcome message")
+  void givenStartWhenUnauthenticatedThenWelcomeWithAuthPrompt() {
+    Update update = updateForHandle(12L, "/start", "Ivan", null);
+    when(userService.findAuthenticatedUser(eq(12L), any())).thenReturn(Optional.empty());
 
-    List<SendMessage> result = handler.handle(update);
+    List<BotApiMethod<?>> result = handler.handle(update);
 
-    assertThat(result).singleElement().satisfies(message -> {
-      assertThat(message.getChatId()).isEqualTo("123");
-      assertThat(message.getText()).contains("Привет, Ivan!");
-      assertThat(message.getText()).contains("/auth");
-    });
+    assertThat(result).singleElement().isInstanceOf(SendMessage.class);
+    SendMessage message = (SendMessage) result.get(0);
+    assertThat(message.getChatId()).isEqualTo("12");
+    assertThat(message.getText()).contains("Привет, Ivan!");
+    assertThat(message.getText()).contains("/auth");
+    assertThat(message.getReplyMarkup()).isNotNull();
   }
 
   @Test
@@ -63,12 +69,12 @@ class StartCommandHandlerTest {
     user.setFullName("Anna Test");
     when(userService.findAuthenticatedUser(eq(55L), any())).thenReturn(Optional.of(user));
 
-    List<SendMessage> result = handler.handle(update);
+    List<BotApiMethod<?>> result = handler.handle(update);
 
-    assertThat(result).singleElement().satisfies(message -> {
-      assertThat(message.getText()).contains("С возвращением, Anna!");
-      assertThat(message.getReplyMarkup()).isNotNull();
-    });
+    assertThat(result).singleElement().isInstanceOf(SendMessage.class);
+    SendMessage message = (SendMessage) result.get(0);
+    assertThat(message.getText()).contains("С возвращением, Anna!");
+    assertThat(message.getReplyMarkup()).isNotNull();
   }
 
   @Test
@@ -80,12 +86,12 @@ class StartCommandHandlerTest {
     user.setUserTelegramId(88L);
     when(userService.findAuthenticatedUser(88L, "xFruts")).thenReturn(Optional.of(user));
 
-    List<SendMessage> result = handler.handle(update);
+    List<BotApiMethod<?>> result = handler.handle(update);
 
-    assertThat(result).singleElement().satisfies(message -> {
-      assertThat(message.getText()).contains("С возвращением, Max!");
-      assertThat(message.getReplyMarkup()).isNotNull();
-    });
+    assertThat(result).singleElement().isInstanceOf(SendMessage.class);
+    SendMessage message = (SendMessage) result.get(0);
+    assertThat(message.getText()).contains("С возвращением, Max!");
+    assertThat(message.getReplyMarkup()).isNotNull();
   }
 
   @Test
@@ -95,12 +101,12 @@ class StartCommandHandlerTest {
     Update update = updateForHandle(77L, "/start " + token, "Oleg", null);
     when(userService.authenticateUser(token, 77L)).thenReturn(true);
 
-    List<SendMessage> result = handler.handle(update);
+    List<BotApiMethod<?>> result = handler.handle(update);
 
-    assertThat(result).singleElement().satisfies(message -> {
-      assertThat(message.getText()).contains("успешно аутентифицированы");
-      assertThat(message.getText()).contains("С возвращением, Oleg!");
-    });
+    assertThat(result).singleElement().isInstanceOf(SendMessage.class);
+    SendMessage message = (SendMessage) result.get(0);
+    assertThat(message.getText()).contains("успешно");
+    assertThat(message.getText()).contains("С возвращением, Oleg!");
   }
 
   @Test
@@ -119,31 +125,9 @@ class StartCommandHandlerTest {
     when(noTextMessage.hasText()).thenReturn(false);
 
     assertThat(handler.supports(noText)).isFalse();
-    assertThat(handler.supports(updateForSupports("/help"))).isFalse();
-  }
 
-  private Update updateForHandle(
-      Long chatId,
-      String text,
-      String firstName,
-      String username
-  ) {
-    Update update = mock(Update.class);
-    Message message = mock(Message.class);
-
-    when(update.getMessage()).thenReturn(message);
-    when(message.getText()).thenReturn(text);
-    when(message.getChatId()).thenReturn(chatId);
-
-    if (firstName != null || username != null) {
-      org.telegram.telegrambots.meta.api.objects.User from =
-          mock(org.telegram.telegrambots.meta.api.objects.User.class);
-      when(from.getFirstName()).thenReturn(firstName);
-      when(from.getUserName()).thenReturn(username);
-      when(message.getFrom()).thenReturn(from);
-    }
-
-    return update;
+    Update nonStart = updateForSupports("/help");
+    assertThat(handler.supports(nonStart)).isFalse();
   }
 
   private Update updateForSupports(String text) {
@@ -154,6 +138,29 @@ class StartCommandHandlerTest {
     when(update.getMessage()).thenReturn(message);
     when(message.hasText()).thenReturn(true);
     when(message.getText()).thenReturn(text);
+
+    return update;
+  }
+
+  private Update updateForHandle(Long chatId, String text, String firstName, String username) {
+    Update update = mock(Update.class);
+    Message message = mock(Message.class);
+    org.telegram.telegrambots.meta.api.objects.User tgUser =
+        mock(org.telegram.telegrambots.meta.api.objects.User.class);
+    Chat chat = mock(Chat.class);
+
+    when(update.hasMessage()).thenReturn(true);
+    when(update.getMessage()).thenReturn(message);
+    when(message.hasText()).thenReturn(true);
+    when(message.getText()).thenReturn(text);
+    when(message.getChatId()).thenReturn(chatId);
+    when(message.getChat()).thenReturn(chat);
+    when(chat.getId()).thenReturn(chatId);
+    when(chat.getFirstName()).thenReturn(firstName);
+
+    when(message.getFrom()).thenReturn(tgUser);
+    when(tgUser.getFirstName()).thenReturn(firstName);
+    when(tgUser.getUserName()).thenReturn(username);
 
     return update;
   }

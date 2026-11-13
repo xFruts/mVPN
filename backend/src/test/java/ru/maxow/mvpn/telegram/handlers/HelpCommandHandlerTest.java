@@ -15,6 +15,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.telegram.telegrambots.meta.api.methods.BotApiMethod;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.Message;
 import org.telegram.telegrambots.meta.api.objects.Update;
@@ -47,14 +48,14 @@ class HelpCommandHandlerTest {
     when(userService.findAuthenticatedUser(eq(500L), any()))
         .thenReturn(Optional.of(new User()));
 
-    List<SendMessage> result = handler.handle(update);
+    List<BotApiMethod<?>> result = handler.handle(update);
 
-    assertThat(result).singleElement().satisfies(message -> {
-      assertThat(message.getChatId()).isEqualTo("500");
-      assertThat(message.getText()).contains("/status");
-      assertThat(message.getText()).contains("/servers");
-      assertThat(message.getText()).contains("/connect");
-    });
+    assertThat(result).singleElement().isInstanceOf(SendMessage.class);
+    SendMessage message = (SendMessage) result.get(0);
+    assertThat(message.getChatId()).isEqualTo("500");
+    assertThat(message.getText()).contains("/status");
+    assertThat(message.getText()).contains("/servers");
+    assertThat(message.getText()).contains("/connect");
   }
 
   @Test
@@ -63,12 +64,12 @@ class HelpCommandHandlerTest {
     Update update = updateWithText(500L, "/help");
     when(userService.findAuthenticatedUser(eq(500L), any())).thenReturn(Optional.empty());
 
-    List<SendMessage> result = handler.handle(update);
+    List<BotApiMethod<?>> result = handler.handle(update);
 
-    assertThat(result).singleElement().satisfies(message -> {
-      assertThat(message.getChatId()).isEqualTo("500");
-      assertThat(message.getText()).contains("/auth");
-    });
+    assertThat(result).singleElement().isInstanceOf(SendMessage.class);
+    SendMessage message = (SendMessage) result.get(0);
+    assertThat(message.getChatId()).isEqualTo("500");
+    assertThat(message.getText()).contains("/auth");
   }
 
   @Test

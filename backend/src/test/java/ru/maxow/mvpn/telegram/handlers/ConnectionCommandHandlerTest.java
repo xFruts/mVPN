@@ -18,12 +18,15 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
+import org.telegram.telegrambots.meta.api.methods.BotApiMethod;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
+import org.telegram.telegrambots.meta.api.methods.updatingmessages.EditMessageText;
 import org.telegram.telegrambots.meta.api.objects.CallbackQuery;
 import org.telegram.telegrambots.meta.api.objects.Message;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
 import ru.maxow.mvpn.model.SubscriptionStatus;
+import ru.maxow.mvpn.server.Server;
 import ru.maxow.mvpn.subscription.Subscription;
 import ru.maxow.mvpn.telegram.service.TelegramKeyboardFactory;
 import ru.maxow.mvpn.telegram.service.TelegramMessageFormatter;
@@ -54,9 +57,11 @@ class ConnectionCommandHandlerTest {
     Update update = updateWithText(100L, "/connect");
     when(userService.findAuthenticatedUser(eq(100L), any())).thenReturn(Optional.empty());
 
-    List<SendMessage> result = handler.handle(update);
+    List<BotApiMethod<?>> result = handler.handle(update);
 
-    assertThat(result).singleElement().satisfies(message -> {
+    assertThat(result).singleElement().satisfies(method -> {
+      assertThat(method).isInstanceOf(SendMessage.class);
+      SendMessage message = (SendMessage) method;
       assertThat(message.getChatId()).isEqualTo("100");
       assertThat(message.getText()).contains("Вы ещё не авторизованы");
     });
@@ -77,14 +82,16 @@ class ConnectionCommandHandlerTest {
     when(userService.findAuthenticatedUser(eq(200L), any())).thenReturn(Optional.of(user));
     when(userService.findLatestSubscription(user)).thenReturn(Optional.of(sub));
     when(userService.buildSubscriptionUrl(user))
-        .thenReturn("https://api.example.com/v1/config/uuid-code");
+        .thenReturn("https://api.vpn.maxow.ru/v1/config/uuid-code");
 
-    List<SendMessage> result = handler.handle(update);
+    List<BotApiMethod<?>> result = handler.handle(update);
 
-    assertThat(result).singleElement().satisfies(message -> {
+    assertThat(result).singleElement().satisfies(method -> {
+      assertThat(method).isInstanceOf(SendMessage.class);
+      SendMessage message = (SendMessage) method;
       assertThat(message.getChatId()).isEqualTo("200");
       assertThat(message.getText()).contains("Подключение к mVPN");
-      assertThat(message.getText()).contains("https://api.example.com/v1/config/uuid-code");
+      assertThat(message.getText()).contains("https://api.vpn.maxow.ru/v1/config/uuid-code");
       assertThat(message.getReplyMarkup()).isInstanceOf(InlineKeyboardMarkup.class);
     });
   }
@@ -99,10 +106,13 @@ class ConnectionCommandHandlerTest {
     when(userService.findLatestSubscription(user)).thenReturn(Optional.empty());
     when(userService.buildSubscriptionUrl(user)).thenReturn("");
 
-    List<SendMessage> result = handler.handle(update);
+    List<BotApiMethod<?>> result = handler.handle(update);
 
-    assertThat(result).singleElement().satisfies(message ->
-        assertThat(message.getText()).contains("нет активной подписки"));
+    assertThat(result).singleElement().satisfies(method -> {
+      assertThat(method).isInstanceOf(SendMessage.class);
+      SendMessage message = (SendMessage) method;
+      assertThat(message.getText()).contains("нет активной подписки");
+    });
   }
 
   @Test
@@ -118,11 +128,13 @@ class ConnectionCommandHandlerTest {
     when(userService.findAuthenticatedUser(eq(200L), any())).thenReturn(Optional.of(user));
     when(userService.findLatestSubscription(user)).thenReturn(Optional.of(sub));
     when(userService.buildSubscriptionUrl(user))
-        .thenReturn("https://api.example.com/v1/config/uuid-code");
+        .thenReturn("https://api.vpn.maxow.ru/v1/config/uuid-code");
 
-    List<SendMessage> result = handler.handle(update);
+    List<BotApiMethod<?>> result = handler.handle(update);
 
-    assertThat(result).singleElement().satisfies(message -> {
+    assertThat(result).singleElement().satisfies(method -> {
+      assertThat(method).isInstanceOf(SendMessage.class);
+      SendMessage message = (SendMessage) method;
       assertThat(message.getText()).contains("Happ");
       assertThat(message.getText()).contains("Добавить подписку");
       assertThat(message.getReplyMarkup()).isInstanceOf(InlineKeyboardMarkup.class);
@@ -142,11 +154,13 @@ class ConnectionCommandHandlerTest {
     when(userService.findAuthenticatedUser(eq(200L), any())).thenReturn(Optional.of(user));
     when(userService.findLatestSubscription(user)).thenReturn(Optional.of(sub));
     when(userService.buildSubscriptionUrl(user))
-        .thenReturn("https://api.example.com/v1/config/uuid-code");
+        .thenReturn("https://api.vpn.maxow.ru/v1/config/uuid-code");
 
-    List<SendMessage> result = handler.handle(update);
+    List<BotApiMethod<?>> result = handler.handle(update);
 
-    assertThat(result).singleElement().satisfies(message -> {
+    assertThat(result).singleElement().satisfies(method -> {
+      assertThat(method).isInstanceOf(SendMessage.class);
+      SendMessage message = (SendMessage) method;
       assertThat(message.getText()).contains("v2rayTun");
       assertThat(message.getText()).contains("Обновить подписку");
       assertThat(message.getReplyMarkup()).isInstanceOf(InlineKeyboardMarkup.class);
@@ -166,20 +180,22 @@ class ConnectionCommandHandlerTest {
     when(userService.findAuthenticatedUser(eq(200L), any())).thenReturn(Optional.of(user));
     when(userService.findLatestSubscription(user)).thenReturn(Optional.of(sub));
     when(userService.buildSubscriptionUrl(user))
-        .thenReturn("https://api.example.com/v1/config/uuid-code");
+        .thenReturn("https://api.vpn.maxow.ru/v1/config/uuid-code");
     when(userService.getDirectVlessKey(user))
         .thenReturn(Optional.of("vless://user-uuid@host:443?type=tcp"));
 
-    List<SendMessage> result = handler.handle(update);
+    List<BotApiMethod<?>> result = handler.handle(update);
 
-    assertThat(result).singleElement().satisfies(message -> {
+    assertThat(result).singleElement().satisfies(method -> {
+      assertThat(method).isInstanceOf(SendMessage.class);
+      SendMessage message = (SendMessage) method;
       assertThat(message.getText()).contains("vless://user-uuid@host:443?type=tcp");
       assertThat(message.getText()).contains("Импорт из буфера обмена");
     });
   }
 
   @Test
-  @DisplayName("Given callback query When handle Then return appropriate guide")
+  @DisplayName("Given callback query When handle Then edit message with appropriate guide")
   void givenCallbackQueryWhenHandleThenReturnGuide() {
     Update update = updateWithCallback(200L, TelegramKeyboardFactory.CB_GUIDE_HAPP);
     User user = new User();
@@ -191,13 +207,107 @@ class ConnectionCommandHandlerTest {
     when(userService.findAuthenticatedUser(eq(200L), any())).thenReturn(Optional.of(user));
     when(userService.findLatestSubscription(user)).thenReturn(Optional.of(sub));
     when(userService.buildSubscriptionUrl(user))
-        .thenReturn("https://api.example.com/v1/config/uuid-code");
+        .thenReturn("https://api.vpn.maxow.ru/v1/config/uuid-code");
 
-    List<SendMessage> result = handler.handle(update);
+    List<BotApiMethod<?>> result = handler.handle(update);
 
-    assertThat(result).singleElement().satisfies(message -> {
-      assertThat(message.getText()).contains("Happ");
-      assertThat(message.getReplyMarkup()).isInstanceOf(InlineKeyboardMarkup.class);
+    assertThat(result).singleElement().satisfies(method -> {
+      assertThat(method).isInstanceOf(EditMessageText.class);
+      EditMessageText edit = (EditMessageText) method;
+      assertThat(edit.getMessageId()).isEqualTo(42);
+      assertThat(edit.getText()).contains("Happ");
+      assertThat(edit.getReplyMarkup()).isInstanceOf(InlineKeyboardMarkup.class);
+    });
+  }
+
+  @Test
+  @DisplayName("Given select_country callback When handle Then edit with country buttons")
+  void givenSelectCountryCallbackWhenHandleThenReturnCountryList() {
+    Update update = updateWithCallback(200L, TelegramKeyboardFactory.CB_SELECT_COUNTRY);
+    User user = new User();
+    Subscription sub = new Subscription();
+    sub.setStatus(SubscriptionStatus.ACTIVE);
+    sub.setStartDate(OffsetDateTime.now(ZoneOffset.UTC));
+    sub.setEndDate(OffsetDateTime.now(ZoneOffset.UTC).plusDays(30));
+
+    Server server = new Server();
+    server.setId(5L);
+    server.setName("Finland");
+    server.setLocation("FI");
+    server.setCountryEmoji("🇫🇮");
+
+    when(userService.findAuthenticatedUser(eq(200L), any())).thenReturn(Optional.of(user));
+    when(userService.findLatestSubscription(user)).thenReturn(Optional.of(sub));
+    when(userService.getAvailableServers(user)).thenReturn(List.of(server));
+
+    List<BotApiMethod<?>> result = handler.handle(update);
+
+    assertThat(result).singleElement().satisfies(method -> {
+      assertThat(method).isInstanceOf(EditMessageText.class);
+      EditMessageText edit = (EditMessageText) method;
+      assertThat(edit.getMessageId()).isEqualTo(42);
+      assertThat(edit.getText()).contains("Выберите локацию");
+      assertThat(edit.getReplyMarkup()).isInstanceOf(InlineKeyboardMarkup.class);
+    });
+  }
+
+  @Test
+  @DisplayName("Given country_<id> callback When handle Then edit with JSON config")
+  void givenCountryConfigCallbackWhenHandleThenReturnJsonConfig() {
+    Update update = updateWithCallback(200L, TelegramKeyboardFactory.CB_COUNTRY_PREFIX + "5");
+    User user = new User();
+    Subscription sub = new Subscription();
+    sub.setStatus(SubscriptionStatus.ACTIVE);
+    sub.setStartDate(OffsetDateTime.now(ZoneOffset.UTC));
+    sub.setEndDate(OffsetDateTime.now(ZoneOffset.UTC).plusDays(30));
+
+    Server server = new Server();
+    server.setId(5L);
+    server.setName("Netherlands");
+    server.setLocation("NL");
+    server.setCountryEmoji("🇳🇱");
+
+    when(userService.findAuthenticatedUser(eq(200L), any())).thenReturn(Optional.of(user));
+    when(userService.findLatestSubscription(user)).thenReturn(Optional.of(sub));
+    when(userService.findServerById(5L)).thenReturn(Optional.of(server));
+    when(userService.getServerConfig(server, user))
+        .thenReturn(Optional.of("{\"outbounds\":[{\"protocol\":\"vless\"}]}"));
+
+    List<BotApiMethod<?>> result = handler.handle(update);
+
+    assertThat(result).singleElement().satisfies(method -> {
+      assertThat(method).isInstanceOf(EditMessageText.class);
+      EditMessageText edit = (EditMessageText) method;
+      assertThat(edit.getMessageId()).isEqualTo(42);
+      assertThat(edit.getText()).contains("Netherlands");
+      assertThat(edit.getText()).contains("{\"outbounds\":[{\"protocol\":\"vless\"}]}");
+      assertThat(edit.getReplyMarkup()).isInstanceOf(InlineKeyboardMarkup.class);
+    });
+  }
+
+  @Test
+  @DisplayName("Given connection_back callback When handle Then edit with main connection card")
+  void givenConnectionBackCallbackWhenHandleThenReturnConnectionCard() {
+    Update update = updateWithCallback(200L, TelegramKeyboardFactory.CB_CONNECTION_BACK);
+    User user = new User();
+    Subscription sub = new Subscription();
+    sub.setStatus(SubscriptionStatus.ACTIVE);
+    sub.setStartDate(OffsetDateTime.now(ZoneOffset.UTC));
+    sub.setEndDate(OffsetDateTime.now(ZoneOffset.UTC).plusDays(30));
+
+    when(userService.findAuthenticatedUser(eq(200L), any())).thenReturn(Optional.of(user));
+    when(userService.findLatestSubscription(user)).thenReturn(Optional.of(sub));
+    when(userService.buildSubscriptionUrl(user))
+        .thenReturn("https://api.vpn.maxow.ru/v1/config/uuid-code");
+
+    List<BotApiMethod<?>> result = handler.handle(update);
+
+    assertThat(result).singleElement().satisfies(method -> {
+      assertThat(method).isInstanceOf(EditMessageText.class);
+      EditMessageText edit = (EditMessageText) method;
+      assertThat(edit.getMessageId()).isEqualTo(42);
+      assertThat(edit.getText()).contains("Подключение к mVPN");
+      assertThat(edit.getReplyMarkup()).isInstanceOf(InlineKeyboardMarkup.class);
     });
   }
 
@@ -212,12 +322,20 @@ class ConnectionCommandHandlerTest {
     assertThat(handler.supports(updateWithText(1L, "/vless"))).isTrue();
     assertThat(handler.supports(updateWithText(1L, "/happ"))).isTrue();
     assertThat(handler.supports(updateWithText(1L, "/v2raytun"))).isTrue();
+    assertThat(handler.supports(updateWithText(1L, "/country"))).isTrue();
+    assertThat(handler.supports(updateWithText(1L, "/countries"))).isTrue();
     assertThat(handler.supports(updateWithText(1L, TelegramKeyboardFactory.BTN_CONNECTION)))
         .isTrue();
     assertThat(handler.supports(updateWithCallback(1L, TelegramKeyboardFactory.CB_GUIDE_HAPP)))
         .isTrue();
     assertThat(handler.supports(updateWithCallback(1L, TelegramKeyboardFactory.CB_GUIDE_V2RAYTUN)))
         .isTrue();
+    assertThat(handler.supports(updateWithCallback(1L, TelegramKeyboardFactory.CB_SELECT_COUNTRY)))
+        .isTrue();
+    assertThat(handler.supports(updateWithCallback(1L, TelegramKeyboardFactory.CB_CONNECTION_BACK)))
+        .isTrue();
+    String countryCallback = TelegramKeyboardFactory.CB_COUNTRY_PREFIX + "1";
+    assertThat(handler.supports(updateWithCallback(1L, countryCallback))).isTrue();
     assertThat(handler.supports(updateWithCallback(1L, TelegramKeyboardFactory.CB_GET_VLESS_KEY)))
         .isTrue();
     assertThat(handler.supports(updateWithText(1L, "/other"))).isFalse();
@@ -246,6 +364,7 @@ class ConnectionCommandHandlerTest {
     when(callbackQuery.getData()).thenReturn(callbackData);
     when(callbackQuery.getMessage()).thenReturn(message);
     when(message.getChatId()).thenReturn(chatId);
+    when(message.getMessageId()).thenReturn(42);
 
     return update;
   }

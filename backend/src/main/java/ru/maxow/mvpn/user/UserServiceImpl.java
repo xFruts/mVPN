@@ -122,7 +122,7 @@ public class UserServiceImpl implements UserService {
     updateUserSubscription(existingUser, dto);
 
     User updatedUser = userRepository.save(existingUser);
-    log.info("User updated: id={}", id);
+    log.debug("User updated: id={}", id);
     return userMapper.toUserResponseDto(updatedUser);
   }
 
@@ -140,7 +140,7 @@ public class UserServiceImpl implements UserService {
             subscription.setEndDate(dto.getSubscriptionEndDate());
           }
           subscriptionRepository.save(subscription);
-          log.info("Latest subscription updated for user id={}", user.getId());
+          log.debug("Latest subscription updated for user id={}", user.getId());
         });
   }
 

@@ -2,7 +2,7 @@ package ru.maxow.mvpn.telegram.adapter;
 
 import java.util.List;
 import org.springframework.stereotype.Component;
-import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
+import org.telegram.telegrambots.meta.api.methods.BotApiMethod;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import ru.maxow.mvpn.telegram.handlers.CommandHandler;
 
@@ -26,10 +26,10 @@ public class UpdateDispatcher {
    * Dispatches the given update to the appropriate command handler.
    *
    * @param update the incoming Telegram update
-   * @return a list of SendMessage responses from the handler,
+   * @return a list of BotApiMethod responses from the handler,
    *     or an empty list if no handler supports the update
    */
-  public List<SendMessage> dispatch(Update update) {
+  public List<BotApiMethod<?>> dispatch(Update update) {
     return handlers.stream()
         .filter(h -> h.supports(update))
         .findFirst()

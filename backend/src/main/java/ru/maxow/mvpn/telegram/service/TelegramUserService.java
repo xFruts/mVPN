@@ -8,6 +8,7 @@ import java.util.UUID;
 import lombok.AccessLevel;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -27,20 +28,27 @@ import ru.maxow.mvpn.xui.XuiPanelService;
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class TelegramUserService {
 
+  private static final String DEFAULT_API_DOMAIN = "api.vpn.maxow.ru";
+
   UserService userService;
   SubscriptionRepository subscriptionRepository;
   SubscriptionTrafficStateService trafficStateService;
   ServerRepository serverRepository;
   XuiPanelService xuiPanelService;
   String profileWebPageUrl;
+  String subscriptionBaseUrl;
+  String apiDomain;
 
+  @Autowired
   public TelegramUserService(
       UserService userService,
       SubscriptionRepository subscriptionRepository,
       SubscriptionTrafficStateService trafficStateService,
       ServerRepository serverRepository,
       XuiPanelService xuiPanelService,
-      @Value("${vpn.config.profile-web-page-url:}") String profileWebPageUrl
+      @Value("${vpn.config.profile-web-page-url:}") String profileWebPageUrl,
+      @Value("${vpn.config.subscription-base-url:}") String subscriptionBaseUrl,
+      @Value("${vpn.config.api-domain:}") String apiDomain
   ) {
     this.userService = userService;
     this.subscriptionRepository = subscriptionRepository;
@@ -48,6 +56,20 @@ public class TelegramUserService {
     this.serverRepository = serverRepository;
     this.xuiPanelService = xuiPanelService;
     this.profileWebPageUrl = profileWebPageUrl;
+    this.subscriptionBaseUrl = subscriptionBaseUrl;
+    this.apiDomain = apiDomain;
+  }
+
+  public TelegramUserService(
+      UserService userService,
+      SubscriptionRepository subscriptionRepository,
+      SubscriptionTrafficStateService trafficStateService,
+      ServerRepository serverRepository,
+      XuiPanelService xuiPanelService,
+      String profileWebPageUrl
+  ) {
+    this(userService, subscriptionRepository, trafficStateService,
+        serverRepository, xuiPanelService, profileWebPageUrl, null, null);
   }
 
   @Transactional
@@ -99,12 +121,30 @@ public class TelegramUserService {
         .findFirstWithTariffAndServersByUser_IdOrderByStartDateDesc(user.getId());
   }
 
-  @Transactional(readOnly = true)
-  public Optional<SubscriptionTrafficState> getTrafficState(Long subscriptionId) {
+  @Transactional
+  public Optional<SubscriptionTrafficState> getTrafficState(User user, Long subscriptionId) {
     if (subscriptionId == null) {
       return Optional.empty();
     }
+    if (user != null) {
+      Optional<Subscription> subOpt = subscriptionRepository.findById(subscriptionId);
+      if (subOpt.isPresent()) {
+        try {
+          SubscriptionTrafficState synced = trafficStateService
+              .syncTrafficForSubscription(user, subOpt.get());
+          if (synced != null) {
+            return Optional.of(synced);
+          }
+        } catch (Exception e) {
+          log.warn("Live traffic sync failed for user id={}: {}", user.getId(), e.getMessage());
+        }
+      }
+    }
     return trafficStateService.getTrafficStateBySubscriptionId(subscriptionId);
+  }
+
+  public Optional<SubscriptionTrafficState> getTrafficState(Long subscriptionId) {
+    return getTrafficState(null, subscriptionId);
   }
 
   @Transactional(readOnly = true)
@@ -128,15 +168,56 @@ public class TelegramUserService {
         .toList();
   }
 
+  @Transactional(readOnly = true)
+  public Optional<Server> findServerById(Long serverId) {
+    if (serverId == null) {
+      return Optional.empty();
+    }
+    return serverRepository.findById(serverId);
+  }
+
   public String buildSubscriptionUrl(User user) {
     if (user == null || user.getVerificationCode() == null) {
       return "";
     }
-    if (profileWebPageUrl != null && !profileWebPageUrl.isBlank()) {
+    if (subscriptionBaseUrl != null && !subscriptionBaseUrl.isBlank()) {
+      String trimmed = subscriptionBaseUrl.replaceAll("/+$", "");
+      return trimmed + "/" + user.getVerificationCode();
+    }
+    if (apiDomain != null && !apiDomain.isBlank()) {
+      String trimmed = apiDomain.replaceAll("^https?://", "").replaceAll("/+$", "");
+      return "https://" + trimmed + "/v1/config/" + user.getVerificationCode();
+    }
+    if (profileWebPageUrl != null && !profileWebPageUrl.isBlank()
+        && !profileWebPageUrl.contains("t.me/")) {
       String trimmed = profileWebPageUrl.replaceAll("/+$", "");
       return trimmed + "/" + user.getVerificationCode();
     }
-    return "/v1/config/" + user.getVerificationCode();
+    return "https://" + DEFAULT_API_DOMAIN + "/v1/config/" + user.getVerificationCode();
+  }
+
+  public Optional<String> getServerConfig(Server server, User user) {
+    if (server == null || user == null) {
+      return Optional.empty();
+    }
+    try {
+      String json = xuiPanelService.getJsonConfig(server, user);
+      if (json != null && !json.isBlank()) {
+        return Optional.of(json);
+      }
+    } catch (Exception e) {
+      log.warn("Failed to get JSON config for server {}: {}. Falling back to VLESS",
+          server.getName(), e.getMessage());
+    }
+    try {
+      String vless = xuiPanelService.getVlessConfig(server, user);
+      if (vless != null && !vless.isBlank()) {
+        return Optional.of(vless);
+      }
+    } catch (Exception e) {
+      log.warn("Failed to get VLESS config from server {}: {}", server.getName(), e.getMessage());
+    }
+    return Optional.empty();
   }
 
   public Optional<String> getDirectVlessKey(User user) {

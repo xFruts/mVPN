@@ -1,5 +1,6 @@
 package ru.maxow.mvpn.telegram.service;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import lombok.AccessLevel;
@@ -13,6 +14,7 @@ import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboardMar
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.KeyboardButton;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.KeyboardRow;
+import ru.maxow.mvpn.server.Server;
 
 @Component
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
@@ -35,6 +37,9 @@ public class TelegramKeyboardFactory {
 
   public static final String CB_GUIDE_HAPP = "guide_happ";
   public static final String CB_GUIDE_V2RAYTUN = "guide_v2raytun";
+  public static final String CB_SELECT_COUNTRY = "select_country";
+  public static final String CB_COUNTRY_PREFIX = "country_";
+  public static final String CB_CONNECTION_BACK = "connection_back";
   public static final String CB_GET_VLESS_KEY = "get_vless_key";
 
   MessageSource messageSource;
@@ -109,6 +114,9 @@ public class TelegramKeyboardFactory {
     String v2rayTunText = getMessage(
         "bot.btn.guide.v2raytun", target, "📱 Инструкция: v2rayTun"
     );
+    String countryText = getMessage(
+        "bot.btn.select.country", target, "🌍 Конфиг по странам (JSON)"
+    );
     String vlessKeyText = getMessage(
         "bot.btn.key.vless", target, "🔑 Скопировать VLESS-ключ"
     );
@@ -123,6 +131,11 @@ public class TelegramKeyboardFactory {
         .callbackData(CB_GUIDE_V2RAYTUN)
         .build();
 
+    InlineKeyboardButton countryBtn = InlineKeyboardButton.builder()
+        .text(countryText)
+        .callbackData(CB_SELECT_COUNTRY)
+        .build();
+
     InlineKeyboardButton vlessKeyBtn = InlineKeyboardButton.builder()
         .text(vlessKeyText)
         .callbackData(CB_GET_VLESS_KEY)
@@ -132,8 +145,85 @@ public class TelegramKeyboardFactory {
         .keyboard(List.of(
             List.of(happBtn),
             List.of(v2rayTunBtn),
+            List.of(countryBtn),
             List.of(vlessKeyBtn)
         ))
+        .build();
+  }
+
+  public InlineKeyboardMarkup buildCountrySelectionKeyboard(
+      List<Server> servers,
+      Locale locale
+  ) {
+    Locale target = locale != null ? locale : TelegramLocaleResolver.LOCALE_RU;
+    List<List<InlineKeyboardButton>> rows = new ArrayList<>();
+
+    if (servers != null) {
+      for (Server server : servers) {
+        String emoji = server.getCountryEmoji() != null ? server.getCountryEmoji() : "🌐";
+        String name = server.getName() != null ? server.getName() : "Сервер";
+        String location = server.getLocation() != null && !server.getLocation().isBlank()
+            ? " (" + server.getLocation() + ")"
+            : "";
+        String label = String.format("%s %s%s", emoji, name, location);
+
+        InlineKeyboardButton btn = InlineKeyboardButton.builder()
+            .text(label)
+            .callbackData(CB_COUNTRY_PREFIX + server.getId())
+            .build();
+        rows.add(List.of(btn));
+      }
+    }
+
+    String backText = getMessage("bot.btn.back", target, "◀ Назад в меню подключения");
+    InlineKeyboardButton backBtn = InlineKeyboardButton.builder()
+        .text(backText)
+        .callbackData(CB_CONNECTION_BACK)
+        .build();
+    rows.add(List.of(backBtn));
+
+    return InlineKeyboardMarkup.builder()
+        .keyboard(rows)
+        .build();
+  }
+
+  public InlineKeyboardMarkup buildCountryConfigKeyboard(Locale locale) {
+    Locale target = locale != null ? locale : TelegramLocaleResolver.LOCALE_RU;
+    String otherCountryText = getMessage(
+        "bot.btn.other-country", target, "🌍 Выбрать другую страну"
+    );
+    String menuText = getMessage(
+        "bot.btn.connection-menu", target, "🏠 В меню подключения"
+    );
+
+    InlineKeyboardButton otherBtn = InlineKeyboardButton.builder()
+        .text(otherCountryText)
+        .callbackData(CB_SELECT_COUNTRY)
+        .build();
+
+    InlineKeyboardButton menuBtn = InlineKeyboardButton.builder()
+        .text(menuText)
+        .callbackData(CB_CONNECTION_BACK)
+        .build();
+
+    return InlineKeyboardMarkup.builder()
+        .keyboard(List.of(
+            List.of(otherBtn),
+            List.of(menuBtn)
+        ))
+        .build();
+  }
+
+  public InlineKeyboardMarkup buildGuideBackKeyboard(Locale locale) {
+    Locale target = locale != null ? locale : TelegramLocaleResolver.LOCALE_RU;
+    String backText = getMessage("bot.btn.back", target, "◀ Назад в меню подключения");
+    InlineKeyboardButton backBtn = InlineKeyboardButton.builder()
+        .text(backText)
+        .callbackData(CB_CONNECTION_BACK)
+        .build();
+
+    return InlineKeyboardMarkup.builder()
+        .keyboard(List.of(List.of(backBtn)))
         .build();
   }
 

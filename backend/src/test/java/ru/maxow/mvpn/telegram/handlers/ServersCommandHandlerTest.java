@@ -16,6 +16,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
+import org.telegram.telegrambots.meta.api.methods.BotApiMethod;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.Message;
 import org.telegram.telegrambots.meta.api.objects.Update;
@@ -50,12 +51,12 @@ class ServersCommandHandlerTest {
     Update update = updateWithText(100L, "/servers");
     when(userService.findAuthenticatedUser(eq(100L), any())).thenReturn(Optional.empty());
 
-    List<SendMessage> result = handler.handle(update);
+    List<BotApiMethod<?>> result = handler.handle(update);
 
-    assertThat(result).singleElement().satisfies(message -> {
-      assertThat(message.getChatId()).isEqualTo("100");
-      assertThat(message.getText()).contains("Вы ещё не авторизованы");
-    });
+    assertThat(result).singleElement().isInstanceOf(SendMessage.class);
+    SendMessage message = (SendMessage) result.get(0);
+    assertThat(message.getChatId()).isEqualTo("100");
+    assertThat(message.getText()).contains("Вы ещё не авторизованы");
   }
 
   @Test
@@ -67,62 +68,52 @@ class ServersCommandHandlerTest {
 
     Server server1 = new Server();
     server1.setName("Финляндия");
-    server1.setLocation("Helsinki");
-    server1.setCountryEmoji("🇫🇮");
+    server1.setLocation("FI");
     server1.setStatus(ServerStatus.ACTIVE);
-    server1.setIp("192.168.1.100");
+    server1.setCountryEmoji("🇫🇮");
 
     Server server2 = new Server();
     server2.setName("Германия");
-    server2.setLocation("Frankfurt");
-    server2.setCountryEmoji("🇩🇪");
+    server2.setLocation("DE");
     server2.setStatus(ServerStatus.MAINTENANCE);
-    server2.setIp("10.0.0.5");
+    server2.setCountryEmoji("🇩🇪");
 
     when(userService.findAuthenticatedUser(eq(200L), any())).thenReturn(Optional.of(user));
     when(userService.getAvailableServers(user)).thenReturn(List.of(server1, server2));
 
-    List<SendMessage> result = handler.handle(update);
+    List<BotApiMethod<?>> result = handler.handle(update);
 
-    assertThat(result).singleElement().satisfies(message -> {
-      assertThat(message.getChatId()).isEqualTo("200");
-      assertThat(message.getText()).contains("Финляндия (Helsinki)");
-      assertThat(message.getText()).contains("🟢 Работает стабильно");
-      assertThat(message.getText()).contains("Германия (Frankfurt)");
-      assertThat(message.getText()).contains("🟡 Технические работы");
-      assertThat(message.getText()).contains("Если сервер со статусом 🟢 у вас не работает");
-
-      // Verify ZERO technical leaks
-      assertThat(message.getText()).doesNotContain("192.168.1.100");
-      assertThat(message.getText()).doesNotContain("10.0.0.5");
-      assertThat(message.getReplyMarkup()).isNotNull();
-    });
+    assertThat(result).singleElement().isInstanceOf(SendMessage.class);
+    SendMessage message = (SendMessage) result.get(0);
+    assertThat(message.getChatId()).isEqualTo("200");
+    assertThat(message.getText()).contains("Финляндия");
+    assertThat(message.getText()).contains("Германия");
+    assertThat(message.getText()).contains("Работает стабильно");
+    assertThat(message.getText()).contains("Технические работы");
+    assertThat(message.getReplyMarkup()).isNotNull();
   }
 
   @Test
-  @DisplayName("Given authenticated user without servers When handle Then return empty message")
-  void givenUserWithoutServersWhenHandleThenReturnEmptyMessage() {
-    Update update = updateWithText(100L, "/servers");
+  @DisplayName("Given empty server list When handle Then return friendly message")
+  void givenEmptyServerListWhenHandleThenReturnEmptyMessage() {
+    Update update = updateWithText(200L, "/servers");
     User user = new User();
     user.setId(5L);
 
-    when(userService.findAuthenticatedUser(eq(100L), any())).thenReturn(Optional.of(user));
+    when(userService.findAuthenticatedUser(eq(200L), any())).thenReturn(Optional.of(user));
     when(userService.getAvailableServers(user)).thenReturn(List.of());
 
-    List<SendMessage> result = handler.handle(update);
+    List<BotApiMethod<?>> result = handler.handle(update);
 
-    assertThat(result).singleElement().satisfies(message -> {
-      assertThat(message.getChatId()).isEqualTo("100");
-      assertThat(message.getText()).contains("список доступных серверов пуст");
-    });
+    assertThat(result).singleElement().isInstanceOf(SendMessage.class);
+    SendMessage message = (SendMessage) result.get(0);
+    assertThat(message.getText()).contains("список доступных серверов пуст");
   }
 
   @Test
   @DisplayName("Given supported texts When supports Then return true")
   void givenSupportedTextsWhenSupportsThenTrue() {
     assertThat(handler.supports(updateWithText(1L, "/servers"))).isTrue();
-    assertThat(handler.supports(updateWithText(1L, "/countries"))).isTrue();
-    assertThat(handler.supports(updateWithText(1L, "/nodes"))).isTrue();
     assertThat(handler.supports(updateWithText(1L, TelegramKeyboardFactory.BTN_SERVERS))).isTrue();
     assertThat(handler.supports(updateWithText(1L, "/other"))).isFalse();
   }

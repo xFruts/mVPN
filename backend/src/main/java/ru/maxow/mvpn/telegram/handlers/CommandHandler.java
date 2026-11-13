@@ -1,7 +1,7 @@
 package ru.maxow.mvpn.telegram.handlers;
 
 import java.util.List;
-import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
+import org.telegram.telegrambots.meta.api.methods.BotApiMethod;
 import org.telegram.telegrambots.meta.api.objects.Update;
 
 /**
@@ -17,10 +17,10 @@ public interface CommandHandler {
   boolean supports(Update update);
 
   /**
-   * Handles the given update and returns a list of messages to be sent.
+   * Handles the given update and returns a list of BotApiMethod actions to be executed.
    *
    * @param update the incoming update
-   * @return a list of SendMessage objects to be sent as responses
+   * @return a list of BotApiMethod objects (e.g. SendMessage, EditMessageText) to execute
    */
-  List<SendMessage> handle(Update update);
+  List<BotApiMethod<?>> handle(Update update);
 }

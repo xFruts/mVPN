@@ -19,6 +19,7 @@ import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
+import org.telegram.telegrambots.meta.api.methods.BotApiMethod;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.Message;
 import org.telegram.telegrambots.meta.api.objects.Update;
@@ -53,9 +54,11 @@ class AuthCommandHandlerTest {
     when(userService.findByTelegramId(12345L)).thenReturn(null);
     when(userService.checkVerificationCode(token)).thenReturn(true);
 
-    List<SendMessage> result = handler.handle(update);
+    List<BotApiMethod<?>> result = handler.handle(update);
 
-    assertThat(result).singleElement().satisfies(message -> {
+    assertThat(result).singleElement().satisfies(method -> {
+      assertThat(method).isInstanceOf(SendMessage.class);
+      SendMessage message = (SendMessage) method;
       assertThat(message.getChatId()).isEqualTo("12345");
       assertThat(message.getText()).contains("успешно аутентифицированы");
     });
@@ -70,9 +73,11 @@ class AuthCommandHandlerTest {
 
     when(userService.findByTelegramId(777L)).thenReturn(existingUser);
 
-    List<SendMessage> result = handler.handle(update);
+    List<BotApiMethod<?>> result = handler.handle(update);
 
-    assertThat(result).singleElement().satisfies(message -> {
+    assertThat(result).singleElement().satisfies(method -> {
+      assertThat(method).isInstanceOf(SendMessage.class);
+      SendMessage message = (SendMessage) method;
       assertThat(message.getChatId()).isEqualTo("777");
       assertThat(message.getText()).contains("уже аутентифицированы");
     });
@@ -85,10 +90,13 @@ class AuthCommandHandlerTest {
     Update update = updateWithText(10L, "/auth");
     when(userService.findByTelegramId(10L)).thenReturn(null);
 
-    List<SendMessage> result = handler.handle(update);
+    List<BotApiMethod<?>> result = handler.handle(update);
 
-    assertThat(result).singleElement().satisfies(message ->
-        assertThat(message.getText()).contains("предоставьте токен аутентификации"));
+    assertThat(result).singleElement().satisfies(method -> {
+      assertThat(method).isInstanceOf(SendMessage.class);
+      SendMessage message = (SendMessage) method;
+      assertThat(message.getText()).contains("предоставьте токен аутентификации");
+    });
   }
 
   @Test
@@ -97,10 +105,13 @@ class AuthCommandHandlerTest {
     Update update = updateWithText(10L, "/auth not-a-uuid");
     when(userService.findByTelegramId(10L)).thenReturn(null);
 
-    List<SendMessage> result = handler.handle(update);
+    List<BotApiMethod<?>> result = handler.handle(update);
 
-    assertThat(result).singleElement().satisfies(message ->
-        assertThat(message.getText()).contains("Неверный формат токена"));
+    assertThat(result).singleElement().satisfies(method -> {
+      assertThat(method).isInstanceOf(SendMessage.class);
+      SendMessage message = (SendMessage) method;
+      assertThat(message.getText()).contains("Неверный формат токена");
+    });
   }
 
   @Test
@@ -111,10 +122,13 @@ class AuthCommandHandlerTest {
     when(userService.findByTelegramId(10L)).thenReturn(null);
     when(userService.checkVerificationCode(token)).thenReturn(false);
 
-    List<SendMessage> result = handler.handle(update);
+    List<BotApiMethod<?>> result = handler.handle(update);
 
-    assertThat(result).singleElement().satisfies(message ->
-        assertThat(message.getText()).contains("Неверный токен аутентификации"));
+    assertThat(result).singleElement().satisfies(method -> {
+      assertThat(method).isInstanceOf(SendMessage.class);
+      SendMessage message = (SendMessage) method;
+      assertThat(message.getText()).contains("Неверный токен аутентификации");
+    });
     verify(userService, never()).updateUserTelegramId(any(), anyLong());
   }
 

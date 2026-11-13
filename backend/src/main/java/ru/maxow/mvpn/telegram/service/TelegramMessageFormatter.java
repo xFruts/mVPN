@@ -222,6 +222,29 @@ public class TelegramMessageFormatter {
     return msg("bot.guide.v2raytun", locale, subscriptionUrl).strip();
   }
 
+  public String formatCountrySelection() {
+    return formatCountrySelection(DEFAULT_LOCALE);
+  }
+
+  public String formatCountrySelection(Locale locale) {
+    return msg("bot.country.select", locale).strip();
+  }
+
+  public String formatCountryConfig(
+      Server server,
+      Optional<String> configOpt,
+      Locale locale
+  ) {
+    String emoji = server.getCountryEmoji() != null ? server.getCountryEmoji() : "🌍";
+    String name = server.getName() != null ? server.getName() : "Сервер";
+    if (configOpt.isEmpty() || configOpt.get().isBlank()) {
+      return msg("bot.country.config.unavailable", locale, emoji, name).strip();
+    }
+    String config = configOpt.get();
+    String format = config.trim().startsWith("{") ? "sing-box / Xray (JSON)" : "VLESS URI";
+    return msg("bot.country.config", locale, emoji, name, format, config).strip();
+  }
+
   public String formatVlessKey(Optional<String> vlessKeyOpt, String subscriptionUrl) {
     return formatVlessKey(vlessKeyOpt, subscriptionUrl, DEFAULT_LOCALE);
   }

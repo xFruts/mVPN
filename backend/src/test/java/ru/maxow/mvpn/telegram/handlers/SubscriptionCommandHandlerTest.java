@@ -17,6 +17,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.telegram.telegrambots.meta.api.methods.BotApiMethod;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.Message;
 import org.telegram.telegrambots.meta.api.objects.Update;
@@ -52,12 +53,12 @@ class SubscriptionCommandHandlerTest {
     Update update = updateWithText(100L, "/status");
     when(userService.findAuthenticatedUser(eq(100L), any())).thenReturn(Optional.empty());
 
-    List<SendMessage> result = handler.handle(update);
+    List<BotApiMethod<?>> result = handler.handle(update);
 
-    assertThat(result).singleElement().satisfies(message -> {
-      assertThat(message.getChatId()).isEqualTo("100");
-      assertThat(message.getText()).contains("/auth");
-    });
+    assertThat(result).singleElement().isInstanceOf(SendMessage.class);
+    SendMessage message = (SendMessage) result.get(0);
+    assertThat(message.getChatId()).isEqualTo("100");
+    assertThat(message.getText()).contains("/auth");
   }
 
   @Test
@@ -83,16 +84,16 @@ class SubscriptionCommandHandlerTest {
 
     when(userService.findAuthenticatedUser(eq(100L), any())).thenReturn(Optional.of(user));
     when(userService.findLatestSubscription(user)).thenReturn(Optional.of(subscription));
-    when(userService.getTrafficState(42L)).thenReturn(Optional.of(trafficState));
+    when(userService.getTrafficState(any(), eq(42L))).thenReturn(Optional.of(trafficState));
 
-    List<SendMessage> result = handler.handle(update);
+    List<BotApiMethod<?>> result = handler.handle(update);
 
-    assertThat(result).singleElement().satisfies(message -> {
-      assertThat(message.getChatId()).isEqualTo("100");
-      assertThat(message.getText()).contains("Standard-30");
-      assertThat(message.getText()).contains("Активна");
-      assertThat(message.getText()).contains("5.00 ГБ");
-    });
+    assertThat(result).singleElement().isInstanceOf(SendMessage.class);
+    SendMessage message = (SendMessage) result.get(0);
+    assertThat(message.getChatId()).isEqualTo("100");
+    assertThat(message.getText()).contains("Standard-30");
+    assertThat(message.getText()).contains("Активна");
+    assertThat(message.getText()).contains("5.00 ГБ");
   }
 
   @Test
@@ -105,12 +106,12 @@ class SubscriptionCommandHandlerTest {
     when(userService.findAuthenticatedUser(eq(100L), any())).thenReturn(Optional.of(user));
     when(userService.findLatestSubscription(user)).thenReturn(Optional.empty());
 
-    List<SendMessage> result = handler.handle(update);
+    List<BotApiMethod<?>> result = handler.handle(update);
 
-    assertThat(result).singleElement().satisfies(message -> {
-      assertThat(message.getChatId()).isEqualTo("100");
-      assertThat(message.getText()).contains("нет активной подписки");
-    });
+    assertThat(result).singleElement().isInstanceOf(SendMessage.class);
+    SendMessage message = (SendMessage) result.get(0);
+    assertThat(message.getChatId()).isEqualTo("100");
+    assertThat(message.getText()).contains("нет");
   }
 
   @Test

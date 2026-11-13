@@ -8,6 +8,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
+import org.telegram.telegrambots.meta.api.methods.BotApiMethod;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import ru.maxow.mvpn.subscription.Subscription;
@@ -43,7 +44,7 @@ public class SubscriptionCommandHandler implements CommandHandler {
   }
 
   @Override
-  public List<SendMessage> handle(Update update) {
+  public List<BotApiMethod<?>> handle(Update update) {
     Long chatId = update.getMessage().getChatId();
     Locale locale = TelegramLocaleResolver.resolveLocale(update);
     String username = update.getMessage().getFrom() != null
@@ -62,7 +63,7 @@ public class SubscriptionCommandHandler implements CommandHandler {
     User user = userOpt.get();
     Optional<Subscription> subOpt = userService.findLatestSubscription(user);
     Optional<SubscriptionTrafficState> trafficOpt = subOpt
-        .flatMap(s -> userService.getTrafficState(s.getId()));
+        .flatMap(s -> userService.getTrafficState(user, s.getId()));
 
     String responseText = messageFormatter
         .formatSubscriptionStatus(user, subOpt, trafficOpt, locale);
