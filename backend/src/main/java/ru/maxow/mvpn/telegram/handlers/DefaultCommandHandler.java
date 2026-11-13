@@ -28,7 +28,10 @@ public class DefaultCommandHandler implements CommandHandler {
   @Override
   public List<SendMessage> handle(Update update) {
     Long chatId = update.getMessage().getChatId();
-    boolean isAuthenticated = userService.findAuthenticatedUser(chatId).isPresent();
+    String username = update.getMessage().getFrom() != null
+        ? update.getMessage().getFrom().getUserName()
+        : null;
+    boolean isAuthenticated = userService.findAuthenticatedUser(chatId, username).isPresent();
     String text = "❓ Неизвестная команда. Посмотреть список доступных команд: /help";
 
     return List.of(

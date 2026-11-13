@@ -53,7 +53,7 @@ spring:
                 scope: openid
 
 bot:
-  enabled: ${BOT_ENABLED:false}
+  enabled: ${TELEGRAM_BOT_ENABLED:false}
   token: ${TELEGRAM_BOT_TOKEN}
   username: ${TELEGRAM_BOT_USERNAME}
 

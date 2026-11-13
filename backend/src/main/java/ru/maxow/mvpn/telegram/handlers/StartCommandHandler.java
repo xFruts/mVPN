@@ -38,6 +38,9 @@ public class StartCommandHandler implements CommandHandler {
     String firstName = update.getMessage().getFrom() != null
         ? update.getMessage().getFrom().getFirstName()
         : null;
+    String username = update.getMessage().getFrom() != null
+        ? update.getMessage().getFrom().getUserName()
+        : null;
 
     String[] parts = update.getMessage().getText().trim().split("\\s+");
     if (parts.length > 1) {
@@ -55,11 +58,11 @@ public class StartCommandHandler implements CommandHandler {
               .build());
         }
       } catch (IllegalArgumentException ignored) {
-        // Невалидный UUID переходит к стандартному приветствию
+        // Невалидный UUID переходит к проверке по имени
       }
     }
 
-    Optional<User> userOpt = userService.findAuthenticatedUser(chatId);
+    Optional<User> userOpt = userService.findAuthenticatedUser(chatId, username);
     boolean isAuthenticated = userOpt.isPresent();
     String text = messageFormatter.formatWelcome(firstName, isAuthenticated);
 

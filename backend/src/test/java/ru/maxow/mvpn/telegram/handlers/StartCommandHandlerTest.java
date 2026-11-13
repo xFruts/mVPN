@@ -1,6 +1,8 @@
 package ru.maxow.mvpn.telegram.handlers;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -41,8 +43,8 @@ class StartCommandHandlerTest {
   @Test
   @DisplayName("Given /start and first name When unauthenticated Then return auth instructions")
   void givenStartWithFirstNameWhenUnauthenticatedThenReturnAuthInstructions() {
-    Update update = updateForHandle(123L, "/start", "Ivan");
-    when(userService.findAuthenticatedUser(123L)).thenReturn(Optional.empty());
+    Update update = updateForHandle(123L, "/start", "Ivan", null);
+    when(userService.findAuthenticatedUser(eq(123L), any())).thenReturn(Optional.empty());
 
     List<SendMessage> result = handler.handle(update);
 
@@ -56,10 +58,10 @@ class StartCommandHandlerTest {
   @Test
   @DisplayName("Given /start When authenticated Then personalized welcome and main keyboard")
   void givenStartWhenAuthenticatedThenWelcomeWithMainMenu() {
-    Update update = updateForHandle(55L, "/start", "Anna");
+    Update update = updateForHandle(55L, "/start", "Anna", null);
     User user = new User();
     user.setFullName("Anna Test");
-    when(userService.findAuthenticatedUser(55L)).thenReturn(Optional.of(user));
+    when(userService.findAuthenticatedUser(eq(55L), any())).thenReturn(Optional.of(user));
 
     List<SendMessage> result = handler.handle(update);
 
@@ -70,10 +72,27 @@ class StartCommandHandlerTest {
   }
 
   @Test
+  @DisplayName("Given /start with username When auto-authenticated Then personalized welcome")
+  void givenStartWithUsernameWhenAutoAuthenticatedThenPersonalizedWelcome() {
+    Update update = updateForHandle(88L, "/start", "Max", "xFruts");
+    User user = new User();
+    user.setFullName("Max Owner");
+    user.setUserTelegramId(88L);
+    when(userService.findAuthenticatedUser(88L, "xFruts")).thenReturn(Optional.of(user));
+
+    List<SendMessage> result = handler.handle(update);
+
+    assertThat(result).singleElement().satisfies(message -> {
+      assertThat(message.getText()).contains("С возвращением, Max!");
+      assertThat(message.getReplyMarkup()).isNotNull();
+    });
+  }
+
+  @Test
   @DisplayName("Given /start with valid deep-link token When handle Then authenticate user")
   void givenStartWithDeepLinkTokenWhenHandleThenAuthenticateUser() {
     UUID token = UUID.randomUUID();
-    Update update = updateForHandle(77L, "/start " + token, "Oleg");
+    Update update = updateForHandle(77L, "/start " + token, "Oleg", null);
     when(userService.authenticateUser(token, 77L)).thenReturn(true);
 
     List<SendMessage> result = handler.handle(update);
@@ -103,7 +122,12 @@ class StartCommandHandlerTest {
     assertThat(handler.supports(updateForSupports("/help"))).isFalse();
   }
 
-  private Update updateForHandle(Long chatId, String text, String firstName) {
+  private Update updateForHandle(
+      Long chatId,
+      String text,
+      String firstName,
+      String username
+  ) {
     Update update = mock(Update.class);
     Message message = mock(Message.class);
 
@@ -111,10 +135,11 @@ class StartCommandHandlerTest {
     when(message.getText()).thenReturn(text);
     when(message.getChatId()).thenReturn(chatId);
 
-    if (firstName != null) {
+    if (firstName != null || username != null) {
       org.telegram.telegrambots.meta.api.objects.User from =
           mock(org.telegram.telegrambots.meta.api.objects.User.class);
       when(from.getFirstName()).thenReturn(firstName);
+      when(from.getUserName()).thenReturn(username);
       when(message.getFrom()).thenReturn(from);
     }
 

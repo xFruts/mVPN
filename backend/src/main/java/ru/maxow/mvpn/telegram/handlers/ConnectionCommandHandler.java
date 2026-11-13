@@ -52,8 +52,9 @@ public class ConnectionCommandHandler implements CommandHandler {
   public List<SendMessage> handle(Update update) {
     Long chatId = extractChatId(update);
     String action = extractAction(update);
+    String username = extractUsername(update);
 
-    Optional<User> userOpt = userService.findAuthenticatedUser(chatId);
+    Optional<User> userOpt = userService.findAuthenticatedUser(chatId, username);
     if (userOpt.isEmpty()) {
       String text = """
           ⚠️ Вы ещё не авторизованы.
@@ -131,6 +132,16 @@ public class ConnectionCommandHandler implements CommandHandler {
       return update.getCallbackQuery().getData();
     }
     return update.getMessage().getText().trim();
+  }
+
+  private String extractUsername(Update update) {
+    if (update.hasCallbackQuery() && update.getCallbackQuery().getFrom() != null) {
+      return update.getCallbackQuery().getFrom().getUserName();
+    }
+    if (update.hasMessage() && update.getMessage().getFrom() != null) {
+      return update.getMessage().getFrom().getUserName();
+    }
+    return null;
   }
 
   private boolean isHappRequest(String action) {

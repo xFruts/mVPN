@@ -1,6 +1,8 @@
 package ru.maxow.mvpn.telegram.handlers;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -40,7 +42,7 @@ class DefaultCommandHandlerTest {
   @DisplayName("Given unknown command When handle Then return fallback message")
   void givenUnknownCommandWhenHandleThenFallbackMessage() {
     Update update = updateWithText(42L, "/unknown");
-    when(userService.findAuthenticatedUser(42L)).thenReturn(Optional.of(new User()));
+    when(userService.findAuthenticatedUser(eq(42L), any())).thenReturn(Optional.of(new User()));
 
     List<SendMessage> result = handler.handle(update);
 

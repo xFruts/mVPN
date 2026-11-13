@@ -1,0 +1,20 @@
+databaseChangeLog:
+  - changeSet:
+      id: "005-add-telegram-username"
+      author: "xFruts"
+      preConditions:
+        - onFail: "MARK_RAN"
+          tableExists:
+            tableName: "users"
+        - onFail: "MARK_RAN"
+          not:
+            columnExists:
+              tableName: "users"
+              columnName: "telegram_username"
+      changes:
+        - addColumn:
+            tableName: "users"
+            columns:
+              - column:
+                  name: telegram_username
+                  type: varchar(255)

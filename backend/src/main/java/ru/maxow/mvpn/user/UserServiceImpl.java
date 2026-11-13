@@ -6,6 +6,7 @@ import static ru.maxow.mvpn.user.UserSpecifications.nameContains;
 import static ru.maxow.mvpn.util.PaginationUtils.parseSorting;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
@@ -45,7 +46,8 @@ public class UserServiceImpl implements UserService {
         .and(hasSubscriptionStatus(subStatus))
         .and(nameContains(search));
 
-    Page<User> users = userRepository.findAll(spec, PageRequest.of(page, size, parseSorting(sort)));
+    Page<User> users = userRepository
+        .findAll(spec, PageRequest.of(page, size, parseSorting(sort)));
 
     return new PageListUserDto()
         .content(users.getContent().stream().map(userMapper::toListUserDto).toList())
@@ -84,6 +86,9 @@ public class UserServiceImpl implements UserService {
     }
 
     User user = userMapper.toUser(dto);
+    if (dto.getTelegramUsername() != null) {
+      user.setTelegramUsername(normalizeTelegramUsername(dto.getTelegramUsername()));
+    }
     userRepository.save(user);
     log.info("User created: id={}", user.getId());
     return userMapper.toUserResponseDto(user);
@@ -105,6 +110,10 @@ public class UserServiceImpl implements UserService {
     }
     if (dto.getUserTelegramId() != null) {
       existingUser.setUserTelegramId(dto.getUserTelegramId());
+    }
+    if (dto.getTelegramUsername() != null) {
+      existingUser.setTelegramUsername(
+          normalizeTelegramUsername(dto.getTelegramUsername()));
     }
     if (dto.getRole() != null) {
       existingUser.setRole(dto.getRole());
@@ -202,6 +211,26 @@ public class UserServiceImpl implements UserService {
 
   @Override
   @Transactional(readOnly = true)
+  public Optional<User> findByTelegramUsername(String telegramUsername) {
+    if (telegramUsername == null || telegramUsername.isBlank()) {
+      return Optional.empty();
+    }
+    return userRepository.findByTelegramUsernameIgnoreCase(
+        normalizeTelegramUsername(telegramUsername));
+  }
+
+  @Override
+  @Transactional
+  public void bindTelegramIdToUser(Long userId, Long telegramId) {
+    userRepository.findById(userId).ifPresent(user -> {
+      user.setUserTelegramId(telegramId);
+      userRepository.save(user);
+      log.info("Bound telegram ID {} to user id={}", telegramId, userId);
+    });
+  }
+
+  @Override
+  @Transactional(readOnly = true)
   public List<User> getUsersByTelegramIds(List<Long> ids) {
     return userRepository.findByUserTelegramIdIn(ids);
   }
@@ -216,5 +245,28 @@ public class UserServiceImpl implements UserService {
   @Transactional(readOnly = true)
   public UUID getUserVerificationCode(Long userId) {
     return findUserById(userId).getVerificationCode();
+  }
+
+  public static String normalizeTelegramUsername(String username) {
+    if (username == null || username.isBlank()) {
+      return null;
+    }
+    String clean = username.trim();
+    if (clean.startsWith("https://t.me/")) {
+      clean = clean.substring("https://t.me/".length());
+    } else if (clean.startsWith("http://t.me/")) {
+      clean = clean.substring("http://t.me/".length());
+    } else if (clean.startsWith("t.me/")) {
+      clean = clean.substring("t.me/".length());
+    }
+    if (clean.startsWith("@")) {
+      clean = clean.substring(1);
+    }
+    int slashIdx = clean.indexOf('/');
+    if (slashIdx >= 0) {
+      clean = clean.substring(0, slashIdx);
+    }
+    clean = clean.trim();
+    return clean.isEmpty() ? null : clean;
   }
 }

@@ -36,9 +36,10 @@ class UserMapperTest {
   class ToListUserDto {
 
     @Test
-    @DisplayName("maps identity fields and latest subscription by startDate")
+    @DisplayName("maps identity fields, telegramUsername, and latest subscription")
     void mapsLatestSubscription() {
       User user = user(1L, "John Doe", UserRole.REGULAR);
+      user.setTelegramUsername("xFruts");
       user.getSubscriptions().addAll(List.of(
           subscription(user, "2025-01-01T00:00:00Z", "2025-02-01T00:00:00Z",
               SubscriptionStatus.ACTIVE, tariff(10L, "Basic")),
@@ -51,6 +52,7 @@ class UserMapperTest {
       assertThat(result.getId()).isEqualTo(1L);
       assertThat(result.getFullName()).isEqualTo("John Doe");
       assertThat(result.getRole()).isEqualTo("REGULAR");
+      assertThat(result.getTelegramUsername()).isEqualTo("xFruts");
       assertThat(result.getTariffName()).isEqualTo("Premium");
       assertThat(result.getSubscriptionStatus()).isEqualTo(SubscriptionStatus.CANCELED);
       assertThat(result.getEndDate()).isEqualTo(OffsetDateTime.parse("2026-02-01T00:00:00Z"));
@@ -174,10 +176,11 @@ class UserMapperTest {
   class ToUserResponseDto {
 
     @Test
-    @DisplayName("maps user and attaches latest subscription")
+    @DisplayName("maps user, telegramUsername, and attaches latest subscription")
     void mapsWithLatestSubscription() {
       User user = user(7L, "Alice", UserRole.REGULAR);
       user.setUserTelegramId(555L);
+      user.setTelegramUsername("alice_tg");
       user.getSubscriptions().add(
           subscription(user, "2026-03-01T00:00:00Z", "2026-04-01T00:00:00Z",
               SubscriptionStatus.ACTIVE, tariff(5L, "Pro")));
@@ -188,6 +191,7 @@ class UserMapperTest {
       assertThat(result.getFullName()).isEqualTo("Alice");
       assertThat(result.getRole()).isEqualTo(UserRole.REGULAR);
       assertThat(result.getUserTelegramId()).isEqualTo(555L);
+      assertThat(result.getTelegramUsername()).isEqualTo("alice_tg");
       assertThat(result.getSubscription()).isNotNull();
       assertThat(result.getSubscription().getUserId()).isEqualTo(7L);
       assertThat(result.getSubscription().getStatus()).isEqualTo(SubscriptionStatus.ACTIVE);
@@ -225,7 +229,9 @@ class UserMapperTest {
       Tariff tariff) {
     Subscription subscription = new Subscription();
     subscription.setUser(user);
-    subscription.setStartDate(start == null ? null : OffsetDateTime.parse(start).withOffsetSameInstant(ZoneOffset.UTC));
+    subscription.setStartDate(start == null
+        ? null
+        : OffsetDateTime.parse(start).withOffsetSameInstant(ZoneOffset.UTC));
     subscription.setEndDate(OffsetDateTime.parse(end).withOffsetSameInstant(ZoneOffset.UTC));
     subscription.setStatus(status);
     subscription.setTariff(tariff);

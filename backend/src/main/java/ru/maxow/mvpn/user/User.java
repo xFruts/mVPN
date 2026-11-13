@@ -13,7 +13,6 @@ import jakarta.persistence.Table;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
-
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
@@ -38,6 +37,9 @@ public class User {
   Long id;
 
   Long userTelegramId;
+
+  @Column(name = "telegram_username")
+  String telegramUsername;
 
   @Column(nullable = false, unique = true)
   String fullName;

@@ -42,7 +42,10 @@ public class SubscriptionCommandHandler implements CommandHandler {
   @Override
   public List<SendMessage> handle(Update update) {
     Long chatId = update.getMessage().getChatId();
-    Optional<User> userOpt = userService.findAuthenticatedUser(chatId);
+    String username = update.getMessage().getFrom() != null
+        ? update.getMessage().getFrom().getUserName()
+        : null;
+    Optional<User> userOpt = userService.findAuthenticatedUser(chatId, username);
 
     if (userOpt.isEmpty()) {
       String text = """
@@ -64,7 +67,8 @@ public class SubscriptionCommandHandler implements CommandHandler {
     Optional<SubscriptionTrafficState> trafficOpt = subOpt
         .flatMap(s -> userService.getTrafficState(s.getId()));
 
-    String responseText = messageFormatter.formatSubscriptionStatus(user, subOpt, trafficOpt);
+    String responseText = messageFormatter
+        .formatSubscriptionStatus(user, subOpt, trafficOpt);
 
     return List.of(SendMessage.builder()
         .chatId(chatId.toString())

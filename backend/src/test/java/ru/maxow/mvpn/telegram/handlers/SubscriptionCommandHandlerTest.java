@@ -1,6 +1,8 @@
 package ru.maxow.mvpn.telegram.handlers;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -48,7 +50,7 @@ class SubscriptionCommandHandlerTest {
   @DisplayName("Given unauthenticated user When handle Then return auth prompt")
   void givenUnauthenticatedUserWhenHandleThenReturnAuthPrompt() {
     Update update = updateWithText(100L, "/status");
-    when(userService.findAuthenticatedUser(100L)).thenReturn(Optional.empty());
+    when(userService.findAuthenticatedUser(eq(100L), any())).thenReturn(Optional.empty());
 
     List<SendMessage> result = handler.handle(update);
 
@@ -59,7 +61,7 @@ class SubscriptionCommandHandlerTest {
   }
 
   @Test
-  @DisplayName("Given authenticated user with active subscription When handle Then return formatted status")
+  @DisplayName("Given authenticated user with active subscription When handle Then return status")
   void givenUserWithSubscriptionWhenHandleThenReturnFormattedStatus() {
     Update update = updateWithText(100L, "/status");
     User user = new User();
@@ -79,7 +81,7 @@ class SubscriptionCommandHandlerTest {
     SubscriptionTrafficState trafficState = new SubscriptionTrafficState();
     trafficState.setUsedBytes(5L * 1024 * 1024 * 1024);
 
-    when(userService.findAuthenticatedUser(100L)).thenReturn(Optional.of(user));
+    when(userService.findAuthenticatedUser(eq(100L), any())).thenReturn(Optional.of(user));
     when(userService.findLatestSubscription(user)).thenReturn(Optional.of(subscription));
     when(userService.getTrafficState(42L)).thenReturn(Optional.of(trafficState));
 
@@ -94,13 +96,13 @@ class SubscriptionCommandHandlerTest {
   }
 
   @Test
-  @DisplayName("Given authenticated user without subscription When handle Then return empty message")
+  @DisplayName("Given authenticated user without subscription When handle Then return empty")
   void givenUserWithoutSubscriptionWhenHandleThenReturnEmptyMessage() {
     Update update = updateWithText(100L, "/status");
     User user = new User();
     user.setId(5L);
 
-    when(userService.findAuthenticatedUser(100L)).thenReturn(Optional.of(user));
+    when(userService.findAuthenticatedUser(eq(100L), any())).thenReturn(Optional.of(user));
     when(userService.findLatestSubscription(user)).thenReturn(Optional.empty());
 
     List<SendMessage> result = handler.handle(update);

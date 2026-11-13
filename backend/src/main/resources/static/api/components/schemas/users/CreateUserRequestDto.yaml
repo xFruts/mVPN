@@ -12,5 +12,9 @@ properties:
     format: int64
     description: ID пользователя в Telegram
     example: 123456789
+  telegramUsername:
+    type: string
+    description: Telegram username (например, @xFruts или xFruts)
+    example: "xFruts"
   role:
     $ref: './UserRole.yaml'

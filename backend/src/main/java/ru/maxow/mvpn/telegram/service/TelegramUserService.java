@@ -50,12 +50,32 @@ public class TelegramUserService {
     this.profileWebPageUrl = profileWebPageUrl;
   }
 
-  @Transactional(readOnly = true)
-  public Optional<User> findAuthenticatedUser(Long telegramId) {
+  @Transactional
+  public Optional<User> findAuthenticatedUser(Long telegramId, String telegramUsername) {
     if (telegramId == null) {
       return Optional.empty();
     }
-    return Optional.ofNullable(userService.findByTelegramId(telegramId));
+    User user = userService.findByTelegramId(telegramId);
+    if (user != null) {
+      return Optional.of(user);
+    }
+    if (telegramUsername != null && !telegramUsername.isBlank()) {
+      Optional<User> matched = userService.findByTelegramUsername(telegramUsername);
+      if (matched.isPresent()) {
+        User u = matched.get();
+        log.info("Auto-authenticating user id={} by Telegram username '@{}' (chatId={})",
+            u.getId(), telegramUsername, telegramId);
+        userService.bindTelegramIdToUser(u.getId(), telegramId);
+        u.setUserTelegramId(telegramId);
+        return Optional.of(u);
+      }
+    }
+    return Optional.empty();
+  }
+
+  @Transactional
+  public Optional<User> findAuthenticatedUser(Long telegramId) {
+    return findAuthenticatedUser(telegramId, null);
   }
 
   @Transactional

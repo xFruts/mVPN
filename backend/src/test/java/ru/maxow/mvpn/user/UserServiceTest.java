@@ -17,6 +17,8 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
@@ -82,7 +84,10 @@ class UserServiceTest {
       mapped.setId(2L);
       mapped.setFullName("New User");
       mapped.setRole(UserRole.REGULAR);
-      UserResponseDto response = new UserResponseDto().id(2L).fullName("New User").role(UserRole.REGULAR);
+      UserResponseDto response = new UserResponseDto()
+          .id(2L)
+          .fullName("New User")
+          .role(UserRole.REGULAR);
 
       when(userRepository.existsByFullName("New User")).thenReturn(false);
       when(userMapper.toUser(request)).thenReturn(mapped);
@@ -93,6 +98,26 @@ class UserServiceTest {
 
       assertThat(result.getId()).isEqualTo(2L);
       assertThat(result.getFullName()).isEqualTo("New User");
+      verify(userRepository).save(mapped);
+    }
+
+    @Test
+    @DisplayName("normalizes telegramUsername when creating user")
+    void normalizesTelegramUsernameOnCreate() {
+      CreateUserRequestDto request = new CreateUserRequestDto()
+          .fullName("Telegram User")
+          .telegramUsername("@xFruts");
+      User mapped = new User();
+      mapped.setId(3L);
+
+      when(userRepository.existsByFullName("Telegram User")).thenReturn(false);
+      when(userMapper.toUser(request)).thenReturn(mapped);
+      when(userRepository.save(mapped)).thenReturn(mapped);
+      when(userMapper.toUserResponseDto(mapped)).thenReturn(new UserResponseDto().id(3L));
+
+      userService.createUser(request);
+
+      assertThat(mapped.getTelegramUsername()).isEqualTo("xFruts");
       verify(userRepository).save(mapped);
     }
 
@@ -165,6 +190,22 @@ class UserServiceTest {
     }
 
     @Test
+    @DisplayName("updates and normalizes telegramUsername")
+    void updatesTelegramUsername() {
+      UpdateUserRequestDto dto = new UpdateUserRequestDto()
+          .telegramUsername("https://t.me/new_nickname");
+
+      when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
+      when(userRepository.save(testUser)).thenReturn(testUser);
+      when(userMapper.toUserResponseDto(testUser)).thenReturn(new UserResponseDto().id(1L));
+
+      userService.updateUser(1L, dto);
+
+      assertThat(testUser.getTelegramUsername()).isEqualTo("new_nickname");
+      verify(userRepository).save(testUser);
+    }
+
+    @Test
     @DisplayName("rejects fullName that belongs to another user")
     void rejectsTakenFullName() {
       UpdateUserRequestDto dto = new UpdateUserRequestDto().fullName("Taken Name");
@@ -219,7 +260,8 @@ class UserServiceTest {
     void missingUser() {
       when(userRepository.findById(999L)).thenReturn(Optional.empty());
 
-      assertThatThrownBy(() -> userService.updateUser(999L, new UpdateUserRequestDto().fullName("X")))
+      assertThatThrownBy(() -> userService.updateUser(999L,
+          new UpdateUserRequestDto().fullName("X")))
           .isInstanceOf(NotFoundException.class);
 
       verify(userRepository, never()).save(any());
@@ -317,7 +359,8 @@ class UserServiceTest {
     @Test
     @DisplayName("updateUserTelegramId binds telegram id when code matches")
     void bindTelegramId() {
-      when(userRepository.findByVerificationCode(verificationCode)).thenReturn(Optional.of(testUser));
+      when(userRepository.findByVerificationCode(verificationCode))
+          .thenReturn(Optional.of(testUser));
 
       userService.updateUserTelegramId(verificationCode, 777L);
 
@@ -363,8 +406,8 @@ class UserServiceTest {
   }
 
   @Nested
-  @DisplayName("telegram lookups")
-  class TelegramLookups {
+  @DisplayName("telegram lookups and binding")
+  class TelegramLookupsAndBinding {
 
     @Test
     @DisplayName("findByTelegramId returns user or null")
@@ -374,6 +417,62 @@ class UserServiceTest {
 
       assertThat(userService.findByTelegramId(123456789L)).isSameAs(testUser);
       assertThat(userService.findByTelegramId(1L)).isNull();
+    }
+
+    @Test
+    @DisplayName("findByTelegramUsername normalizes and delegates to repository")
+    void findByTelegramUsername() {
+      when(userRepository.findByTelegramUsernameIgnoreCase("xFruts"))
+          .thenReturn(Optional.of(testUser));
+
+      Optional<User> found = userService.findByTelegramUsername("@xFruts");
+
+      assertThat(found).contains(testUser);
+      verify(userRepository).findByTelegramUsernameIgnoreCase("xFruts");
+    }
+
+    @Test
+    @DisplayName("findByTelegramUsername returns empty for blank username")
+    void findByTelegramUsernameBlank() {
+      assertThat(userService.findByTelegramUsername(null)).isEmpty();
+      assertThat(userService.findByTelegramUsername("   ")).isEmpty();
+      verifyNoInteractions(userRepository);
+    }
+
+    @Test
+    @DisplayName("bindTelegramIdToUser updates user telegram ID")
+    void bindTelegramIdToUser() {
+      when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
+
+      userService.bindTelegramIdToUser(1L, 999888L);
+
+      assertThat(testUser.getUserTelegramId()).isEqualTo(999888L);
+      verify(userRepository).save(testUser);
+    }
+
+    @ParameterizedTest(name = "input \"{0}\" -> normalized \"{1}\"")
+    @CsvSource(value = {
+        "'@xFruts', 'xFruts'",
+        "'xFruts', 'xFruts'",
+        "'https://t.me/xFruts', 'xFruts'",
+        "'http://t.me/xFruts', 'xFruts'",
+        "'t.me/xFruts', 'xFruts'",
+        "'https://t.me/xFruts/', 'xFruts'",
+        "'https://t.me/xFruts/extra_path', 'xFruts'",
+        "'  @xFruts  ', 'xFruts'"
+    })
+    @DisplayName("normalizeTelegramUsername cleans all valid formats")
+    void shouldNormalizeTelegramUsername(String input, String expected) {
+      assertThat(UserServiceImpl.normalizeTelegramUsername(input)).isEqualTo(expected);
+    }
+
+    @Test
+    @DisplayName("normalizeTelegramUsername returns null for empty or null")
+    void shouldReturnNullForEmptyUsername() {
+      assertThat(UserServiceImpl.normalizeTelegramUsername(null)).isNull();
+      assertThat(UserServiceImpl.normalizeTelegramUsername("")).isNull();
+      assertThat(UserServiceImpl.normalizeTelegramUsername("   ")).isNull();
+      assertThat(UserServiceImpl.normalizeTelegramUsername("@")).isNull();
     }
 
     @Test
@@ -452,7 +551,8 @@ class UserServiceTest {
     void commaSeparatedSort() {
       stubPage();
 
-      userService.findAllAsPage(0, 10, List.of("fullName,desc", "role,invalid"), null, null, null);
+      userService.findAllAsPage(0, 10,
+          List.of("fullName,desc", "role,invalid"), null, null, null);
 
       ArgumentCaptor<Pageable> captor = ArgumentCaptor.forClass(Pageable.class);
       verify(userRepository).findAll(any(Specification.class), captor.capture());

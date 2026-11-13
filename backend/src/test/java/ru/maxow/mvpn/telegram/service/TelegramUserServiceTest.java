@@ -1,6 +1,7 @@
 package ru.maxow.mvpn.telegram.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -78,6 +79,39 @@ class TelegramUserServiceTest {
 
     when(userService.findByTelegramId(999L)).thenReturn(null);
     assertThat(telegramUserService.findAuthenticatedUser(999L)).isEmpty();
+  }
+
+  @Test
+  @DisplayName("findAuthenticatedUser auto-binds user by telegram username when unbound")
+  void shouldAutoAuthenticateUserByTelegramUsername() {
+    User user = new User();
+    user.setId(42L);
+    user.setTelegramUsername("xFruts");
+
+    when(userService.findByTelegramId(777L)).thenReturn(null);
+    when(userService.findByTelegramUsername("xFruts")).thenReturn(Optional.of(user));
+
+    Optional<User> result = telegramUserService.findAuthenticatedUser(777L, "xFruts");
+
+    assertThat(result).contains(user);
+    assertThat(user.getUserTelegramId()).isEqualTo(777L);
+    verify(userService).bindTelegramIdToUser(42L, 777L);
+  }
+
+  @Test
+  @DisplayName("findAuthenticatedUser does not lookup by username when blank or null")
+  void shouldNotLookupWhenUsernameBlank() {
+    when(userService.findByTelegramId(777L)).thenReturn(null);
+
+    assertThat(telegramUserService.findAuthenticatedUser(777L, "")).isEmpty();
+    assertThat(telegramUserService.findAuthenticatedUser(777L, "  ")).isEmpty();
+    assertThat(telegramUserService.findAuthenticatedUser(777L, null)).isEmpty();
+
+    verify(userService, never()).findByTelegramUsername(anyString());
+  }
+
+  private String anyString() {
+    return org.mockito.ArgumentMatchers.anyString();
   }
 
   @Test

@@ -1,6 +1,8 @@
 package ru.maxow.mvpn.telegram.handlers;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -46,7 +48,7 @@ class ServersCommandHandlerTest {
   @DisplayName("Given unauthenticated user When handle Then return prompt to /auth")
   void givenUnauthenticatedUserWhenHandleThenReturnAuthPrompt() {
     Update update = updateWithText(100L, "/servers");
-    when(userService.findAuthenticatedUser(100L)).thenReturn(Optional.empty());
+    when(userService.findAuthenticatedUser(eq(100L), any())).thenReturn(Optional.empty());
 
     List<SendMessage> result = handler.handle(update);
 
@@ -57,7 +59,7 @@ class ServersCommandHandlerTest {
   }
 
   @Test
-  @DisplayName("Given authenticated user When handle Then return servers without sensitive IP data")
+  @DisplayName("Given authenticated user When handle Then return safe servers")
   void givenAuthenticatedUserWhenHandleThenReturnSafeServerList() {
     Update update = updateWithText(200L, TelegramKeyboardFactory.BTN_SERVERS);
     User user = new User();
@@ -77,7 +79,7 @@ class ServersCommandHandlerTest {
     server2.setStatus(ServerStatus.MAINTENANCE);
     server2.setIp("10.0.0.5");
 
-    when(userService.findAuthenticatedUser(200L)).thenReturn(Optional.of(user));
+    when(userService.findAuthenticatedUser(eq(200L), any())).thenReturn(Optional.of(user));
     when(userService.getAvailableServers(user)).thenReturn(List.of(server1, server2));
 
     List<SendMessage> result = handler.handle(update);
@@ -104,7 +106,7 @@ class ServersCommandHandlerTest {
     User user = new User();
     user.setId(5L);
 
-    when(userService.findAuthenticatedUser(100L)).thenReturn(Optional.of(user));
+    when(userService.findAuthenticatedUser(eq(100L), any())).thenReturn(Optional.of(user));
     when(userService.getAvailableServers(user)).thenReturn(List.of());
 
     List<SendMessage> result = handler.handle(update);

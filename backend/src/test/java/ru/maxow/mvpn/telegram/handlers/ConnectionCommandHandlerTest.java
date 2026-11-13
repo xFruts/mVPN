@@ -1,6 +1,8 @@
 package ru.maxow.mvpn.telegram.handlers;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -50,7 +52,7 @@ class ConnectionCommandHandlerTest {
   @DisplayName("Given unauthenticated user When handle Then return prompt to /auth")
   void givenUnauthenticatedUserWhenHandleThenReturnAuthPrompt() {
     Update update = updateWithText(100L, "/connect");
-    when(userService.findAuthenticatedUser(100L)).thenReturn(Optional.empty());
+    when(userService.findAuthenticatedUser(eq(100L), any())).thenReturn(Optional.empty());
 
     List<SendMessage> result = handler.handle(update);
 
@@ -72,7 +74,7 @@ class ConnectionCommandHandlerTest {
     sub.setStartDate(OffsetDateTime.now(ZoneOffset.UTC));
     sub.setEndDate(OffsetDateTime.now(ZoneOffset.UTC).plusDays(30));
 
-    when(userService.findAuthenticatedUser(200L)).thenReturn(Optional.of(user));
+    when(userService.findAuthenticatedUser(eq(200L), any())).thenReturn(Optional.of(user));
     when(userService.findLatestSubscription(user)).thenReturn(Optional.of(sub));
     when(userService.buildSubscriptionUrl(user))
         .thenReturn("https://api.example.com/v1/config/uuid-code");
@@ -93,7 +95,7 @@ class ConnectionCommandHandlerTest {
     Update update = updateWithText(300L, "/link");
     User user = new User();
 
-    when(userService.findAuthenticatedUser(300L)).thenReturn(Optional.of(user));
+    when(userService.findAuthenticatedUser(eq(300L), any())).thenReturn(Optional.of(user));
     when(userService.findLatestSubscription(user)).thenReturn(Optional.empty());
     when(userService.buildSubscriptionUrl(user)).thenReturn("");
 
@@ -113,7 +115,7 @@ class ConnectionCommandHandlerTest {
     sub.setStartDate(OffsetDateTime.now(ZoneOffset.UTC));
     sub.setEndDate(OffsetDateTime.now(ZoneOffset.UTC).plusDays(30));
 
-    when(userService.findAuthenticatedUser(200L)).thenReturn(Optional.of(user));
+    when(userService.findAuthenticatedUser(eq(200L), any())).thenReturn(Optional.of(user));
     when(userService.findLatestSubscription(user)).thenReturn(Optional.of(sub));
     when(userService.buildSubscriptionUrl(user))
         .thenReturn("https://api.example.com/v1/config/uuid-code");
@@ -137,7 +139,7 @@ class ConnectionCommandHandlerTest {
     sub.setStartDate(OffsetDateTime.now(ZoneOffset.UTC));
     sub.setEndDate(OffsetDateTime.now(ZoneOffset.UTC).plusDays(30));
 
-    when(userService.findAuthenticatedUser(200L)).thenReturn(Optional.of(user));
+    when(userService.findAuthenticatedUser(eq(200L), any())).thenReturn(Optional.of(user));
     when(userService.findLatestSubscription(user)).thenReturn(Optional.of(sub));
     when(userService.buildSubscriptionUrl(user))
         .thenReturn("https://api.example.com/v1/config/uuid-code");
@@ -161,7 +163,7 @@ class ConnectionCommandHandlerTest {
     sub.setStartDate(OffsetDateTime.now(ZoneOffset.UTC));
     sub.setEndDate(OffsetDateTime.now(ZoneOffset.UTC).plusDays(30));
 
-    when(userService.findAuthenticatedUser(200L)).thenReturn(Optional.of(user));
+    when(userService.findAuthenticatedUser(eq(200L), any())).thenReturn(Optional.of(user));
     when(userService.findLatestSubscription(user)).thenReturn(Optional.of(sub));
     when(userService.buildSubscriptionUrl(user))
         .thenReturn("https://api.example.com/v1/config/uuid-code");
@@ -186,7 +188,7 @@ class ConnectionCommandHandlerTest {
     sub.setStartDate(OffsetDateTime.now(ZoneOffset.UTC));
     sub.setEndDate(OffsetDateTime.now(ZoneOffset.UTC).plusDays(30));
 
-    when(userService.findAuthenticatedUser(200L)).thenReturn(Optional.of(user));
+    when(userService.findAuthenticatedUser(eq(200L), any())).thenReturn(Optional.of(user));
     when(userService.findLatestSubscription(user)).thenReturn(Optional.of(sub));
     when(userService.buildSubscriptionUrl(user))
         .thenReturn("https://api.example.com/v1/config/uuid-code");

@@ -9,6 +9,10 @@ properties:
   role:
     type: string
     example: "REGULAR"
+  telegramUsername:
+    type: string
+    nullable: true
+    example: "xFruts"
   subscriptionStatus:
     $ref: '../subscriptions/SubscriptionStatus.yaml'
   endDate:

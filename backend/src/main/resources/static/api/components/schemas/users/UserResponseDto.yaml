@@ -13,6 +13,9 @@ properties:
   userTelegramId:
     type: integer
     format: int64
+  telegramUsername:
+    type: string
+    example: "xFruts"
   role:
     $ref: './UserRole.yaml'
   subscription:

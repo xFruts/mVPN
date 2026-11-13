@@ -40,7 +40,10 @@ public class ServersCommandHandler implements CommandHandler {
   @Override
   public List<SendMessage> handle(Update update) {
     Long chatId = update.getMessage().getChatId();
-    Optional<User> userOpt = userService.findAuthenticatedUser(chatId);
+    String username = update.getMessage().getFrom() != null
+        ? update.getMessage().getFrom().getUserName()
+        : null;
+    Optional<User> userOpt = userService.findAuthenticatedUser(chatId, username);
 
     if (userOpt.isEmpty()) {
       String text = """

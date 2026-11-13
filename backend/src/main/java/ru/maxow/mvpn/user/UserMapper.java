@@ -41,11 +41,15 @@ public abstract class UserMapper {
     ListUserDto dto = new ListUserDto()
         .id(user.getId())
         .fullName(user.getFullName())
-        .role(user.getRole() != null ? user.getRole().name() : null);
+        .role(user.getRole() != null ? user.getRole().name() : null)
+        .telegramUsername(user.getTelegramUsername());
 
-    latestSubscription.ifPresent(subscription -> dto.subscriptionStatus(subscription.getStatus())
+    latestSubscription.ifPresent(subscription -> dto
+        .subscriptionStatus(subscription.getStatus())
         .endDate(subscription.getEndDate())
-        .tariffName(subscription.getTariff() != null ? subscription.getTariff().getName() : null));
+        .tariffName(subscription.getTariff() != null
+            ? subscription.getTariff().getName()
+            : null));
 
     return dto;
   }

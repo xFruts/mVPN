@@ -34,7 +34,10 @@ public class HelpCommandHandler implements CommandHandler {
   @Override
   public List<SendMessage> handle(Update update) {
     Long chatId = update.getMessage().getChatId();
-    boolean isAuthenticated = userService.findAuthenticatedUser(chatId).isPresent();
+    String username = update.getMessage().getFrom() != null
+        ? update.getMessage().getFrom().getUserName()
+        : null;
+    boolean isAuthenticated = userService.findAuthenticatedUser(chatId, username).isPresent();
     String text = messageFormatter.formatHelp(isAuthenticated);
 
     return List.of(
