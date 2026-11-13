@@ -1,0 +1,365 @@
+name: AI Code Review (Gemini)
+
+on:
+  pull_request_target:
+    types: [opened, synchronize, reopened]
+    branches:
+      - main
+      - master
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.run_id }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  pull-requests: write
+  issues: write
+
+jobs:
+  review:
+    name: Gemini Senior Code Review
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.base_ref || 'master' }}
+          fetch-depth: 0
+
+      - name: Fetch PR commit
+        env:
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          if [ -n "$PR_NUMBER" ]; then
+            git fetch origin "pull/$PR_NUMBER/head:pr-head" || ( [ -n "$HEAD_SHA" ] && git fetch origin "$HEAD_SHA:pr-head" )
+          elif [ -n "$HEAD_SHA" ]; then
+            git fetch origin "$HEAD_SHA:pr-head"
+          fi
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Check for GEMINI_API_KEY
+        id: check-key
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        run: |
+          if [ -z "$GEMINI_API_KEY" ]; then
+            echo "missing_key=true" >> "$GITHUB_OUTPUT"
+            echo "::warning::GEMINI_API_KEY is not set in repository secrets."
+          else
+            echo "missing_key=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Notify Missing API Key
+        if: steps.check-key.outputs.missing_key == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          gh pr comment "$PR_NUMBER" --body '⚠️ **AI Code Review пропущено**: Секрет `GEMINI_API_KEY` не найден в настройках репозитория. Добавьте его в **Settings → Secrets and variables → Actions**, чтобы включить автоматическое ревью.' || true
+          exit 0
+
+      - name: Generate AI Code Review
+        if: steps.check-key.outputs.missing_key == 'false'
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          GEMINI_MODEL: "gemini-2.5-flash"
+          BASE_REF: ${{ github.base_ref }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          PR_TITLE: ${{ github.event.pull_request.title }}
+          PR_AUTHOR: ${{ github.event.pull_request.user.login }}
+          PR_SHA: ${{ github.event.pull_request.head.sha }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+        run: |
+          python3 -c "import sys, textwrap; exec(textwrap.dedent(sys.stdin.read()))" << 'EOF'
+          import os
+          import sys
+          import json
+          import subprocess
+          import urllib.request
+          import urllib.error
+
+          api_key = os.environ.get("GEMINI_API_KEY", "").strip()
+          preferred_model = os.environ.get("GEMINI_MODEL", "gemini-2.5-flash").strip().removeprefix("models/")
+          base_ref = (os.environ.get("BASE_REF") or "master").strip()
+          base_sha = os.environ.get("BASE_SHA", "").strip()
+          pr_number = os.environ.get("PR_NUMBER", "")
+          pr_title = os.environ.get("PR_TITLE", "")
+          pr_author = os.environ.get("PR_AUTHOR", "")
+          pr_sha = os.environ.get("PR_SHA", "")
+          repo = os.environ.get("REPO", "")
+
+          # Ensure base branch / ref is available locally for computing merge-base
+          fetch_targets = []
+          if base_ref:
+              fetch_targets.extend([f"{base_ref}:{base_ref}", base_ref])
+          for target in fetch_targets:
+              try:
+                  subprocess.run(
+                      ["git", "fetch", "origin", target],
+                      capture_output=True,
+                      text=True,
+                      check=False
+                  )
+              except Exception:
+                  pass
+
+          # Exclude sensitive files (strictly adhering to AGENTS.md), binary files, lockfiles
+          exclude_patterns = [
+              ":(exclude)*.lock",
+              ":(exclude)package-lock.json",
+              ":(exclude)*.jks",
+              ":(exclude)*.keystore",
+              ":(exclude)*.p12",
+              ":(exclude)*.pem",
+              ":(exclude)*.crt",
+              ":(exclude)*.key",
+              ":(exclude)cookies.txt",
+              ":(exclude)local.properties*",
+              ":(exclude).env*",
+              ":(exclude)*.png",
+              ":(exclude)*.jpg",
+              ":(exclude)*.jpeg",
+              ":(exclude)*.webp",
+              ":(exclude)*.gif",
+              ":(exclude)*.ico",
+              ":(exclude)*.svg",
+              ":(exclude)*.jar",
+              ":(exclude)*.war",
+              ":(exclude).idea/**",
+              ":(exclude).agents/**",
+              ":(exclude).gemini/**",
+              ":(exclude)target/**",
+              ":(exclude)build/**",
+              ":(exclude)node_modules/**",
+              ":(exclude)dist/**",
+          ]
+
+          # Determine the common ancestor (merge-base)
+          head_ref = "pr-head" if subprocess.run(["git", "rev-parse", "--verify", "pr-head"], capture_output=True).returncode == 0 else (pr_sha or "HEAD")
+
+          merge_base = None
+          for base_candidate in [base_sha, f"origin/{base_ref}", base_ref, "origin/master", "master", "origin/main", "main"]:
+              if not base_candidate:
+                  continue
+              mb_res = subprocess.run(
+                  ["git", "merge-base", base_candidate, head_ref],
+                  capture_output=True,
+                  text=True,
+                  check=False
+              )
+              if mb_res.returncode == 0 and mb_res.stdout.strip():
+                  merge_base = mb_res.stdout.strip()
+                  print(f"Computed merge-base: {merge_base} against {base_candidate}")
+                  break
+
+          if not merge_base:
+              merge_base = base_sha if base_sha else f"origin/{base_ref}"
+              print(f"Fallback to base ref: {merge_base}")
+
+          # Run git diff
+          diff_cmd = ["git", "diff", f"{merge_base}...{head_ref}", "--"] + exclude_patterns
+          diff_res = subprocess.run(diff_cmd, capture_output=True, text=True, check=False)
+
+          diff_text = diff_res.stdout
+          if not diff_text.strip():
+              print("No diff found or only excluded files changed. Exiting cleanly.")
+              sys.exit(0)
+
+          MAX_DIFF_CHARS = 80000
+          diff_truncated = False
+          if len(diff_text) > MAX_DIFF_CHARS:
+              diff_text = diff_text[:MAX_DIFF_CHARS] + "\n\n... [DIFF TRUNCATED: Exceeded 80,000 characters limit] ..."
+              diff_truncated = True
+
+          # Read AGENTS.md standards
+          agents_rules = ""
+          if os.path.exists("AGENTS.md"):
+              try:
+                  with open("AGENTS.md", "r", encoding="utf-8") as f:
+                      agents_rules = f.read()
+              except Exception as e:
+                  print(f"Warning: could not read AGENTS.md: {e}")
+
+          system_prompt = f"""Ты — Senior / Staff Software Engineer & Tech Lead в FAANG (Google / Meta / Netflix), наставник и код-ревьюер для платформы VPN-оркестрации и управления подписками mVPN.
+          Твоя цель: провести исчерпывающее, строгое, конструктивное и высокопрофессиональное код-ревью предоставленного Pull Request diff.
+
+          СТРОГИЕ ПРАВИЛА И СТАНДАРТЫ ПРОЕКТА (из AGENTS.md):
+          {agents_rules}
+
+          Инструкции по стилю и структуре ревью:
+          1. Пиши на русском языке, профессионально, уважительно, по-деловому, без токсичности, без пустых похвал и без лишней воды.
+          2. Фокусируйся на реальных проблемах архитектуры, безопасности и производительности:
+             - Frontend (React 19, TypeScript 5, Zustand, Vite, Tailwind): строгая типизация без any, корректность интеграции с Keycloak (silent SSO, токен-интерцепторы), точечные селекторы Zustand, отсутствие XSS и open-redirect уязвимостей, обработка состояний экранов.
+             - Backend (Java 21, Spring Boot 3, PostgreSQL, Kafka, MinIO, 3X-UI): строгий Contract-First (OpenAPI yaml), отсутствие @Transactional на внешних I/O вызовах (предотвращение starvation в пуле HikariCP), изоляция интеграций с нодами 3X-UI и SSH, шифрование токенов через AES-256-GCM (AttributeEncryptor), идемпотентность Kafka consumer/producer, RFC 7807 исключения, запрет выхода Entity за пределы сервисного слоя.
+             - Безопасность: строжайший запрет хардкода секретов, токенов, ключей, паролей и любых данных из .env (кроме шаблонов .example).
+          3. Формат ответа:
+             - 📋 **Краткое резюме изменений** (1-2 емких предложения о сути PR)
+             - 🚨 **Критические замечания (Critical / Blocker)** (если найдены критические баги, утечки ресурсов, уязвимости безопасности или грубые нарушения архитектуры)
+             - 💡 **Рекомендации и оптимизации (Suggestions / Performance)** (ререндеринг, оптимизация запросов, читаемость, Clean Code)
+             - 👍 **Что сделано отлично** (позитивные инженерные решения)
+          4. Приводи конкретные строки и имена файлов из diff в формате `путь/к/файлу:строка` или небольшие блоки кода с объяснением «ПОЧЕМУ» (Socratic Mentoring).
+          5. Если в PR всё написано чисто и оптимально, отметь хорошие решения и поставь вердикт: **LGTM (Looks Good To Me) ✨**.
+          """
+
+          user_prompt = f"""Pull Request: #{pr_number} - "{pr_title}"
+          Автор: @{pr_author}
+          Commit: {pr_sha}
+
+          {"[Внимание: Diff был усечен из-за большого объема]" if diff_truncated else ""}
+
+          Diff изменений:
+          ```diff
+          {diff_text}
+          ```
+          """
+
+          # Dynamically discover active models supported by this API key
+          def discover_models():
+              list_url = f"https://generativelanguage.googleapis.com/v1beta/models?key={api_key}"
+              try:
+                  req = urllib.request.Request(list_url, method="GET")
+                  with urllib.request.urlopen(req, timeout=15) as resp:
+                      data = json.loads(resp.read().decode("utf-8"))
+                      available = []
+                      for item in data.get("models", []):
+                          methods = item.get("supportedGenerationMethods", [])
+                          if "generateContent" in methods:
+                              name = item.get("name", "").removeprefix("models/")
+                              if name:
+                                  available.append(name)
+                      print(f"Available models for this key: {available}")
+                      return available
+              except Exception as e:
+                  print(f"Warning: could not discover models dynamically ({e})")
+                  return []
+
+          available_models = discover_models()
+
+          # Build prioritized candidate list
+          candidate_models = []
+          if preferred_model:
+              candidate_models.append(preferred_model)
+
+          # Prioritize active Google recommended models
+          priority_patterns = ["2.5-flash", "1.5-flash", "2.5-pro", "1.5-pro", "flash", "pro"]
+          for pat in priority_patterns:
+              for m in available_models:
+                  if pat in m and m not in candidate_models:
+                      candidate_models.append(m)
+
+          # Fallbacks if discovery returned empty or missed
+          default_fallbacks = ["gemini-2.5-flash", "gemini-1.5-flash", "gemini-2.5-pro", "gemini-1.5-pro"]
+          for fb in default_fallbacks:
+              if fb not in candidate_models:
+                  candidate_models.append(fb)
+
+          # Filter out deprecated models known to fail
+          deprecated_models = {"gemini-2.0-flash", "gemini-1.0-pro"}
+          candidate_models = [m for m in candidate_models if m not in deprecated_models]
+
+          print(f"Models candidate queue: {candidate_models}")
+
+          def call_gemini(model_name):
+              url = f"https://generativelanguage.googleapis.com/v1beta/models/{model_name}:generateContent?key={api_key}"
+              headers = {"Content-Type": "application/json"}
+              payload = {
+                  "systemInstruction": {
+                      "parts": [{"text": system_prompt}]
+                  },
+                  "contents": [
+                      {
+                          "role": "user",
+                          "parts": [{"text": user_prompt}]
+                      }
+                  ],
+                  "generationConfig": {
+                      "temperature": 0.2,
+                      "topP": 0.95,
+                      "maxOutputTokens": 8192
+                  }
+              }
+
+              req = urllib.request.Request(
+                  url,
+                  data=json.dumps(payload).encode("utf-8"),
+                  headers=headers,
+                  method="POST"
+              )
+              with urllib.request.urlopen(req, timeout=120) as resp:
+                  return json.loads(resp.read().decode("utf-8"))
+
+          review_content = ""
+          last_error = None
+          for model in candidate_models:
+              try:
+                  print(f"Attempting review with Gemini model: {model}...")
+                  response = call_gemini(model)
+                  candidates = response.get("candidates", [])
+                  if candidates and "content" in candidates[0]:
+                      parts = candidates[0]["content"].get("parts", [])
+                      if parts and "text" in parts[0]:
+                          review_content = parts[0]["text"]
+                          print(f"Successfully generated review with model {model}!")
+                          break
+              except urllib.error.HTTPError as e:
+                  err_msg = e.read().decode("utf-8") if e.fp else str(e)
+                  print(f"Model {model} failed with HTTP {e.code}: {err_msg}")
+                  last_error = f"HTTP {e.code}: {err_msg}"
+              except Exception as e:
+                  print(f"Model {model} failed with error: {e}")
+                  last_error = str(e)
+
+          if not review_content:
+              print(f"Error: All Gemini models failed. Last error: {last_error}")
+              sys.exit(1)
+
+          bot_marker = "<!-- GEMINI_AI_CODE_REVIEW_BOT_COMMENT -->"
+          header = f"## 🤖 Gemini Senior Code Review\n\n> 🔍 Анализ изменений Pull Request #{pr_number} на соответствие архитектурным стандартам и качеству кода.\n\n"
+          footer = f"\n\n---\n*Сгенерировано автоматически с помощью Gemini AI ({preferred_model}) по стандартам [AGENTS.md](../../AGENTS.md).*\n{bot_marker}"
+          final_comment = header + review_content + footer
+
+          # Post or update GitHub PR comment
+          def post_or_update_comment(comment_body):
+              comments_url = f"https://api.github.com/repos/{repo}/issues/{pr_number}/comments"
+              gh_headers = {
+                  "Authorization": f"Bearer {os.environ.get('GH_TOKEN')}",
+                  "Accept": "application/vnd.github+json",
+                  "User-Agent": "Gemini-Code-Review-Action"
+              }
+
+              existing_comment_id = None
+              try:
+                  list_req = urllib.request.Request(comments_url, headers=gh_headers, method="GET")
+                  with urllib.request.urlopen(list_req, timeout=15) as resp:
+                      comments = json.loads(resp.read().decode("utf-8"))
+                      for c in comments:
+                          if bot_marker in c.get("body", ""):
+                              existing_comment_id = c.get("id")
+                              break
+              except Exception as e:
+                  print(f"Warning: could not inspect existing PR comments: {e}")
+
+              if existing_comment_id:
+                  print(f"Updating existing comment ID: {existing_comment_id}")
+                  patch_url = f"https://api.github.com/repos/{repo}/issues/comments/{existing_comment_id}"
+                  payload = json.dumps({"body": comment_body}).encode("utf-8")
+                  req = urllib.request.Request(patch_url, data=payload, headers=gh_headers, method="PATCH")
+                  with urllib.request.urlopen(req, timeout=15) as resp:
+                      print("PR comment updated successfully.")
+              else:
+                  print("Creating new PR review comment...")
+                  payload = json.dumps({"body": comment_body}).encode("utf-8")
+                  req = urllib.request.Request(comments_url, data=payload, headers=gh_headers, method="POST")
+                  with urllib.request.urlopen(req, timeout=15) as resp:
+                      print("PR comment created successfully.")
+
+          post_or_update_comment(final_comment)
+          EOF

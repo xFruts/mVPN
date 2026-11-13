@@ -1,0 +1,76 @@
+version: 2
+updates:
+  # GitHub Actions workflows
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "06:00"
+      timezone: "Europe/Moscow"
+    commit-message:
+      prefix: "chore(deps-ci)"
+      include: "scope"
+    labels:
+      - "dependencies"
+      - "ci"
+    groups:
+      github-actions:
+        patterns:
+          - "*"
+
+  # Backend (Maven)
+  - package-ecosystem: "maven"
+    directory: "/backend"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "06:00"
+      timezone: "Europe/Moscow"
+    commit-message:
+      prefix: "chore(deps-backend)"
+      include: "scope"
+    labels:
+      - "dependencies"
+      - "backend"
+    groups:
+      spring-boot:
+        patterns:
+          - "org.springframework.boot*"
+      jackson:
+        patterns:
+          - "tools.jackson.*"
+          - "com.fasterxml.jackson.*"
+      test-dependencies:
+        patterns:
+          - "org.testcontainers*"
+          - "org.junit*"
+          - "org.mockito*"
+
+  # Frontend (npm)
+  - package-ecosystem: "npm"
+    directory: "/Frontend"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "06:00"
+      timezone: "Europe/Moscow"
+    commit-message:
+      prefix: "chore(deps-frontend)"
+      include: "scope"
+    labels:
+      - "dependencies"
+      - "frontend"
+    groups:
+      react:
+        patterns:
+          - "react*"
+          - "@types/react*"
+      vite:
+        patterns:
+          - "vite*"
+          - "@vitejs/*"
+      linters:
+        patterns:
+          - "eslint*"
+          - "@eslint/*"

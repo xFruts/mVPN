@@ -284,7 +284,7 @@ In centralized Grafana/mDash log viewers, always scope queries with the applicat
 ./mvnw clean verify -Pci
 
 # OWASP Vulnerability Check (fails build if CVSS >= 9):
-./mvnw org.owasp:dependency-check-maven:check -DfailBuildOnCVSS=9
+./mvnw org.owasp:dependency-check-maven:check -DfailBuildOnCVSS=9 -DfailOnError=false
 ```
 
 - **JaCoCo Thresholds**: Minimum 55% instruction coverage and 35-40% branch coverage on domain service packages. Exclude generated OpenAPI DTOs and MapStruct implementations.

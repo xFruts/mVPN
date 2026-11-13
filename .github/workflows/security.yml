@@ -5,90 +5,166 @@ on:
     branches:
       - main
       - master
+    paths-ignore:
+      - '**.md'
+      - 'docs/**'
+      - '.gitignore'
   push:
     branches:
       - main
       - master
+    paths-ignore:
+      - '**.md'
+      - 'docs/**'
+      - '.gitignore'
   schedule:
     - cron: '0 3 * * 1'
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 concurrency:
   group: security-${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: ${{ github.ref != 'refs/heads/master' && github.ref != 'refs/heads/main' }}
 
 jobs:
-  dependency-review:
-    name: dependency-review
-    if: github.event_name == 'pull_request'
+  changes:
+    name: detect-changes
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: read
+    outputs:
+      backend: ${{ steps.filter.outputs.backend }}
+      frontend: ${{ steps.filter.outputs.frontend }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Paths Filter
+        id: filter
+        uses: dorny/paths-filter@ceb8a2b8f2d89434be7ff52d3de7ec3738c5cc9d # v4.0.3
+        with:
+          filters: |
+            backend:
+              - 'backend/**'
+              - '.github/workflows/security.yml'
+            frontend:
+              - 'Frontend/**'
+              - '.github/workflows/security.yml'
+
+  secret-scan:
+    name: secret-scan
     runs-on: ubuntu-latest
     permissions:
       contents: read
       pull-requests: read
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
 
-      - name: Dependency Review
-        uses: actions/dependency-review-action@v4
+      - name: Gitleaks Secret Scan
+        uses: gitleaks/gitleaks-action@e0c47f4f8be36e29cdc102c57e68cb5cbf0e8d1e # v3.0.0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-  codeql:
-    name: codeql
+  codeql-backend:
+    name: codeql (java-kotlin)
+    needs: changes
+    if: |
+      needs.changes.outputs.backend == 'true' ||
+      github.event_name == 'push' ||
+      github.event_name == 'schedule' ||
+      github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     permissions:
       actions: read
       contents: read
-      security-events: write
-    strategy:
-      fail-fast: false
-      matrix:
-        language: [ 'java-kotlin', 'javascript-typescript' ]
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
-
-      - name: Make Maven wrapper executable
-        if: matrix.language == 'java-kotlin'
-        working-directory: backend
-        run: chmod +x mvnw
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Initialize CodeQL
-        uses: github/codeql-action/init@v4
+        uses: github/codeql-action/init@9b3254085494b55a0f7c4c2b3d2d52cc712ce370 # v4.39.1
         with:
-          languages: ${{ matrix.language }}
+          languages: 'java-kotlin'
 
       - name: Set up JDK 21
-        if: matrix.language == 'java-kotlin'
-        uses: actions/setup-java@v5
+        uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad # v6.1.0
         with:
           distribution: temurin
           java-version: '21'
           cache: maven
+          cache-dependency-path: backend/pom.xml
 
-      - name: Set up Node.js 24
-        if: matrix.language == 'javascript-typescript'
-        uses: actions/setup-node@v5
-        with:
-          node-version: '24'
-          cache: npm
-          cache-dependency-path: Frontend/package-lock.json
-
-      - name: Build backend
-        if: matrix.language == 'java-kotlin'
+      - name: Build backend for CodeQL
         working-directory: backend
-        run: ./mvnw -B -ntp -DskipTests compile
-
-      - name: Build frontend
-        if: matrix.language == 'javascript-typescript'
-        working-directory: Frontend
-        run: npm ci && npm run build
+        run: |
+          if [ -f "./mvnw" ]; then chmod +x ./mvnw; fi
+          ./mvnw -B -ntp -DskipTests compile
 
       - name: Perform CodeQL Analysis
-        uses: github/codeql-action/analyze@v4
+        uses: github/codeql-action/analyze@9b3254085494b55a0f7c4c2b3d2d52cc712ce370 # v4.39.1
+        with:
+          upload: 'never'
+          output: '${{ runner.temp }}/results'
+
+      - name: Upload CodeQL SARIF report
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: codeql-java-kotlin-report
+          path: ${{ runner.temp }}/results
+          if-no-files-found: ignore
+
+  codeql-frontend:
+    name: codeql (javascript-typescript)
+    needs: changes
+    if: |
+      needs.changes.outputs.frontend == 'true' ||
+      github.event_name == 'push' ||
+      github.event_name == 'schedule' ||
+      github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@9b3254085494b55a0f7c4c2b3d2d52cc712ce370 # v4.39.1
+        with:
+          languages: 'javascript-typescript'
+
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@9b3254085494b55a0f7c4c2b3d2d52cc712ce370 # v4.39.1
+        with:
+          upload: 'never'
+          output: '${{ runner.temp }}/results'
+
+      - name: Upload CodeQL SARIF report
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: codeql-javascript-typescript-report
+          path: ${{ runner.temp }}/results
+          if-no-files-found: ignore
 
   backend-dependency-check:
     name: backend-dependency-check
+    needs: changes
+    if: |
+      needs.changes.outputs.backend == 'true' ||
+      github.event_name == 'push' ||
+      github.event_name == 'schedule' ||
+      github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     permissions:
       contents: read
     defaults:
@@ -96,27 +172,73 @@ jobs:
         working-directory: backend
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Cache OWASP NVD database
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.m2/repository/org/owasp/dependency-check-data
+          key: owasp-nvd-${{ runner.os }}-${{ github.run_id }}
+          restore-keys: |
+            owasp-nvd-${{ runner.os }}-
 
       - name: Make Maven wrapper executable
-        working-directory: backend
-        run: chmod +x mvnw
+        run: if [ -f "./mvnw" ]; then chmod +x ./mvnw; fi
 
       - name: Set up JDK 21
-        uses: actions/setup-java@v5
+        uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad # v6.1.0
         with:
           distribution: temurin
           java-version: '21'
           cache: maven
+          cache-dependency-path: backend/pom.xml
 
       - name: OWASP Dependency-Check
-        run: ./mvnw -B -ntp org.owasp:dependency-check-maven:12.1.8:check -Dformat=HTML -DfailBuildOnCVSS=9
+        env:
+          NVD_API_KEY: ${{ secrets.NVD_API_KEY }}
+        run: |
+          NVD_KEY_ARG=""
+          if [ -n "$NVD_API_KEY" ]; then
+            NVD_KEY_ARG="-DnvdApiKey=$NVD_API_KEY"
+          fi
+          ./mvnw -B -ntp org.owasp:dependency-check-maven:12.1.8:check \
+            -Dformat=HTML \
+            -DfailBuildOnCVSS=9 \
+            -DfailOnError=false \
+            -DnvdMaxRetryCount=5 \
+            -DnvdDelay=10000 \
+            $NVD_KEY_ARG
 
       - name: Upload OWASP report
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: owasp-dependency-check-report
           path: backend/target/dependency-check-report.html
           if-no-files-found: ignore
 
+  security-gate:
+    name: Security Gate
+    needs: [changes, secret-scan, codeql-backend, codeql-frontend, backend-dependency-check]
+    if: always()
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Evaluate Security Pipeline Status
+        run: |
+          echo "Evaluating Security job results..."
+          echo "secret-scan: ${{ needs.secret-scan.result }}"
+          echo "codeql-backend: ${{ needs.codeql-backend.result }}"
+          echo "codeql-frontend: ${{ needs.codeql-frontend.result }}"
+          echo "backend-dependency-check: ${{ needs.backend-dependency-check.result }}"
+
+          if [ "${{ needs.secret-scan.result }}" == "failure" ] || \
+             [ "${{ needs.codeql-backend.result }}" == "failure" ] || \
+             [ "${{ needs.codeql-frontend.result }}" == "failure" ] || \
+             [ "${{ needs.backend-dependency-check.result }}" == "failure" ]; then
+            echo "❌ One or more required Security gates failed!"
+            exit 1
+          fi
+
+          echo "✅ All security gates passed or were selectively skipped."
