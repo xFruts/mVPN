@@ -1,15 +1,23 @@
 databaseChangeLog:
-    - changeSet:
-        id: 003-tariff-servers-cascade
-        author: xFruts
-        changes:
-          - dropForeignKeyConstraint:
-              baseTableName: tariff_plan_servers
-              constraintName: fk7ssljuvxcwumk19xfnx81lrfn
-          - addForeignKeyConstraint:
-              baseTableName: tariff_plan_servers
-              baseColumnNames: server_id
-              constraintName: fk_tariff_servers_server
-              referencedTableName: servers
-              referencedColumnNames: id
-              onDelete: CASCADE
+  - changeSet:
+      id: 003-tariff-servers-cascade
+      author: xFruts
+      preConditions:
+        - onFail: "MARK_RAN"
+          tableExists:
+            tableName: "tariff_plan_servers"
+        - onFail: "MARK_RAN"
+          foreignKeyConstraintExists:
+            foreignKeyTableName: "tariff_plan_servers"
+            foreignKeyName: "fk7ssljuvxcwumk19xfnx81lrfn"
+      changes:
+        - dropForeignKeyConstraint:
+            baseTableName: tariff_plan_servers
+            constraintName: fk7ssljuvxcwumk19xfnx81lrfn
+        - addForeignKeyConstraint:
+            baseTableName: tariff_plan_servers
+            baseColumnNames: server_id
+            constraintName: fk_tariff_servers_server
+            referencedTableName: servers
+            referencedColumnNames: id
+            onDelete: CASCADE
