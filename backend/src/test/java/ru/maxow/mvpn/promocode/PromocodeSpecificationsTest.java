@@ -17,10 +17,12 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
+import org.springframework.test.context.ActiveProfiles;
 import ru.maxow.mvpn.model.PromocodeStatus;
 import ru.maxow.mvpn.tariff.Tariff;
 
 @DataJpaTest
+@ActiveProfiles("test")
 @DisplayName("PromocodeSpecifications - Интеграционные тесты")
 class PromocodeSpecificationsTest {
 
@@ -76,7 +78,8 @@ class PromocodeSpecificationsTest {
     @Test
     @DisplayName("ACTIVE — возвращает только активные промокоды")
     void filterByActiveStatus() {
-      List<Promocode> result = promocodeRepository.findAll(Specification.where(hasStatus("ACTIVE")));
+      List<Promocode> result = promocodeRepository
+          .findAll(Specification.where(hasStatus("ACTIVE")));
 
       assertThat(result).extracting(Promocode::getCode).containsExactly("ABC12345");
     }
@@ -84,7 +87,8 @@ class PromocodeSpecificationsTest {
     @Test
     @DisplayName("USED — возвращает только использованные промокоды")
     void filterByUsedStatus() {
-      List<Promocode> result = promocodeRepository.findAll(Specification.where(hasStatus("USED")));
+      List<Promocode> result = promocodeRepository
+          .findAll(Specification.where(hasStatus("USED")));
 
       assertThat(result).extracting(Promocode::getCode).containsExactly("QWER5678");
     }
@@ -92,7 +96,8 @@ class PromocodeSpecificationsTest {
     @Test
     @DisplayName("EXPIRED — возвращает только истёкшие промокоды")
     void filterByExpiredStatus() {
-      List<Promocode> result = promocodeRepository.findAll(Specification.where(hasStatus("EXPIRED")));
+      List<Promocode> result = promocodeRepository
+          .findAll(Specification.where(hasStatus("EXPIRED")));
 
       assertThat(result).extracting(Promocode::getCode).containsExactly("ZXCV9999");
     }
@@ -108,7 +113,8 @@ class PromocodeSpecificationsTest {
     @Test
     @DisplayName("Неизвестный статус — возвращает пустой результат")
     void invalidStatusReturnsEmpty() {
-      List<Promocode> result = promocodeRepository.findAll(Specification.where(hasStatus("UNKNOWN")));
+      List<Promocode> result = promocodeRepository
+          .findAll(Specification.where(hasStatus("UNKNOWN")));
 
       assertThat(result).isEmpty();
     }
@@ -121,7 +127,8 @@ class PromocodeSpecificationsTest {
     @Test
     @DisplayName("Поиск по части кода — регистронезависимый")
     void searchByPartialCode() {
-      List<Promocode> result = promocodeRepository.findAll(Specification.where(codeContains("abc")));
+      List<Promocode> result = promocodeRepository
+          .findAll(Specification.where(codeContains("abc")));
 
       assertThat(result).extracting(Promocode::getCode).containsExactly("ABC12345");
     }
@@ -129,7 +136,8 @@ class PromocodeSpecificationsTest {
     @Test
     @DisplayName("Поиск по несуществующей строке — пустой результат")
     void searchByNonExistentString() {
-      List<Promocode> result = promocodeRepository.findAll(Specification.where(codeContains("zzzzz")));
+      List<Promocode> result = promocodeRepository
+          .findAll(Specification.where(codeContains("zzzzz")));
 
       assertThat(result).isEmpty();
     }
@@ -174,6 +182,3 @@ class PromocodeSpecificationsTest {
     }
   }
 }
-
-
-

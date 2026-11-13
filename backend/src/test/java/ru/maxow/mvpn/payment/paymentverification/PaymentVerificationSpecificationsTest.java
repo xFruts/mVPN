@@ -21,11 +21,13 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
+import org.springframework.test.context.ActiveProfiles;
 import ru.maxow.mvpn.model.UserRole;
 import ru.maxow.mvpn.model.VerificationStatus;
 import ru.maxow.mvpn.user.User;
 
 @DataJpaTest
+@ActiveProfiles("test")
 @DisplayName("PaymentVerificationSpecifications - Интеграционные тесты")
 class PaymentVerificationSpecificationsTest {
 

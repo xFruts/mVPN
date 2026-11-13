@@ -15,9 +15,11 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
+import org.springframework.test.context.ActiveProfiles;
 import ru.maxow.mvpn.model.ServerStatus;
 
 @DataJpaTest
+@ActiveProfiles("test")
 @DisplayName("ServerSpecifications - Интеграционные тесты")
 class ServerSpecificationsTest {
 
@@ -94,7 +96,8 @@ class ServerSpecificationsTest {
     @Test
     @DisplayName("Фильтр по MAINTENANCE — возвращает серверы на обслуживании")
     void filterByMaintenanceStatus() {
-      List<Server> result = serverRepository.findAll(Specification.where(hasStatus("MAINTENANCE")));
+      List<Server> result = serverRepository
+          .findAll(Specification.where(hasStatus("MAINTENANCE")));
 
       assertThat(result).extracting(Server::getName).containsExactly("Berlin-Moscow-Relay");
     }
@@ -123,7 +126,8 @@ class ServerSpecificationsTest {
     @Test
     @DisplayName("Поиск по части имени — находит совпадения (регистронезависимо)")
     void searchByPartialName() {
-      List<Server> result = serverRepository.findAll(Specification.where(nameOrIpContains("moscow")));
+      List<Server> result = serverRepository
+          .findAll(Specification.where(nameOrIpContains("moscow")));
 
       assertThat(result).extracting(Server::getName)
           .containsExactlyInAnyOrder("Moscow-1", "Berlin-Moscow-Relay");
@@ -132,16 +136,18 @@ class ServerSpecificationsTest {
     @Test
     @DisplayName("Поиск по IP-адресу — находит совпадения")
     void searchByIp() {
-      List<Server> result = serverRepository.findAll(Specification.where(nameOrIpContains("91.200")));
+      List<Server> result = serverRepository
+          .findAll(Specification.where(nameOrIpContains("91.200")));
 
       assertThat(result).extracting(Server::getName).containsExactly("Helsinki-1");
     }
 
     @Test
-    @DisplayName("Поиск по подстроке, встречающейся и в имени и в IP — возвращает уникальные результаты")
+    @DisplayName("Поиск по подстроке в имени и в IP — уникальные результаты")
     void searchMatchingBothNameAndIp() {
       // "33" appears in Berlin's IP (45.33.32.156) but not in names
-      List<Server> result = serverRepository.findAll(Specification.where(nameOrIpContains("33")));
+      List<Server> result = serverRepository
+          .findAll(Specification.where(nameOrIpContains("33")));
 
       assertThat(result).extracting(Server::getName).containsExactly("Berlin-Moscow-Relay");
     }
@@ -149,7 +155,8 @@ class ServerSpecificationsTest {
     @Test
     @DisplayName("Поиск по несуществующей строке — возвращает пустой результат")
     void searchByNonExistentString() {
-      List<Server> result = serverRepository.findAll(Specification.where(nameOrIpContains("zzzzz")));
+      List<Server> result = serverRepository
+          .findAll(Specification.where(nameOrIpContains("zzzzz")));
 
       assertThat(result).isEmpty();
     }

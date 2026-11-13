@@ -36,15 +36,15 @@ public class ConfigController implements ConfigApi {
   public ConfigController(
       ConfigFacade configFacade,
       SubscriptionService subscriptionService,
-      @Value("${vpn.config.profile-title}")
+      @Value("${vpn.config.profile-title:}")
       String profileTitle,
-      @Value("${vpn.config.profile-description}")
+      @Value("${vpn.config.profile-description:}")
       String profileDescription,
-      @Value("${vpn.config.support-url}")
+      @Value("${vpn.config.support-url:}")
       String supportUrl,
-      @Value("${vpn.config.profile-web-page-url}")
+      @Value("${vpn.config.profile-web-page-url:}")
       String profileWebPageUrl,
-      @Value("${vpn.config.profile-update-interval}")
+      @Value("${vpn.config.profile-update-interval:24}")
       String profileUpdateInterval
   ) {
     this.configFacade = configFacade;
@@ -56,6 +56,7 @@ public class ConfigController implements ConfigApi {
     this.profileUpdateInterval = profileUpdateInterval;
   }
 
+  @Override
   public String getConfigByVerificationCode(UUID verificationCode) {
     SubscriptionConfigPayload config = configFacade.getSubscriptionConfig(verificationCode);
     String subscriptionInfo = config.subscriptionInfo() != null

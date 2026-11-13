@@ -21,6 +21,9 @@ spring:
     console:
       enabled: false
 
+  kafka:
+    bootstrap-servers: localhost:9092
+
   security:
     oauth2:
       client:
@@ -32,9 +35,30 @@ spring:
             client-id: test-client
             client-secret: test-secret
 
+minio:
+  url: http://localhost:9000
+  access:
+    name: minioadmin
+    secret: minioadmin
+  bucket:
+    name: test-bucket
+
 app:
   keycloak:
     client-id: test-client
+  kafka:
+    topics:
+      broadcast: test-broadcast-topic
+    groups:
+      broadcast: test-broadcast-group
+
+vpn:
+  config:
+    profile-title: test-vpn
+    profile-description: test-desc
+    support-url: http://localhost
+    profile-web-page-url: http://localhost
+    profile-update-interval: 24
 
 encryption:
   key: MySecureKey12345MySecureKey12345
