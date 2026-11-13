@@ -77,16 +77,13 @@ class XuiClientApiClient {
                     String currentEmail, XuiClientDto clientDto, Server server) {
     String encodedEmail = UriUtils.encodePathSegment(currentEmail, StandardCharsets.UTF_8);
 
-    XuiCreateUpdateClientRequestDto requestBody =
-        new XuiCreateUpdateClientRequestDto(clientDto, null);
-
     log.debug("XUI updateClient: currentEmail={}, serverId={}",
         currentEmail, server.getId());
 
     XuiApiResponse<?> response = sendPostRequest(
         restClient, sessionCookie,
         "/panel/api/clients/update/" + encodedEmail,
-        requestBody
+        clientDto
     );
 
     if (response == null || !response.success()) {
