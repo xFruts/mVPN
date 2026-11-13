@@ -65,7 +65,7 @@ public class SubscriptionTrafficStateServiceImpl implements SubscriptionTrafficS
 
     SubscriptionTrafficState saved = trafficStateRepository.save(newState);
 
-    log.info("Traffic synced successfully." +
+    log.debug("Traffic synced successfully." +
             " subscriptionId={}, upload={} b, download={} b, total={} b, servers={}/{}",
         subscription.getId(), accumulator.upload, accumulator.download, accumulator.totalBytes(),
         accumulator.successfulServers, accumulator.totalServers);
@@ -96,8 +96,8 @@ public class SubscriptionTrafficStateServiceImpl implements SubscriptionTrafficS
             successfulServers++;
           }
         } catch (Exception e) {
-          log.warn("Failed to get traffic from server {}. userId={}, xuiId={}, serverId={}",
-              server.getName(), user.getId(), user.getXuiId(), server.getId(), e);
+          log.warn("Failed to get traffic from server {} (id={}). userId={}: {}",
+              server.getName(), server.getId(), user.getId(), e.getMessage());
         }
       }
     }

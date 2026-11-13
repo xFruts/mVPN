@@ -86,11 +86,21 @@ management:
   endpoints:
     web:
       exposure:
-        include: health, info, prometheus
+        include: health, info, prometheus, metrics
   endpoint:
     prometheus:
       enabled: true
+    health:
+      show-details: when_authorized
 
+  metrics:
+    tags:
+      application: ${spring.application.name}
+    distribution:
+      percentiles-histogram:
+        http.server.requests: true
+      slo:
+        http.server.requests: 100ms, 200ms, 500ms, 1s, 2s, 5s, 10s
 springdoc:
   api-docs:
     enabled: true

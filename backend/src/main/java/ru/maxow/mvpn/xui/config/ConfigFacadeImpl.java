@@ -1,12 +1,19 @@
 package ru.maxow.mvpn.xui.config;
 
+import java.nio.charset.StandardCharsets;
+import java.util.Base64;
+import java.util.List;
+import java.util.Set;
+import java.util.UUID;
+import java.util.stream.Collectors;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.node.ArrayNode;
 import ru.maxow.mvpn.model.ServerStatus;
-import ru.maxow.mvpn.model.SubscriptionStatus;
 import ru.maxow.mvpn.server.Server;
 import ru.maxow.mvpn.server.SubscriptionFormat;
 import ru.maxow.mvpn.subscription.Subscription;
@@ -18,16 +25,8 @@ import ru.maxow.mvpn.user.UserRepository;
 import ru.maxow.mvpn.util.exception.BadRequestException;
 import ru.maxow.mvpn.util.exception.NotFoundException;
 import ru.maxow.mvpn.util.exception.XuiUnavailableException;
-import tools.jackson.databind.ObjectMapper;
-import tools.jackson.databind.node.ArrayNode;
-import ru.maxow.mvpn.xui.dto.SubscriptionConfigPayload;
 import ru.maxow.mvpn.xui.XuiPanelService;
-import java.nio.charset.StandardCharsets;
-import java.util.Base64;
-import java.util.List;
-import java.util.Set;
-import java.util.UUID;
-import java.util.stream.Collectors;
+import ru.maxow.mvpn.xui.dto.SubscriptionConfigPayload;
 
 @Slf4j
 @Service
@@ -53,40 +52,39 @@ public class ConfigFacadeImpl implements ConfigFacade {
         .or(() -> subscriptionRepository.findFirstByUser_IdOrderByStartDateDesc(user.getId()))
         .orElseThrow(() -> new NotFoundException("Subscription for user"));
 
-    if (subscription.getStatus() != SubscriptionStatus.ACTIVE ||
-        subscription.getEndDate().isBefore(java.time.OffsetDateTime.now())) {
+    if (!subscription.isActive()) {
       throw new BadRequestException("Subscription is not active or expired for user");
     }
 
-    long trafficLimitBytes = subscription.getTariff().getTrafficLimitGb() * 1024L * 1024L * 1024L;
+    long trafficLimitBytes = subscription.getTrafficLimitBytes();
     SubscriptionTrafficState cachedTrafficState = trafficStateService
         .getTrafficStateBySubscriptionId(subscription.getId())
         .orElse(null);
-    if (cachedTrafficState != null && cachedTrafficState.getUsedBytes() != null
-        && cachedTrafficState.getUsedBytes() >= trafficLimitBytes) {
+    if (cachedTrafficState != null && cachedTrafficState.isLimitExceeded(trafficLimitBytes)) {
       throw new BadRequestException("Traffic limit exceeded for subscription");
     }
 
     SubscriptionConfigPayload cached = configCacheService.get(user.getId());
     if (cached != null) {
-      log.debug("Returning cached subscription payload for verificationCode={}", verificationCode);
+      log.debug("Returning cached payload for verificationCode={}", verificationCode);
       configSyncService.asyncSyncSubscription(verificationCode);
       String info = formatSubscriptionInfo(subscription, cachedTrafficState);
       return new SubscriptionConfigPayload(cached.body(), cached.format(), info);
     }
 
-    SubscriptionTrafficState trafficState = trafficStateService.syncTrafficForSubscription(user, subscription);
-    if (trafficState != null && trafficState.getUsedBytes() != null
-        && trafficState.getUsedBytes() >= trafficLimitBytes) {
+    SubscriptionTrafficState trafficState =
+        trafficStateService.syncTrafficForSubscription(user, subscription);
+    if (trafficState != null && trafficState.isLimitExceeded(trafficLimitBytes)) {
       throw new BadRequestException("Traffic limit exceeded for subscription");
     }
 
-    List<ResolvedServerConfig> configs = getActiveServersByUserSubscription(subscription).stream()
+    List<ResolvedServerConfig> configs = getActiveServersByUserSubscription(subscription)
+        .stream()
         .map(server -> {
           try {
             xuiPanelService.createOrUpdateClient(server, user, subscription);
 
-            SubscriptionFormat format = resolveSubscriptionFormat(server);
+            SubscriptionFormat format = server.getSubscriptionFormat();
             String config = format == SubscriptionFormat.JSON
                 ? xuiPanelService.getJsonConfig(server, user)
                 : xuiPanelService.getVlessConfig(server, user);
@@ -95,7 +93,7 @@ public class ConfigFacadeImpl implements ConfigFacade {
             log.warn("XUI is unavailable for server {}: {}", server, e.getMessage());
             return null;
           } catch (RuntimeException e) {
-            log.error("Unexpected error while getting config from server {}: {}",
+            log.error("Unexpected error getting config from server {}: {}",
                 server, e.getMessage(), e);
             return null;
           }
@@ -111,22 +109,20 @@ public class ConfigFacadeImpl implements ConfigFacade {
     SubscriptionConfigPayload payload = resolvePayload(configs, subscriptionInfo);
     try {
       configCacheService.put(user.getId(), payload);
-      configSyncService.asyncSyncSubscription(verificationCode);
     } catch (Exception e) {
-      log.warn("Failed to schedule background sync or cache payload for verificationCode={}: {}",
-          verificationCode, e.getMessage());
+      log.warn("Failed caching config for userId={}: {}", user.getId(), e.getMessage());
     }
 
     return payload;
   }
 
-  private String formatSubscriptionInfo(Subscription subscription, SubscriptionTrafficState trafficState) {
-    long trafficLimitBytes = subscription.getTariff().getTrafficLimitGb() * 1024L * 1024L * 1024L;
+  private String formatSubscriptionInfo(
+      Subscription subscription,
+      SubscriptionTrafficState trafficState) {
+    long trafficLimitBytes = subscription.getTrafficLimitBytes();
     long expireSec = subscription.getEndDate().toInstant().getEpochSecond();
-    long upload = trafficState != null && trafficState.getUsedUploadBytes() != null
-        ? trafficState.getUsedUploadBytes() : 0L;
-    long download = trafficState != null && trafficState.getUsedDownloadBytes() != null
-        ? trafficState.getUsedDownloadBytes() : 0L;
+    long upload = trafficState != null ? trafficState.getEffectiveUploadBytes() : 0L;
+    long download = trafficState != null ? trafficState.getEffectiveDownloadBytes() : 0L;
 
     return String.format(
         "upload=%d; download=%d; total=%d; expire=%d",
@@ -143,7 +139,9 @@ public class ConfigFacadeImpl implements ConfigFacade {
         .toList();
   }
 
-  private SubscriptionConfigPayload resolvePayload(List<ResolvedServerConfig> configs, String subscriptionInfo) {
+  private SubscriptionConfigPayload resolvePayload(
+      List<ResolvedServerConfig> configs,
+      String subscriptionInfo) {
     Set<SubscriptionFormat> formats = configs.stream()
         .map(ResolvedServerConfig::format)
         .collect(Collectors.toSet());
@@ -162,7 +160,7 @@ public class ConfigFacadeImpl implements ConfigFacade {
           try {
             jsonArray.add(objectMapper.readTree(cfg.config()));
           } catch (Exception e) {
-            log.warn("Failed to parse JSON config for server {}, skipping. Error: {}",
+            log.warn("Failed to parse JSON for server {}, skipping. Error: {}",
                 cfg.server().getId(), e.getMessage());
           }
         }
@@ -173,7 +171,8 @@ public class ConfigFacadeImpl implements ConfigFacade {
 
         String combinedConfigs = objectMapper.writeValueAsString(jsonArray);
         log.debug("Combined {} JSON configs into array", jsonArray.size());
-        return new SubscriptionConfigPayload(combinedConfigs, SubscriptionFormat.JSON, subscriptionInfo);
+        return new SubscriptionConfigPayload(
+            combinedConfigs, SubscriptionFormat.JSON, subscriptionInfo);
       } catch (BadRequestException e) {
         throw e;
       } catch (Exception e) {
@@ -189,12 +188,4 @@ public class ConfigFacadeImpl implements ConfigFacade {
         combinedConfigs.getBytes(StandardCharsets.UTF_8));
     return new SubscriptionConfigPayload(encoded, SubscriptionFormat.VLESS, subscriptionInfo);
   }
-
-  private SubscriptionFormat resolveSubscriptionFormat(Server server) {
-    return server.getSubscriptionFormat() == null
-        ? SubscriptionFormat.VLESS
-        : server.getSubscriptionFormat();
-  }
-
-  private record ResolvedServerConfig(Server server, String config, SubscriptionFormat format) {}
 }

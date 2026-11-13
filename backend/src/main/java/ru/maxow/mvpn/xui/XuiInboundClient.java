@@ -12,7 +12,7 @@ import ru.maxow.mvpn.util.exception.XuiUnavailableException;
  * <p>
  * После миграции на Clients API мутации клиентов выполняются через {@link XuiClientApiClient}.
  * Данный клиент используется только для получения списка inbound'ов и их настроек
- * (streamSettings, settings) — необходимо для генерации VLESS-ссылок и определения доступных inbound'ов.
+ * (streamSettings, settings) — необходимо для генерации VLESS-ссылок.
  */
 @Slf4j
 @Component

@@ -21,4 +21,14 @@
     <Class name="ru.maxow.mvpn.xui.XuiPanelServiceImpl"/>
     <Bug pattern="EI_EXPOSE_REP2"/>
   </Match>
+
+  <Match>
+    <Class name="ru.maxow.mvpn.xui.config.ResolvedServerConfig"/>
+    <Bug pattern="EI_EXPOSE_REP"/>
+  </Match>
+
+  <Match>
+    <Class name="ru.maxow.mvpn.xui.config.ResolvedServerConfig"/>
+    <Bug pattern="EI_EXPOSE_REP2"/>
+  </Match>
 </FindBugsFilter>
