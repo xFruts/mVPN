@@ -2,22 +2,21 @@ package ru.maxow.mvpn.tariff;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
-import jakarta.persistence.Table;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.JoinTable;
 import jakarta.persistence.ManyToMany;
-import jakarta.persistence.FetchType;
+import jakarta.persistence.Table;
+import java.util.HashSet;
+import java.util.Set;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.experimental.FieldDefaults;
 import ru.maxow.mvpn.server.Server;
-
-import java.util.HashSet;
-import java.util.Set;
 
 @Entity
 @Table(name = "tariff_plan")
@@ -25,6 +24,9 @@ import java.util.Set;
 @Setter
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class Tariff {
+
+  private static final long BYTES_IN_GIGABYTE = 1024L * 1024L * 1024L;
+
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
   Long id;
@@ -48,4 +50,8 @@ public class Tariff {
       inverseJoinColumns = @JoinColumn(name = "server_id")
   )
   Set<Server> servers = new HashSet<>();
+
+  public long getTrafficLimitBytes() {
+    return trafficLimitGb != null ? trafficLimitGb * BYTES_IN_GIGABYTE : 0L;
+  }
 }
