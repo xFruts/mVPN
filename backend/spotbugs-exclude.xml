@@ -33,12 +33,12 @@
   </Match>
 
   <Match>
-    <Class name="ru.maxow.mvpn.telegram.service.TelegramUserService"/>
-    <Bug pattern="EI_EXPOSE_REP2"/>
+    <Class name="ru.maxow.mvpn.device.DeviceRecordResult"/>
+    <Bug pattern="EI_EXPOSE_REP"/>
   </Match>
 
   <Match>
-    <Class name="ru.maxow.mvpn.telegram.service.TelegramMessageFormatter"/>
-    <Bug pattern="VA_FORMAT_STRING_USES_NEWLINE"/>
+    <Class name="ru.maxow.mvpn.device.DeviceRecordResult"/>
+    <Bug pattern="EI_EXPOSE_REP2"/>
   </Match>
 </FindBugsFilter>

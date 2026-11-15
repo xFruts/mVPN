@@ -150,6 +150,11 @@
                 <version>${grizzly-http.version}</version>
             </dependency>
             <dependency>
+                <groupId>org.glassfish.grizzly</groupId>
+                <artifactId>grizzly-http-server</artifactId>
+                <version>${grizzly-http.version}</version>
+            </dependency>
+            <dependency>
                 <groupId>org.assertj</groupId>
                 <artifactId>assertj-core</artifactId>
                 <version>${assertj.version}</version>
@@ -237,6 +242,10 @@
         <dependency>
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-text</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.github.ben-manes.caffeine</groupId>
+            <artifactId>caffeine</artifactId>
         </dependency>
 
         <!-- === Business Logic Clients === -->
@@ -439,7 +448,7 @@
                 <artifactId>maven-surefire-plugin</artifactId>
                 <version>${maven.failsafe.plugin.version}</version>
                 <configuration>
-                    <argLine>@{argLine} -Dspring.profiles.active=test -Dfile.encoding=UTF-8 -Dsun.stdout.encoding=UTF-8 -Dsun.stderr.encoding=UTF-8</argLine>
+                    <argLine>@{argLine} -Dspring.profiles.active=test -Dfile.encoding=UTF-8 -Dsun.stdout.encoding=UTF-8 -Dsun.stderr.encoding=UTF-8 -Duser.language=ru -Duser.country=RU</argLine>
                     <includes>
                         <include>**/*Test.java</include>
                     </includes>
@@ -455,7 +464,7 @@
                 <version>${maven.failsafe.plugin.version}</version>
                 <configuration>
                     <skipITs>${skipITs}</skipITs>
-                    <argLine>@{argLine} -Dspring.profiles.active=test -Dfile.encoding=UTF-8 -Dsun.stdout.encoding=UTF-8 -Dsun.stderr.encoding=UTF-8</argLine>
+                    <argLine>@{argLine} -Dspring.profiles.active=test -Dfile.encoding=UTF-8 -Dsun.stdout.encoding=UTF-8 -Dsun.stderr.encoding=UTF-8 -Duser.language=ru -Duser.country=RU</argLine>
                     <includes>
                         <include>**/*IT.java</include>
                         <include>**/*ITCase.java</include>
@@ -551,6 +560,20 @@
                 </executions>
             </plugin>
         </plugins>
+        <pluginManagement>
+            <plugins>
+                <plugin>
+                    <groupId>org.owasp</groupId>
+                    <artifactId>dependency-check-maven</artifactId>
+                    <version>${dependency-check.plugin.version}</version>
+                    <configuration>
+                        <suppressionFiles>
+                            <suppressionFile>${project.basedir}/dependency-check-suppression.xml</suppressionFile>
+                        </suppressionFiles>
+                    </configuration>
+                </plugin>
+            </plugins>
+        </pluginManagement>
     </build>
 
     <profiles>
@@ -625,6 +648,9 @@
                                     <failOnError>false</failOnError>
                                     <nvdMaxRetryCount>5</nvdMaxRetryCount>
                                     <format>HTML</format>
+                                    <suppressionFiles>
+                                        <suppressionFile>${project.basedir}/dependency-check-suppression.xml</suppressionFile>
+                                    </suppressionFiles>
                                 </configuration>
                             </execution>
                         </executions>

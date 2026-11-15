@@ -18,6 +18,11 @@ spring:
         default-page-size: 20
         max-page-size: 100
 
+  messages:
+    basename: messages
+    encoding: UTF-8
+    fallback-to-system-locale: false
+
   profiles:
     active: ${SPRING_PROFILES_ACTIVE:dev}
 
@@ -53,7 +58,7 @@ spring:
                 scope: openid
 
 bot:
-  enabled: ${BOT_ENABLED:false}
+  enabled: ${TELEGRAM_BOT_ENABLED:false}
   token: ${TELEGRAM_BOT_TOKEN}
   username: ${TELEGRAM_BOT_USERNAME}
 
@@ -117,7 +122,13 @@ vpn:
     profile-description: ${PROFILE_DESCRIPTION:}
     support-url: ${SUPPORT_URL:}
     profile-web-page-url: ${PROFILE_WEB_PAGE_URL:}
+    subscription-base-url: ${SUBSCRIPTION_BASE_URL:}
+    api-domain: ${API_DOMAIN:}
     profile-update-interval: ${PROFILE_UPDATE_INTERVAL:24}
 
 encryption:
   key: ${ENCRYPTION_KEY:DevKey12345DevKey12345DevKey1234}
+
+geo:
+  api-url: ${GEO_IP_API_URL:https://ip-api.com/json/}
+  timeout-ms: ${GEO_IP_TIMEOUT_MS:1500}

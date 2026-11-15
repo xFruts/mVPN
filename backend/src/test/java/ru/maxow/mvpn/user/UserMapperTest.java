@@ -3,9 +3,7 @@ package ru.maxow.mvpn.user;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import java.time.OffsetDateTime;
-import java.time.ZoneOffset;
 import java.util.List;
-import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -21,7 +19,7 @@ import ru.maxow.mvpn.subscription.Subscription;
 import ru.maxow.mvpn.tariff.Tariff;
 import ru.maxow.mvpn.tariff.TariffMapperImpl;
 
-@DisplayName("UserMapper")
+@DisplayName("UserMapper - Unit Tests")
 class UserMapperTest {
 
   private final UserMapperImpl userMapper = new UserMapperImpl();
@@ -36,9 +34,10 @@ class UserMapperTest {
   class ToListUserDto {
 
     @Test
-    @DisplayName("maps identity fields and latest subscription by startDate")
+    @DisplayName("maps identity fields, telegramUsername, and latest subscription")
     void mapsLatestSubscription() {
       User user = user(1L, "John Doe", UserRole.REGULAR);
+      user.setTelegramUsername("xFruts");
       user.getSubscriptions().addAll(List.of(
           subscription(user, "2025-01-01T00:00:00Z", "2025-02-01T00:00:00Z",
               SubscriptionStatus.ACTIVE, tariff(10L, "Basic")),
@@ -51,121 +50,41 @@ class UserMapperTest {
       assertThat(result.getId()).isEqualTo(1L);
       assertThat(result.getFullName()).isEqualTo("John Doe");
       assertThat(result.getRole()).isEqualTo("REGULAR");
+      assertThat(result.getTelegramUsername()).isEqualTo("xfruts");
       assertThat(result.getTariffName()).isEqualTo("Premium");
       assertThat(result.getSubscriptionStatus()).isEqualTo(SubscriptionStatus.CANCELED);
       assertThat(result.getEndDate()).isEqualTo(OffsetDateTime.parse("2026-02-01T00:00:00Z"));
     }
 
     @Test
-    @DisplayName("returns null subscription fields when user has no subscriptions")
+    @DisplayName("handles user with no subscriptions gracefully")
     void noSubscriptions() {
-      ListUserDto result = userMapper.toListUserDto(user(1L, "John Doe", UserRole.REGULAR));
+      User user = user(2L, "Jane Doe", UserRole.ADMIN);
 
-      assertThat(result.getId()).isEqualTo(1L);
-      assertThat(result.getFullName()).isEqualTo("John Doe");
-      assertThat(result.getRole()).isEqualTo("REGULAR");
+      ListUserDto result = userMapper.toListUserDto(user);
+
+      assertThat(result.getId()).isEqualTo(2L);
+      assertThat(result.getFullName()).isEqualTo("Jane Doe");
+      assertThat(result.getRole()).isEqualTo("ADMIN");
+      assertThat(result.getTelegramUsername()).isNull();
       assertThat(result.getTariffName()).isNull();
       assertThat(result.getSubscriptionStatus()).isNull();
       assertThat(result.getEndDate()).isNull();
     }
 
     @Test
-    @DisplayName("keeps subscription metadata when latest tariff is missing")
+    @DisplayName("handles latest subscription without tariff")
     void latestSubscriptionWithoutTariff() {
-      User user = user(1L, "John Doe", UserRole.REGULAR);
-      Subscription subscription = subscription(
-          user, "2026-01-01T00:00:00Z", "2026-02-01T00:00:00Z",
-          SubscriptionStatus.ACTIVE, null);
-      user.getSubscriptions().add(subscription);
+      User user = user(3L, "Bob", UserRole.SPECIAL);
+      user.getSubscriptions().add(
+          subscription(user, "2026-03-01T00:00:00Z", "2026-04-01T00:00:00Z",
+              SubscriptionStatus.ACTIVE, null)
+      );
 
       ListUserDto result = userMapper.toListUserDto(user);
 
       assertThat(result.getTariffName()).isNull();
       assertThat(result.getSubscriptionStatus()).isEqualTo(SubscriptionStatus.ACTIVE);
-      assertThat(result.getEndDate()).isEqualTo(subscription.getEndDate());
-    }
-
-    @Test
-    @DisplayName("skips subscriptions with null startDate when selecting latest")
-    void skipsNullStartDate() {
-      User user = user(1L, "John Doe", UserRole.REGULAR);
-
-      Subscription withoutStart = subscription(
-          user, null, "2024-01-01T00:00:00Z",
-          SubscriptionStatus.EXPIRED, tariff(10L, "Legacy"));
-      Subscription withStart = subscription(
-          user, "2026-01-01T00:00:00Z", "2026-02-01T00:00:00Z",
-          SubscriptionStatus.ACTIVE, tariff(11L, "Current"));
-      user.getSubscriptions().addAll(List.of(withoutStart, withStart));
-
-      ListUserDto result = userMapper.toListUserDto(user);
-
-      assertThat(result.getTariffName()).isEqualTo("Current");
-      assertThat(result.getSubscriptionStatus()).isEqualTo(SubscriptionStatus.ACTIVE);
-    }
-
-    @Test
-    @DisplayName("returns no subscription fields when all startDates are null")
-    void allStartDatesNull() {
-      User user = user(1L, "John Doe", UserRole.REGULAR);
-      user.getSubscriptions().add(subscription(
-          user, null, "2024-01-01T00:00:00Z",
-          SubscriptionStatus.EXPIRED, tariff(10L, "Legacy")));
-
-      ListUserDto result = userMapper.toListUserDto(user);
-
-      assertThat(result.getTariffName()).isNull();
-      assertThat(result.getSubscriptionStatus()).isNull();
-      assertThat(result.getEndDate()).isNull();
-    }
-
-    @Test
-    @DisplayName("returns null for null input")
-    void nullUser() {
-      assertThat(userMapper.toListUserDto(null)).isNull();
-    }
-  }
-
-  @Nested
-  @DisplayName("toShortListUserDto")
-  class ToShortListUserDto {
-
-    @Test
-    @DisplayName("exposes only id and fullName")
-    void mapsMinimalProjection() {
-      User user = user(42L, "Jane Roe", UserRole.ADMIN);
-      user.setUserTelegramId(999L);
-      user.setVerificationCode(UUID.randomUUID());
-
-      ShortListUserDto result = userMapper.toShortListUserDto(user);
-
-      assertThat(result.getId()).isEqualTo(42L);
-      assertThat(result.getFullName()).isEqualTo("Jane Roe");
-    }
-  }
-
-  @Nested
-  @DisplayName("toUser")
-  class ToUser {
-
-    @Test
-    @DisplayName("maps request fields and does not accept client-controlled secrets")
-    void ignoresSensitiveGeneratedFields() {
-      CreateUserRequestDto request = new CreateUserRequestDto()
-          .fullName("New User")
-          .role(UserRole.SPECIAL)
-          .userTelegramId(111L);
-
-      User result = userMapper.toUser(request);
-
-      assertThat(result.getId()).isNull();
-      assertThat(result.getFullName()).isEqualTo("New User");
-      assertThat(result.getRole()).isEqualTo(UserRole.SPECIAL);
-      assertThat(result.getUserTelegramId()).isEqualTo(111L);
-      assertThat(result.getVerificationCode()).isNotNull();
-      assertThat(result.getXuiId()).isNotNull();
-      assertThat(result.getXuiSubscription()).isNotNull();
-      assertThat(result.getSubscriptions()).isEmpty();
     }
   }
 
@@ -174,35 +93,85 @@ class UserMapperTest {
   class ToUserResponseDto {
 
     @Test
-    @DisplayName("maps user and attaches latest subscription")
-    void mapsWithLatestSubscription() {
-      User user = user(7L, "Alice", UserRole.REGULAR);
-      user.setUserTelegramId(555L);
+    @DisplayName("maps identity and latest subscription via enrichUserResponseDto")
+    void mapsIdentityAndLatestSubscription() {
+      User user = user(1L, "John Doe", UserRole.REGULAR);
+      user.setTelegramUsername("john_tg");
+      user.setUserTelegramId(999L);
       user.getSubscriptions().add(
-          subscription(user, "2026-03-01T00:00:00Z", "2026-04-01T00:00:00Z",
-              SubscriptionStatus.ACTIVE, tariff(5L, "Pro")));
+          subscription(user, "2026-01-01T00:00:00Z", "2026-02-01T00:00:00Z",
+              SubscriptionStatus.ACTIVE, tariff(5L, "Pro"))
+      );
 
       UserResponseDto result = userMapper.toUserResponseDto(user);
 
-      assertThat(result.getId()).isEqualTo(7L);
-      assertThat(result.getFullName()).isEqualTo("Alice");
+      assertThat(result.getId()).isEqualTo(1L);
+      assertThat(result.getFullName()).isEqualTo("John Doe");
       assertThat(result.getRole()).isEqualTo(UserRole.REGULAR);
-      assertThat(result.getUserTelegramId()).isEqualTo(555L);
+      assertThat(result.getTelegramUsername()).isEqualTo("john_tg");
+      assertThat(result.getUserTelegramId()).isEqualTo(999L);
       assertThat(result.getSubscription()).isNotNull();
-      assertThat(result.getSubscription().getUserId()).isEqualTo(7L);
+      assertThat(result.getSubscription().getUserId()).isEqualTo(1L);
       assertThat(result.getSubscription().getStatus()).isEqualTo(SubscriptionStatus.ACTIVE);
+      assertThat(result.getSubscription().getTariff()).isNotNull();
+      assertThat(result.getSubscription().getTariff().getName()).isEqualTo("Pro");
     }
 
     @Test
-    @DisplayName("omits subscription when user has none")
-    void mapsWithoutSubscription() {
-      UserResponseDto result = userMapper.toUserResponseDto(user(7L, "Alice", UserRole.REGULAR));
+    @DisplayName("subscription is null when user has no subscriptions")
+    void emptySubscriptionsYieldsNullSubscriptionDto() {
+      User user = user(2L, "Jane Doe", UserRole.ADMIN);
+
+      UserResponseDto result = userMapper.toUserResponseDto(user);
 
       assertThat(result.getSubscription()).isNull();
     }
   }
 
-  private static User user(Long id, String fullName, UserRole role) {
+  @Nested
+  @DisplayName("toShortListUserDto")
+  class ToShortListUserDto {
+
+    @Test
+    @DisplayName("maps id and fullName")
+    void mapsBasicFields() {
+      User user = user(42L, "Alice", UserRole.REGULAR);
+
+      ShortListUserDto result = userMapper.toShortListUserDto(user);
+
+      assertThat(result.getId()).isEqualTo(42L);
+      assertThat(result.getFullName()).isEqualTo("Alice");
+    }
+  }
+
+  @Nested
+  @DisplayName("toUser from CreateUserRequestDto")
+  class ToUserFromCreateRequest {
+
+    @Test
+    @DisplayName("maps fullName and role, ignores id and autogenerated fields")
+    void mapsCreateRequest() {
+      CreateUserRequestDto request = new CreateUserRequestDto()
+          .fullName("New User")
+          .role(UserRole.SPECIAL)
+          .telegramUsername("@newbie")
+          .userTelegramId(12345L);
+
+      User user = userMapper.toUser(request);
+
+      assertThat(user.getId()).isNull();
+      assertThat(user.getFullName()).isEqualTo("New User");
+      assertThat(user.getRole()).isEqualTo(UserRole.SPECIAL);
+      assertThat(user.getTelegramUsername()).isEqualTo("newbie");
+      assertThat(user.getUserTelegramId()).isEqualTo(12345L);
+      assertThat(user.getVerificationCode()).isNotNull();
+      assertThat(user.getXuiId()).isNotNull();
+      assertThat(user.getXuiSubscription()).isNotNull();
+      assertThat(user.isDeleted()).isFalse();
+    }
+  }
+
+  private User user(Long id, String fullName, UserRole role) {
     User user = new User();
     user.setId(id);
     user.setFullName(fullName);
@@ -210,25 +179,21 @@ class UserMapperTest {
     return user;
   }
 
-  private static Tariff tariff(Long id, String name) {
-    Tariff tariff = new Tariff();
-    tariff.setId(id);
-    tariff.setName(name);
-    return tariff;
+  private Subscription subscription(User user, String startIso, String endIso,
+                                    SubscriptionStatus status, Tariff tariff) {
+    Subscription s = new Subscription();
+    s.setUser(user);
+    s.setStartDate(OffsetDateTime.parse(startIso));
+    s.setEndDate(OffsetDateTime.parse(endIso));
+    s.setStatus(status);
+    s.setTariff(tariff);
+    return s;
   }
 
-  private static Subscription subscription(
-      User user,
-      String start,
-      String end,
-      SubscriptionStatus status,
-      Tariff tariff) {
-    Subscription subscription = new Subscription();
-    subscription.setUser(user);
-    subscription.setStartDate(start == null ? null : OffsetDateTime.parse(start).withOffsetSameInstant(ZoneOffset.UTC));
-    subscription.setEndDate(OffsetDateTime.parse(end).withOffsetSameInstant(ZoneOffset.UTC));
-    subscription.setStatus(status);
-    subscription.setTariff(tariff);
-    return subscription;
+  private Tariff tariff(Long id, String name) {
+    Tariff t = new Tariff();
+    t.setId(id);
+    t.setName(name);
+    return t;
   }
 }

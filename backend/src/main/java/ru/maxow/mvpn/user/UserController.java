@@ -35,6 +35,11 @@ public class UserController implements UsersApi {
   }
 
   @Override
+  public UserResponseDto getUserById(Long userId) {
+    return userService.findById(userId);
+  }
+
+  @Override
   public UserResponseDto createUser(CreateUserRequestDto createUserRequestDto) {
     UserResponseDto createdUser = userService.createUser(createUserRequestDto);
     log.info("User created: id={}", createdUser.getId());
@@ -44,18 +49,13 @@ public class UserController implements UsersApi {
   @Override
   public UserResponseDto updateUser(Long userId, UpdateUserRequestDto updateUserRequestDto) {
     UserResponseDto updatedUser = userService.updateUser(userId, updateUserRequestDto);
-    log.info("User updated: id={}", updatedUser.getId());
+    log.debug("User updated: id={}", updatedUser.getId());
     return updatedUser;
   }
 
   @Override
   public void deleteUser(Long userId) {
     userService.deleteUserById(userId);
-  }
-
-  @Override
-  public UserResponseDto getUserById(Long userId) {
-    return userService.findById(userId);
   }
 
   @Override

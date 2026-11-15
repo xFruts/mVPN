@@ -7,8 +7,11 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import ru.maxow.mvpn.model.UserRole;
 
-
-public interface UserRepository extends JpaRepository<User, Long>, JpaSpecificationExecutor<User> {
+/**
+ * Spring Data JPA репозиторий для сущности {@link User}.
+ */
+public interface UserRepository
+    extends JpaRepository<User, Long>, JpaSpecificationExecutor<User> {
 
   Optional<User> findByVerificationCode(UUID code);
 
@@ -17,6 +20,8 @@ public interface UserRepository extends JpaRepository<User, Long>, JpaSpecificat
   boolean existsByFullName(String fullName);
 
   Optional<User> findByUserTelegramId(Long telegramId);
+
+  Optional<User> findByTelegramUsernameIgnoreCase(String telegramUsername);
 
   List<User> findAllByRole(UserRole role);
 

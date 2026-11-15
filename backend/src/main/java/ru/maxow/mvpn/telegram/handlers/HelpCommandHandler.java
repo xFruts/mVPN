@@ -1,42 +1,59 @@
 package ru.maxow.mvpn.telegram.handlers;
 
 import java.util.List;
+import java.util.Locale;
+import lombok.AccessLevel;
+import lombok.RequiredArgsConstructor;
+import lombok.experimental.FieldDefaults;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
+import org.telegram.telegrambots.meta.api.methods.BotApiMethod;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.Update;
+import ru.maxow.mvpn.telegram.service.TelegramKeyboardFactory;
+import ru.maxow.mvpn.telegram.service.TelegramLocaleResolver;
+import ru.maxow.mvpn.telegram.service.TelegramMessageFormatter;
+import ru.maxow.mvpn.telegram.service.TelegramUserService;
+import ru.maxow.mvpn.telegram.util.TelegramUpdateUtils;
 
 /**
- * Handler for /help command.
+ * Обработчик команды справки и инструкций (/help).
  */
 @Component
-@Order(1)
+@Order(6)
+@RequiredArgsConstructor
+@FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class HelpCommandHandler implements CommandHandler {
+
+  TelegramUserService userService;
+  TelegramMessageFormatter messageFormatter;
+  TelegramKeyboardFactory keyboardFactory;
+
   @Override
   public boolean supports(Update update) {
-    return update.hasMessage()
-        && update.getMessage().hasText()
-        && update.getMessage().getText().startsWith("/help");
+    if (!update.hasMessage() || !update.getMessage().hasText()) {
+      return false;
+    }
+    String text = update.getMessage().getText().trim();
+    return keyboardFactory.matchesButton(text, TelegramKeyboardFactory.KEY_BTN_HELP)
+        || text.startsWith("/help");
   }
 
   @Override
-  public List<SendMessage> handle(Update update) {
-    Long chatId = update.getMessage().getChatId();
+  public List<BotApiMethod<?>> handle(Update update) {
+    Long chatId = TelegramUpdateUtils.extractChatId(update);
+    Locale locale = TelegramLocaleResolver.resolveLocale(update);
+    String username = TelegramUpdateUtils.extractUsername(update);
+    boolean isAuthenticated = userService.findAuthenticatedUser(chatId, username).isPresent();
+    String text = messageFormatter.formatHelp(isAuthenticated, locale);
 
-    String text = """
-            Данный бот предназначен для предоставления доступа к VPN-сервису.
-            Для получения доступа необходимо авторизоваться с помощью кода,
-            который можно получить у администратора своего vpn сервиса.
-            После успешной авторизации вам будут доступны команды для управления вашим VPN-доступом.
-            Если у вас возникнут вопросы, пожалуйста, обратитесь к администратору.
-            
-            Список доступных команд:
-            /auth - Ввести код авторизации, полученный от администратора
-            """;
     return List.of(
         SendMessage.builder()
             .chatId(chatId.toString())
             .text(text)
+            .replyMarkup(isAuthenticated
+                ? keyboardFactory.buildMainMenuKeyboard(locale)
+                : keyboardFactory.buildAuthKeyboard(locale))
             .build()
     );
   }

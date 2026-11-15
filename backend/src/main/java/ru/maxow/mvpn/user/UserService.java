@@ -1,6 +1,7 @@
 package ru.maxow.mvpn.user;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 import org.springframework.transaction.annotation.Transactional;
 import ru.maxow.mvpn.model.CreateUserRequestDto;
@@ -10,6 +11,9 @@ import ru.maxow.mvpn.model.UpdateUserRequestDto;
 import ru.maxow.mvpn.model.UserResponseDto;
 import ru.maxow.mvpn.model.UserRole;
 
+/**
+ * Интерфейс сервиса управления пользователями.
+ */
 public interface UserService {
 
   PageListUserDto findAllAsPage(Integer page, Integer size, List<String> sort,
@@ -35,6 +39,10 @@ public interface UserService {
   void updateUserTelegramId(UUID code, Long telegramId);
 
   User findByTelegramId(Long telegramId);
+
+  Optional<User> findByTelegramUsername(String telegramUsername);
+
+  void bindTelegramIdToUser(Long userId, Long telegramId);
 
   List<User> getUsersByTelegramIds(List<Long> ids);
 

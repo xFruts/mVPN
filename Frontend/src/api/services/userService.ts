@@ -30,6 +30,7 @@ export const UserService = {
         return {
             fullName: raw.fullName,
             userTelegramId: raw.userTelegramId,
+            telegramUsername: raw.telegramUsername,
             role: raw.role as UserRole,
             startDate: raw.subscription?.startDate || "",
             subscriptionEndDate: raw.subscription?.endDate || "",

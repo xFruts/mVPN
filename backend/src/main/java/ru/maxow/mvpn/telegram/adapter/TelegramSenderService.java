@@ -7,11 +7,17 @@ import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
+import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboard;
 import org.telegram.telegrambots.meta.bots.AbsSender;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
+import ru.maxow.mvpn.telegram.util.TelegramConstants;
 
 /**
- * Service for sending messages with absSender via Telegram bot.
+ * Сервис отправки сообщений в Telegram через {@link AbsSender}.
+ *
+ * <p>При {@code bot.enabled=false} (например, в тестах или headless-режиме)
+ * бин {@link VpnBot} не создается, и {@code absSender} остается {@code null}.
+ * В этом случае вызовы отправки сообщений безопасно пропускаются.
  */
 @Service
 @FieldDefaults(level = AccessLevel.PRIVATE)
@@ -19,23 +25,63 @@ import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 @Setter
 @RequiredArgsConstructor
 public class TelegramSenderService {
+
   AbsSender absSender;
 
   /**
-   * Send message to chat.
+   * Отправляет текстовое сообщение в указанный чат.
    *
-   * @param chatId chat id
-   * @param text   message text
+   * @param chatId идентификатор чата
+   * @param text   текст сообщения
    */
   public void sendMessage(String chatId, String text) {
-    SendMessage sendMessage = SendMessage.builder()
+    sendMessage(chatId, text, null);
+  }
+
+  /**
+   * Отправляет сообщение с инлайн-клавиатурой в указанный чат.
+   *
+   * @param chatId      идентификатор чата
+   * @param text        текст сообщения
+   * @param replyMarkup разметка инлайн-клавиатуры
+   */
+  public void sendMessage(String chatId, String text, ReplyKeyboard replyMarkup) {
+    if (absSender == null) {
+      log.debug("AbsSender не сконфигурирован, пропуск отправки в {}", maskChatId(chatId));
+      return;
+    }
+    SendMessage.SendMessageBuilder builder = SendMessage.builder()
         .chatId(chatId)
         .text(text)
-        .build();
-    try {
-      absSender.execute(sendMessage);
-    } catch (TelegramApiException e) {
-      log.error("Error while send scheduled message: {}", e.getMessage());
+        .parseMode(TelegramConstants.PARSE_MODE_MARKDOWN);
+    if (replyMarkup != null) {
+      builder.replyMarkup(replyMarkup);
     }
+    try {
+      absSender.execute(builder.build());
+    } catch (TelegramApiException e) {
+      if (e.getMessage() != null && e.getMessage().contains("can't parse entities")) {
+        try {
+          SendMessage plain = SendMessage.builder()
+              .chatId(chatId)
+              .text(text)
+              .replyMarkup(replyMarkup)
+              .build();
+          absSender.execute(plain);
+          return;
+        } catch (Exception ignored) {
+          // ignore
+        }
+      }
+      log.error("Error while sending Telegram message to {}: {}",
+          maskChatId(chatId), e.getMessage());
+    }
+  }
+
+  private String maskChatId(String chatId) {
+    if (chatId == null || chatId.length() <= 4) {
+      return "***";
+    }
+    return chatId.substring(0, 2) + "***" + chatId.substring(chatId.length() - 2);
   }
 }
