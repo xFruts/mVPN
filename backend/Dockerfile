@@ -3,10 +3,10 @@ FROM maven:3.9.6-eclipse-temurin-21 AS builder
 WORKDIR /build
 
 COPY pom.xml .
-RUN mvn -B -q dependency:go-offline
+RUN mvn -B -q dependency:resolve -Dmaven.wagon.http.retryHandler.count=5 || true
 
 COPY src ./src
-RUN mvn -B clean package -DskipTests && \
+RUN mvn -B clean package -DskipTests -Dmaven.wagon.http.retryHandler.count=5 && \
     mv target/*.jar /build/app.jar
 
 FROM eclipse-temurin:21-jre-jammy
