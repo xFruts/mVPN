@@ -1,22 +1,22 @@
-# AGENTS.md — mVPN Engineering Excellence & Operating Manual
+# AGENTS.md — Стандарты разработки и операционное руководство mVPN
 
-> **Scope**: This document defines the engineering standards, architecture, security policies, and operational directives for the **mVPN** platform. All human engineers and AI agents operating in this repository must strictly adhere to these guidelines, which align with Google / FAANG engineering, security, and SRE benchmarks.
+> **Область применения**: Данный документ определяет инженерные стандарты, архитектурные принципы, политики безопасности и операционные директивы для платформы **mVPN**. Все инженеры и AI-агенты, работающие в этом репозитории, обязаны строго следовать данным правилам, соответствующим стандартам разработки, безопасности и SRE уровня Google / FAANG.
 
 ---
 
-## 1. System Vision & Architecture Overview
+## 1. Концепция системы и обзор архитектуры
 
-**mVPN** is an enterprise-grade, microservice-based VPN orchestrator and subscription management platform built with high-throughput event streaming, distributed object storage, automated node synchronization, and zero-trust authentication.
+**mVPN** — это микросервисная платформа корпоративного уровня для управления VPN-узлами и подписками пользователей с высокопроизводительным событийным обменом сообщениями, распределенным объектным хранилищем, автоматической синхронизацией узлов и аутентификацией Zero-Trust.
 
 ```
                       +---------------------------------------+
-                      |         Public Ingress / Clients       |
-                      |   (Web Frontend, Telegram Bot, VPN)    |
+                      |       Внешний трафик / Клиенты        |
+                      |   (Web Frontend, Telegram-бот, VPN)   |
                       +-------------------+-------------------+
                                           | HTTPS (:443)
                                           v
                       +---------------------------------------+
-                      |            Traefik v3 Proxy           |
+                      |            Прокси Traefik v3          |
                       |  (TLS ACME, Security Headers, Auth)   |
                       +---------+-------------------+---------+
                                 |                   |
@@ -28,217 +28,252 @@
        +--------------------+------------------------+-----------------------+
        |                    |                        |                       |
 +------v------+      +------v-------+        +-------v-------+       +-------v-------+
-|  PostgreSQL |      | Apache Kafka |        |   MinIO S3    |       |  3X-UI Nodes  |
-|  (Liquibase)|      | (Event Bus)  |        | (Keys/Configs)|       |  (VPN Panels) |
+|  PostgreSQL |      | Apache Kafka |        |   MinIO S3    |       |  Узлы 3X-UI   |
+|  (Liquibase)|      | (Event Bus)  |        | (Keys/Configs)|       |  (VPN-панели) |
 +-------------+      +--------------+        +---------------+       +---------------+
                                  \                  /
                                   +--------+-------+
-                                           | Telemetry
+                                           | Телеметрия
                     +----------------------v----------------------+
-                    | Central Observability (Prometheus / Loki)   |
-                    | Scraped via Prometheus Agent & Promtail     |
+                    | Центральный мониторинг (Prometheus / Loki)  |
+                    | Сбор через Prometheus Agent и Promtail      |
                     +---------------------------------------------+
 ```
 
-### Core Technology Stack
+### Основной технологический стек
 
-| Layer | Technologies | Standards / Guidelines |
+| Слой | Технологии | Стандарты и регламенты |
 |---|---|---|
-| **Backend** | Java 21, Spring Boot 3.4+, Maven | Google Java Style, Immutability, MapStruct, Lombok |
-| **Frontend** | React 19, TypeScript 5.8+, Vite 7, Tailwind | Strict TypeScript, Functional Components, Zustand, Zod |
-| **Data & Persistence** | PostgreSQL 15, Liquibase, Spring Data JPA | Zero DDL auto-generation in prod, AES-256-GCM encryption |
-| **Messaging & Events** | Apache Kafka (KRaft mode) 7.6+ | Event-driven architecture, idempotent consumer/producer |
-| **Storage & Remote** | MinIO (S3 API), JSch (SSH2), 3X-UI REST | Encrypted SSH keys, secure object lifecycles |
-| **Auth & Identity** | Keycloak OIDC / OAuth2 Resource Server | JWT Bearer verification, RBAC (`VPN_ADMIN`), check-sso |
-| **Ingress & Gateway** | Traefik v3.6 | TLS termination, strict router priority, security headers |
-| **Observability** | Micrometer, Prometheus Agent v3, Promtail 3.3, Loki | Golden Signals, MDC correlation IDs, multi-app label isolation |
-| **Quality & Security** | JaCoCo, Checkstyle, SpotBugs, OWASP Dep-Check, CodeQL | Strict CI gates, CVSS < 9 enforcement, no secrets in VCS |
+| **Backend** | Java 21, Spring Boot 3.4+, Maven | Google Java Style, иммутабельность, MapStruct, Lombok |
+| **Frontend** | React 19, TypeScript 5.8+, Vite 7, Tailwind | Strict TypeScript, функциональные компоненты, Zustand, Zod |
+| **Данные и БД** | PostgreSQL 15, Liquibase, Spring Data JPA | Запрет auto-ddl в prod, шифрование AES-256-GCM |
+| **Сообщения и события** | Apache Kafka (режим KRaft) 7.6+ | Event-driven архитектура, идемпотентные consumer/producer |
+| **Хранилище и сеть** | MinIO (S3 API), JSch (SSH2), 3X-UI REST | Зашифрованные SSH-ключи, безопасный жизненный цикл объектов |
+| **Аутентификация** | Keycloak OIDC / OAuth2 Resource Server | Валидация JWT Bearer, RBAC (`VPN_ADMIN`), silent SSO |
+| **Шлюз и прокси** | Traefik v3.6 | TLS termination, строгий приоритет роутеров, заголовки безопасности |
+| **Наблюдаемость** | Micrometer, Prometheus Agent v3, Promtail 3.3, Loki | Golden Signals, MDC correlation ID, изоляция лейблов приложений |
+| **Качество и безопасность** | JaCoCo, Checkstyle, SpotBugs, OWASP Dep-Check, CodeQL | Строгие гейты CI, блокировка при CVSS >= 9, запрет секретов в VCS |
 
 ---
 
-## 2. Repository Topology & Boundaries
+## 2. Структура репозитория
 
 ```
 mVPN/
 ├── .github/
-│   └── workflows/          # CI/CD: ci.yml (tests/lint/quality), security.yml (CodeQL/OWASP)
-├── backend/                # Spring Boot service
-│   ├── src/main/java/      # Domain-driven Java modules (user, server, xui, tariff, etc.)
-│   ├── src/main/resources/ # application*.yml, Liquibase changelogs, OpenAPI contracts
-│   ├── src/test/java/      # JUnit 5 unit, integration, and contract tests
-│   ├── Dockerfile          # Multi-stage Eclipse Temurin 21 container (non-root javauser:1001)
-│   └── pom.xml             # Enforcer, JaCoCo, Checkstyle, SpotBugs, OpenAPI generator
+│   └── workflows/          # CI/CD: ci.yml (тесты/линтеры), security.yml (CodeQL/OWASP)
+├── backend/                # Spring Boot сервис
+│   ├── src/main/java/      # Доменные Java-пакеты (user, server, xui, tariff и др.)
+│   ├── src/main/resources/ # application*.yml, Liquibase миграции, контракты OpenAPI
+│   ├── src/test/java/      # JUnit 5 модульные, интеграционные и контрактные тесты
+│   ├── Dockerfile          # Multi-stage контейнер Eclipse Temurin 21 (non-root javauser:1001)
+│   └── pom.xml             # Enforcer, JaCoCo, Checkstyle, SpotBugs, OpenAPI генератор
 ├── Frontend/               # React 19 Single Page Application
 │   ├── src/
-│   │   ├── api/            # Centralized Axios client with Keycloak auth interceptor
-│   │   ├── pages/          # Route-level views (Dashboard, Users, Servers, Tariffs, etc.)
-│   │   ├── store/          # Zustand global state stores
-│   │   └── types/          # Strict TypeScript interface and enum models
-│   ├── Dockerfile          # Multi-stage build with Nginx Alpine static server
-│   └── package.json        # ESLint flat config, Prettier, TypeScript configuration
-├── prometheus/             # Prometheus Agent scraper config (metrics push to central mDash)
-├── loki/                   # Promtail file/container log collector config (logs push to central Loki)
-├── compose.dev.yml         # Local Docker development stack
-├── compose.prod.yml        # Production Docker orchestration (Traefik v3, SSL, healthchecks)
-└── AGENTS.md               # Master AI Agent & Engineering Directives (this file)
+│   │   ├── api/            # Централизованный Axios клиент с Keycloak интерцептором
+│   │   ├── pages/          # Страницы (Dashboard, Users, Servers, Tariffs и др.)
+│   │   ├── store/          # Глобальные хранилища Zustand
+│   │   └── types/          # Строгие модели интерфейсов и enum в TypeScript
+│   ├── Dockerfile          # Multi-stage сборка с Nginx Alpine
+│   └── package.json        # ESLint flat config, Prettier, конфигурация TypeScript
+├── prometheus/             # Конфиг скрейпера Prometheus Agent (отправка метрик в mDash)
+├── loki/                   # Конфиг сборщика логов Promtail (отправка логов в Loki)
+├── compose.dev.yml         # Локальный стек Docker для разработки
+├── compose.prod.yml        # Продакшн оркестрация Docker (Traefik v3, SSL, healthchecks)
+└── AGENTS.md               # Главное руководство для AI-агентов и инженеров (этот файл)
 ```
 
 ---
 
-## 3. High-Priority Directives for AI Agents
+## 3. Критические директивы для AI-агентов
 
-When interacting with this codebase, every agent **MUST** observe these non-negotiable rules:
+При работе с данной кодовой базой каждый агент **ОБЯЗАН** соблюдать следующие непреложные правила:
 
-1. **Contract-First (API First)**:
-   - All REST contracts originate in [`backend/src/main/resources/static/api/openapi.yaml`](file:///E:/Programs/Java/mVPN/backend/src/main/resources/static/api/openapi.yaml).
-   - **NEVER** edit files under `backend/target/generated-sources` or manually modify files in `ru.maxow.mvpn.api` / `ru.maxow.mvpn.model`.
-   - Always update the OpenAPI YAML spec first, then regenerate models via `mvn compile` or `./mvnw compile`.
-2. **Entity & DTO Segregation**:
-   - JPA entities (`@Entity`) must **NEVER** cross the boundary into Controllers, REST responses, or Kafka event payloads.
-   - Use MapStruct mappers (`*Mapper.java`) with unmapped target checks to convert between internal entities and external DTOs.
-3. **Immutability & Safety**:
-   - Prefer immutable data structures. Annotate Spring services and components with `@RequiredArgsConstructor` and `@FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)`.
-   - Avoid mutable global state. Use Java 21 `record` types for internal carrier objects, value objects, and event messages.
-4. **Zero Secret Leakage**:
-   - Never commit tokens, passwords, private keys, or API credentials into source code, YAML configs, or Dockerfiles.
-   - All secrets must be referenced via environment variables `${VAR_NAME}` in configurations with secure fallbacks or required bindings.
-5. **No Regressions in Quality Gates**:
-   - Code must pass Checkstyle (Google Java Style), SpotBugs, JaCoCo code coverage, and ESLint without warnings.
-   - Never use `-DskipTests` or `-DskipSecurityScan` in production pipelines or pull requests.
-6. **Code Comment Discipline & Zero Noise**:
-   - Code must be self-documenting through expressive naming and clean abstractions.
-   - **NEVER** write redundant comments or JavaDoc that merely rephrase method/field names (e.g., `/** Returns download bytes */ public long getDownloadBytes()`).
-   - Comments must be concise and reserved strictly for:
-     - The **WHY**, not the **WHAT** (business constraints, non-obvious domain rules, intentional design trade-offs).
-     - External protocol quirks (3X-UI API nuances, VLESS stream settings, cryptographic IV constraints), or workarounds for third-party bugs.
-   - If a method needs a paragraph of explanation to be understood, prefer refactoring into smaller, clearly named functions over commenting.
-7. **Commit Hygiene & No Micro-Commit Spam**:
-   - **NEVER** pollute Git history with dozens of micro-commits (`fix`, `fix test`, `typo`, `wip`).
-   - Prior to merging into `main`/`master`, squash or amend iterative fixes into the parent commit where those files/features originated (`git commit --fixup`, interactive rebase).
-   - Only create a new commit when introducing a distinctly new capability or touching a separate responsibility. Keep the branch history atomic, clean, and linear.
+1. **Contract-First (API-First подход)**:
+   - Все контракты REST определяются в [`backend/src/main/resources/static/api/openapi.yaml`](file:///E:/Programs/Java/mVPN/backend/src/main/resources/static/api/openapi.yaml).
+   - **НИКОГДА** не редактируйте вручную файлы в `backend/target/generated-sources` или сгенерированные файлы в `ru.maxow.mvpn.api` / `ru.maxow.mvpn.model`.
+   - Всегда сначала изменяйте спецификацию OpenAPI YAML, а затем запускайте генерацию моделей через `mvn compile` или `./mvnw compile`.
+2. **Разделение сущностей и DTO**:
+   - JPA-сущности (`@Entity`) **НИКОГДА** не должны проникать в контроллеры, ответы REST API или полезную нагрузку сообщений Kafka.
+   - Для взаимной конвертации сущностей и внешних DTO используйте мапперы MapStruct (`*Mapper.java`) с обязательной проверкой немаппированных полей.
+3. **Иммутабельность и безопасность типов**:
+   - Предпочитайте неизменяемые структуры данных. Аннотируйте Spring-сервисы и компоненты аннотациями `@RequiredArgsConstructor` и `@FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)`.
+   - Избегайте мутабельного глобального состояния. Используйте типы Java 21 `record` для внутренних носителей данных, объектов-значений (Value Objects) и событий.
+4. **Абсолютный запрет утечки секретов**:
+   - Никогда не коммитьте токены, пароли, приватные ключи или учетные данные API в исходный код, YAML-конфиги или Dockerfile.
+   - Все секреты должны внедряться исключительно через переменные окружения `${VAR_NAME}`.
+5. **Предотвращение регрессий и гейты качества**:
+   - Код обязан проходить проверки Checkstyle (Google Java Style), SpotBugs, покрытие JaCoCo и линтер ESLint без ошибок и предупреждений.
+   - Запрещено использовать флаги `-DskipTests` или `-DskipSecurityScan` в пайплайнах и pull request.
+6. **Обязательный контроль предупреждений компилятора и IDE (без @SuppressWarnings)**:
+   - В процессе написания и рефакторинга кода обязательно проверять и сводить к нулю предупреждения компилятора и IDE/статических анализаторов.
+   - **СТРОГО ЗАПРЕЩЕНО** скрывать предупреждения с помощью аннотации `@SuppressWarnings` (включая `@SuppressWarnings("all")`, `@SuppressWarnings("unchecked")` и т.д.).
+   - Все проблемы должны исправляться по существу в самом коде: удаление неиспользуемых импортов, переменных и параметров, отказ от устаревших (deprecated) методов библиотек, безопасное приведение типов с проверкой шаблона `instanceof`, отказ от сырых типов (`Raw types`), отказ от использования `Optional<T>` в качестве параметров методов.
+7. **Культура комментариев и отсутствие шума**:
+   - Код должен быть самодокументируемым за счет выразительных имен и чистых абстракций.
+   - **НИКОГДА** не пишите избыточных комментариев или Javadoc, которые лишь дублируют имя метода или поля (например, `/** Возвращает размер */ public long getSize()`).
+   - Комментарии и Javadoc пишите **на русском языке** кратко и строго по делу:
+     - Описывайте **ПОЧЕМУ** сделано так, а не **ЧТО** делает строка кода (бизнес-ограничения, нетривиальные доменные правила, архитектурные компромиссы).
+     - Специфические особенности внешних протоколов (нюансы 3X-UI REST API, параметры потока VLESS, ограничения криптографических IV) или обход багов сторонних библиотек.
+   - Если метод требует длинного параграфа объяснений, сделайте рефакторинг на более мелкие, понятно названные функции.
+8. **Чистота Git-истории (отсутствие спам-коммитов)**:
+   - **НИКОГДА** не засоряйте историю коммитов микро-коммитами (`fix`, `fix test`, `typo`, `wip`).
+   - Сливайте мелкие правки в исходный коммит через интерактивный ребейз (`git commit --fixup`, `git rebase -i --autosquash`).
+   - Создавайте коммиты строго по стандартам Conventional Commits / FAANG: атомарно, с четким разделением ответственности.
+9. **Ограничение длины строк (Стандарт Google / FAANG)**:
+   - Строго соблюдайте ограничение **максимум 100 символов на строку** во всех Java-файлах и тестах согласно Google Java Style Guide (раздел 4.4).
+   - Любое выражение, сигнатура метода, лямбда, вызов логгера, аннотация или комментарий длиннее 100 символов должны переноситься на новую строку.
+   - Это гарантирует комфортный просмотр параллельных диффов (split diffs) в IDE без горизонтальной прокрутки.
+10. **Запрет хардкода строк и обязательная интернационализация (i18n)**:
+    - Запрещен любой хардкод пользовательских строк, сообщений бота, кнопок и системных ответов.
+    - Все пользовательские сообщения обязаны быть вынесены в `messages.properties` и дублироваться
+      во всех языковых пакетах (`messages_en.properties` и др.) без жестких fallback-строк в коде.
+11. **Запрет магических чисел**:
+    - Все числовые константы (таймауты, лимиты, порты, размеры пулов, множители байт) должны быть
+      объявлены как понятные константы (`static final`) или вынесены в `@ConfigurationProperties`.
+12. **Чистая архитектура и предотвращение антипаттерна God Object**:
+    - Строго следуйте принципу единственной ответственности (SRP). Запрещены перегруженные классы.
+    - Разделяйте сетевые вызовы, бизнес-логику, парсинг данных, форматирование UI и построение
+      клавиатур по отдельным специализированным сервисам и компонентам.
+13. **Проверка на мертворожденный и неиспользуемый код**:
+    - Перед сдачей работы агент обязан верифицировать, что каждый метод, параметр метода,
+      конструктор, поле и переменная реально вызываются и используются в коде или тестах.
+    - Неиспользуемые методы, конструкторы ("серый код" в IDE) и неиспользуемые параметры подлежат
+      безоговорочному удалению.
 
 ---
 
-## 4. Backend Engineering Standards (Java 21 / Spring Boot 3)
+## 4. Стандарты бэкенд-разработки (Java 21 / Spring Boot 3)
 
-### 4.1 Layered Architecture & Separation of Concerns
+### 4.1 Многослойная архитектура и разделение ответственности
 
-Each feature package (e.g. `ru.maxow.mvpn.server`, `ru.maxow.mvpn.user`) must strictly isolate responsibilities:
+Каждый функциональный пакет (`ru.maxow.mvpn.server`, `ru.maxow.mvpn.user` и др.) строго изолирует свои слои:
 
 ```
-[ HTTP / REST Ingress ] -> Controller (Implements generated OpenAPI interface)
-                                    |
-[ DTO Conversion ]      -> MapStruct Mapper
-                                    |
-[ Business Logic ]      -> Service / ServiceImpl (@Transactional boundaries)
-                                    |
-[ Data Access ]         -> Spring Data JPA Repository (Specifications, JpaRepository)
-                                    |
-[ Database ]            -> PostgreSQL (Liquibase managed schema)
+[ Входящий HTTP-запрос ] -> Controller (Реализует сгенерированный OpenAPI-интерфейс)
+                                      |
+[ Маппинг данных ]       -> MapStruct Mapper
+                                      |
+[ Бизнес-логика ]        -> Service / ServiceImpl (Границы @Transactional)
+                                      |
+[ Доступ к данным ]      -> Spring Data JPA Repository (Specifications, JpaRepository)
+                                      |
+[ База данных ]          -> PostgreSQL (Схема под управлением Liquibase)
 ```
 
-- **Controllers**: Thin orchestration layer. Validate requests via `@Valid`, delegate directly to Services, return DTOs with appropriate HTTP statuses.
-- **Services**: Enforce domain rules, manage transactional boundaries (`@Transactional(readOnly = true)` by default, explicitly `@Transactional` for writes), publish Kafka events, execute remote node updates.
-- **Repositories**: Standard Spring Data interfaces. Use `@EntityGraph` or explicit `JOIN FETCH` to eliminate N+1 query antipatterns.
-- **Entities**: Contain table mappings, JPA constraints, and `@Version` for optimistic locking where concurrent updates are expected.
+- **Контроллеры**: Тонкий оркестрационный слой. Валидируют запросы через `@Valid`, вызывают сервисы, возвращают DTO с соответствующими HTTP-статусами. Не содержат бизнес-логики.
+- **Сервисы**: Инкапсулируют бизнес-правила, управляют транзакциями (`@Transactional(readOnly = true)` по умолчанию, `@Transactional` явно для записи), отправляют события в Kafka, синхронизируют удаленные узлы.
+- **Репозитории**: Стандартные интерфейсы Spring Data. Используйте `@EntityGraph` или явные `JOIN FETCH`, исключая проблему N+1 запросов.
+- **Сущности (Entities)**: Содержат JPA-маппинги таблиц, валидационные ограничения и поле `@Version` для оптимистической блокировки при конкурентных обновлениях.
 
-### 4.2 Error Handling & RFC 7807 Standard
+### 4.2 Обработка ошибок (Стандарт RFC 7807)
 
-All uncaught exceptions are intercepted by [`GlobalExceptionHandler`](file:///E:/Programs/Java/mVPN/backend/src/main/java/ru/maxow/mvpn/util/exception/GlobalExceptionHandler.java).
-- **No Stack Traces**: Internal exception details or database stack traces must never be returned to the client.
-- **Correlation ID Tracking**: Every error response contains a `correlationId` retrieved from the SLF4J `MDC`. This ID is returned to the client and printed in server logs for SRE incident tracing.
-- **Explicit Domain Exceptions**:
+Все необработанные исключения перехватываются классом [`GlobalExceptionHandler`](file:///E:/Programs/Java/mVPN/backend/src/main/java/ru/maxow/mvpn/util/exception/GlobalExceptionHandler.java).
+- **Запрет Stack Trace**: Внутренние детали исключений и трейсы БД никогда не возвращаются клиенту.
+- **Трассировка через Correlation ID**: Каждый ответ об ошибке содержит `correlationId`, извлекаемый из `MDC` SLF4J. Этот ID возвращается клиенту и пишется в логи для расследования инцидентов.
+- **Явные доменные исключения**:
   - `NotFoundException` -> HTTP 404
   - `BadRequestException` / `MethodArgumentNotValidException` -> HTTP 400
   - `ResourceAlreadyExistsException` / `DataIntegrityViolationException` -> HTTP 409
   - `UnauthorizedException` -> HTTP 401
-  - `XuiUnavailableException` -> HTTP 503 (Service Temporarily Unavailable)
+  - `XuiUnavailableException` -> HTTP 503 (Сервис временно недоступен)
 
-### 4.3 Database Migrations & Cryptography
+### 4.3 Миграции базы данных и криптография
 
-1. **Liquibase Exclusivity**:
-   - `spring.jpa.hibernate.ddl-auto` must remain `validate` in production environments.
-   - All schema alterations, index additions, and table drops must be authored as reversible YAML/SQL changesets under `backend/src/main/resources/db/changelog/changes/`.
-   - Never alter an already committed and executed changeset; always create an incremental changeset.
-2. **Attribute Encryption (AES-256-GCM)**:
-   - Sensitive columns (such as node access tokens, passwords, and private parameters) must use JPA `@Convert(converter = AttributeEncryptor.class)`.
-   - The [`AttributeEncryptor`](file:///E:/Programs/Java/mVPN/backend/src/main/java/ru/maxow/mvpn/util/converter/AttributeEncryptor.java) applies authenticated encryption (`AES/GCM/NoPadding`) using a 12-byte cryptographically random IV generated via `SecureRandom` and a 128-bit authentication tag.
+1. **Управление схемой исключительно через Liquibase**:
+   - `spring.jpa.hibernate.ddl-auto` в продакшне обязан быть равен `validate`.
+   - Любые изменения схемы (таблицы, колонки, индексы, внешние ключи) оформляются как обратимые YAML/SQL-чейнджсеты в каталоге `backend/src/main/resources/db/changelog/changes/`.
+   - Каждый файл чейнджсета **ОБЯЗАН** быть зарегистрирован через `- include: file: ...` в мастер-файле `backend/src/main/resources/db/changelog/db.changelog-master.yaml`.
+   - Никогда не изменяйте уже примененный и закомиченный чейнджсет; создавайте новый инкрементальный файл миграции.
+2. **Синтаксические правила Preconditions**:
+   - В YAML-миграциях указывайте директиву `onFail: "MARK_RAN"` ровно **один раз** на блок `preConditions`. Запрещено дублировать `onFail` на одном уровне маппинга.
+   - Используйте `tableExists` при модификации существующих таблиц и `not: tableExists` при создании новых для гарантии идемпотентности.
+3. **Обязательное контрактное тестирование миграций**:
+   - Каждое изменение схемы верифицируется тестом `LiquibaseSchemaValidationTest`.
+   - Тест строго проверяет:
+     a) **Полноту мастер-чейнджсета**: Все файлы в `changes/` подключены в мастер-лог.
+     b) **Чистый запуск**: Liquibase успешно выполняется с нуля без ошибок синтаксиса.
+     c) **Валидацию JPA-схемы**: Spring запускается с `hibernate.ddl-auto: validate` для подтверждения 100% соответствия между сущностями `@Entity` и БД.
+4. **Шифрование конфиденциальных атрибутов (AES-256-GCM)**:
+   - Чувствительные поля (токены доступа узлов, пароли, параметры подключения) шифруются через `@Convert(converter = AttributeEncryptor.class)`.
+   - [`AttributeEncryptor`](file:///E:/Programs/Java/mVPN/backend/src/main/java/ru/maxow/mvpn/util/converter/AttributeEncryptor.java) использует аутентифицированное шифрование `AES/GCM/NoPadding` со случайным 12-байтным IV (`SecureRandom`) и 128-битным тегом аутентификации.
 
-### 4.4 Concurrency & Asynchronous Resilience
+### 4.4 Конкурентность и асинхронность
 
-- Use Java 21 Virtual Threads where applicable or bounded task executors (`ThreadPoolTaskExecutor`) with clear thread naming prefixes.
-- In background tasks (e.g. `ServerMonitoringServiceImpl`, subscription synchronizers):
-  - Isolate concurrent node checks to avoid locking database rows across remote network timeouts.
-  - Set explicit connection and read timeouts on all HTTP and SSH clients (`JSch`, `OkHttpClient`).
-
----
-
-## 5. Frontend Engineering Standards (React 19 / TypeScript 5)
-
-### 5.1 Strict Type System & Code Hygiene
-
-- **Strict Mode**: TypeScript strict mode is enabled. The use of `any` is strictly prohibited. Use `unknown` with type guards or schema validation (`zod`) when parsing uncertain payloads.
-- **API Client**: All network communication passes through [`Frontend/src/api/index.ts`](file:///E:/Programs/Java/mVPN/Frontend/src/api/index.ts). The client automatically handles:
-  - Base URL injection from Vite environment.
-  - JWT Bearer token attachment via the dynamic `setTokenGetter`.
-  - Automatic Keycloak token refresh before expiration (`updateToken(30)`).
-  - Normalized `ApiError` propagation with status codes.
-
-### 5.2 Component & State Patterns
-
-- **Functional Components**: Use standard functional components with hooks. Avoid class components.
-- **State Partitioning**:
-  - **Local UI state**: `useState`, `useReducer`.
-  - **Global application state**: Zustand stores (`Frontend/src/store/`). Stores must be modular and actions kept deterministic.
-  - **Authentication context**: Handled via `AdminContext` and `AuthProvider` with Keycloak silent SSO.
-- **Accessibility & Security**:
-  - Prevent XSS: Never utilize `dangerouslySetInnerHTML` without DOMPurify sanitization.
-  - Sanitize all outbound redirect URLs to avoid open-redirect vulnerabilities.
+- Применяйте виртуальные потоки Java 21 или пулы потоков с ограниченной очередью (`ThreadPoolTaskExecutor`) с понятными префиксами имен потоков.
+- В фоновых задачах (мониторинг серверов, синхронизация трафика):
+  - Изолируйте параллельные проверки узлов, чтобы не блокировать строки БД во время сетевых таймаутов.
+  - Устанавливайте явные таймауты подключения и чтения для всех HTTP- и SSH-клиентов.
 
 ---
 
-## 6. Security & Zero Trust Architecture
+## 5. Стандарты фронтенд-разработки (React 19 / TypeScript 5)
 
-### 6.1 Authentication & Authorization Matrix
+### 5.1 Строгая типизация и чистота кода
 
-1. **Keycloak OIDC Integration**:
-   - Spring Security acts as an OAuth2 Resource Server validating JWT signatures against Keycloak realm keys (`${KEYCLOAK_URL}/realms/mID`).
-   - Role claims are extracted from Keycloak token payload via `KeycloakRoleConverter`.
-2. **Access Control**:
-   - Management endpoints (`/v1/users/**`, `/v1/servers/**`, `/v1/tariffs/**`, `/v1/subscriptions/**`, `/v1/promocodes/**`, etc.) strictly require role **`ROLE_VPN_ADMIN`**.
-   - Public client endpoints (`/v1/config/**`) are scoped exclusively to user configuration download tokens and must never expose node credentials.
-   - Actuator endpoints (`/actuator/**`) are permitted internally for health and metrics, but **MUST BE BLOCKED** at the external proxy layer.
+- **Строгий режим TypeScript**: Строгий режим включен. Тип `any` категорически запрещен. Используйте `unknown` с type guards или валидацией схем (`zod`) при разборе внешних данных.
+- **Централизованный API-клиент**: Все сетевые запросы проходят через [`Frontend/src/api/index.ts`](file:///E:/Programs/Java/mVPN/Frontend/src/api/index.ts), который обеспечивает:
+  - Внедрение базового URL из окружения Vite.
+  - Подстановку JWT Bearer токена через динамический `setTokenGetter`.
+  - Автоматическое обновление токена Keycloak перед истечением срока (`updateToken(30)`).
+  - Нормализацию ошибок в объекты `ApiError` с HTTP-кодами.
 
-### 6.2 Container & Infrastructure Hardening
+### 5.2 Паттерны компонентов и состояния
 
-1. **Non-Root Execution**:
-   - Backend runs as system user `javauser` (UID 1001, GID 1001) with `no-install-recommends` packages.
-   - Any host directory bind-mounted into `/app/logs` or data volumes must possess ownership `1001:1001` (`chown -R 1001:1001 ./logs`).
-2. **Network Isolation**:
-   - `web_proxy`: Ingress network shared exclusively between Traefik, Frontend, and Backend.
-   - `internal`: Internal network connecting Backend to PostgreSQL, Apache Kafka, and MinIO. Database and message brokers must **never** be exposed on host ports in production.
-   - `monitoring`: Dedicated network isolating Prometheus Agent and Promtail with backend metric endpoints.
+- **Функциональные компоненты**: Используйте стандартные функциональные компоненты с хуками. Классовые компоненты запрещены.
+- **Разделение состояния**:
+  - **Локальное состояние UI**: `useState`, `useReducer`.
+  - **Глобальное состояние приложения**: Хранилища Zustand (`Frontend/src/store/`). Хранилища должны быть модульными, а действия — детерминированными.
+  - **Контекст аутентификации**: Обрабатывается через `AdminContext` и `AuthProvider` с поддержкой Keycloak silent SSO.
+- **Безопасность UI**:
+  - Защита от XSS: Запрещено использовать `dangerouslySetInnerHTML` без предварительной санитизации через DOMPurify.
+  - Проверяйте внешние URL-адреса перенаправления для исключения уязвимостей Open Redirect.
 
-### 6.3 Traefik v3 Reverse Proxy Guardrails
+---
 
-- **Unique Middleware Names**: Never declare the same Traefik middleware name across multiple containers. Define common middlewares on the proxy container or declare them uniquely to avoid silent router invalidation.
-- **Routing Rules**: Traefik v3 router expressions use backticks for values and negation with `!`:
+## 6. Безопасность и архитектура Zero-Trust
+
+### 6.1 Матрица аутентификации и авторизации
+
+1. **Интеграция с Keycloak OIDC**:
+   - Spring Security выступает в роли OAuth2 Resource Server, проверяя подписи JWT по открытым ключам realm Keycloak (`${KEYCLOAK_URL}/realms/mID`).
+   - Роли пользователя извлекаются из полезной нагрузки токена конвертером `KeycloakRoleConverter`.
+2. **Разграничение доступа**:
+   - Эндпоинты управления (`/v1/users/**`, `/v1/servers/**`, `/v1/tariffs/**`, `/v1/subscriptions/**`, `/v1/promocodes/**` и др.) требуют роль **`ROLE_VPN_ADMIN`**.
+   - Публичные клиентские эндпоинты (`/v1/config/**`) доступны только по уникальным токенам подписки пользователя и никогда не раскрывают учетные данные VPN-узлов.
+   - Эндпоинты Actuator (`/actuator/**`) разрешены во внутренней сети для метрик, но **ОБЯЗАНЫ БЫТЬ ЗАБЛОКИРОВАНЫ** на внешнем обратном прокси.
+   - Запросы `/favicon.ico` исключаются из фильтрации безопасности (`WebSecurityCustomizer`), предотвращая ложные срабатывания фильтра авторизации OAuth2.
+
+### 6.2 Защита контейнеров и сетевая изоляция
+
+1. **Запуск от непривилегированного пользователя**:
+   - Бэкенд исполняется под системным пользователем `javauser` (UID 1001, GID 1001).
+   - Любые директории хоста, монтируемые в контейнер (`/app/logs` или хранилища), должны иметь владельца `1001:1001` (`chown -R 1001:1001 ./logs`).
+2. **Изоляция сетей Docker**:
+   - `web_proxy`: Внешняя сеть, общая только для Traefik, Frontend и Backend.
+   - `internal`: Внутренняя сеть, соединяющая Backend с PostgreSQL, Apache Kafka и MinIO. База данных и брокер сообщений **никогда** не должны публиковать порты наружу в продакшне.
+   - `monitoring`: Выделенная сеть для сбора метрик Prometheus Agent и логов Promtail.
+
+### 6.3 Настройка обратного прокси Traefik v3
+
+- **Уникальные имена middleware**: Не объявляйте middleware с одинаковыми именами в разных контейнерах во избежание сбоев маршрутизации Traefik.
+- **Синтаксис маршрутов Traefik v3**: Используйте обратные кавычки для значений и оператор `!` для отрицания:
   ```yaml
   traefik.http.routers.mvpn-backend.rule: Host(`${API_DOMAIN}`) && !PathPrefix(`/actuator`)
   ```
-- **Security Headers**: Always enforce HTTP Strict Transport Security (HSTS), `contentTypeNosniff: true`, and `referrerPolicy: no-referrer`.
+- **Заголовки безопасности**: Всегда включайте HSTS, `contentTypeNosniff: true` и `referrerPolicy: no-referrer`.
 
 ---
 
-## 7. Observability, Logging & SRE Telemetry
+## 7. Мониторинг, логирование и телеметрия SRE
 
-### 7.1 Multi-Tenant Observability Isolation (Loki & Prometheus)
+### 7.1 Изоляция метрик и логов в мультитенантной среде (Loki и Prometheus)
 
-When mVPN shares a centralized Prometheus/Loki cluster (e.g. with other internal projects like `maudio`), **all metrics and logs must be strictly isolated by service and application tags**.
+При использовании общего кластера Prometheus/Loki с другими сервисами **все метрики и логи обязаны иметь теги сервиса и приложения**.
 
-- **Promtail Configuration (`loki/promtail-config.yml`)**:
-  - Global client `external_labels` must declare `app: mvpn` and `project: mvpn`.
-  - Scrape targets must append `app: mvpn` and `service: backend`.
+- **Конфигурация Promtail (`loki/promtail-config.yml`)**:
+  - Глобальный блок `external_labels` клиента содержит `app: mvpn` и `project: mvpn`.
+  - Цели сбора добавляют метки `app: mvpn` и `service: backend`.
   ```yaml
   clients:
     - url: https://${DASH_DOMAIN}/loki/api/v1/push
@@ -246,76 +281,98 @@ When mVPN shares a centralized Prometheus/Loki cluster (e.g. with other internal
         project: mvpn
         app: mvpn
   ```
-- **Prometheus Scraper (`prometheus/prometheus.yml`)**:
-  - Global `external_labels` must include `app: 'mvpn'` and `project: 'mvpn'`.
-  - Target labels must maintain `service: 'backend'` and `app: 'mvpn'`.
+- **Конфигурация Prometheus (`prometheus/prometheus.yml`)**:
+  - Глобальные метки `external_labels` содержат `app: 'mvpn'` и `project: 'mvpn'`.
+  - Метки таргета скрейпинга содержат `service: 'backend'` и `app: 'mvpn'`.
 
-### 7.2 LogQL Query Discipline in Dashboards
+### 7.2 Запросы LogQL в дашбордах
 
-In centralized Grafana/mDash log viewers, always scope queries with the application identifier:
+В Grafana/mDash всегда фильтруйте логи по приложению:
 ```logql
 {app="mvpn", service=~"backend|db|prometheus|promtail|frontend"}
 ```
 
-### 7.3 Micrometer & Golden Signals
+### 7.3 Метрики Micrometer и Golden Signals
 
-- **Latency & Throughput**: Monitored via custom AOP metrics in [`RepositoryMetricsAspect`](file:///E:/Programs/Java/mVPN/backend/src/main/java/ru/maxow/mvpn/metrics/RepositoryMetricsAspect.java) emitting `repository.method.duration` with percentile histograms enabled.
-- **Errors**: Emitted as `repository.errors` with tags `[repository, method, exception]`.
-- **Health Checks**: `/actuator/health` exposes readiness and liveness states without disclosing internal component topologies to unauthenticated requests.
+- **Задержка и пропускная способность**: Метрика `repository.method.duration` через AOP-аспект [`RepositoryMetricsAspect`](file:///E:/Programs/Java/mVPN/backend/src/main/java/ru/maxow/mvpn/metrics/RepositoryMetricsAspect.java) с включенными гистограммами перцентилей.
+- **Ошибки**: Метрика `repository.errors` с тегами `[repository, method, exception]`.
+- **Health Checks**: `/actuator/health` отдает статусы liveness и readiness без раскрытия внутренней топологии неавторизованным запросам.
 
 ---
 
-## 8. Testing Pyramid & Quality Gates
+## 8. Пирамида тестирования и гейты качества
 
 ```
        /\
-      /  \      Integration Tests (Spring Boot Test, Testcontainers, H2/Postgres)
-     /----\     Contract & API Tests (OpenAPI validation, MockMvc, Security tests)
-    /------\    Unit Tests (JUnit 5, Mockito, AssertJ, isolations)
+      /  \      Интеграционные тесты (Spring Boot Test, Testcontainers, H2/PostgreSQL)
+     /----\     Контрактные тесты API (валидация OpenAPI, MockMvc, Security тесты)
+    /------\    Модульные Unit-тесты (JUnit 5, Mockito, AssertJ, изолированные тесты)
 ```
 
-### 8.1 Backend Verification Gates
+### 8.1 Команды проверки бэкенда
 
 ```bash
-# Standard local build & unit tests:
-./mvnw clean verify
+# Стандартная сборка и запуск unit-тестов:
+./mvnw clean test
 
-# Strict CI verification with Checkstyle, SpotBugs, and JaCoCo coverage rules:
+# Полная строгая верификация CI (Checkstyle, SpotBugs, JaCoCo):
 ./mvnw clean verify -Pci
 
-# OWASP Vulnerability Check (fails build if CVSS >= 9):
+# Проверка уязвимостей зависимостей OWASP (сбой сборки при CVSS >= 9):
 ./mvnw org.owasp:dependency-check-maven:check -DfailBuildOnCVSS=9 -DfailOnError=false
 ```
 
-- **JaCoCo Thresholds**: Minimum 55% instruction coverage and 35-40% branch coverage on domain service packages. Exclude generated OpenAPI DTOs and MapStruct implementations.
-- **Checkstyle & Line Length**: Adheres to Google Java Style conventions (`google_checks.xml`). Enforce a strict **100-character column limit** for all Java source and test files to ensure comfortable reading in dual-split editor panes without horizontal scrolling.
+- **Контрактный тест схемы Liquibase**: Обязательное прохождение `LiquibaseSchemaValidationTest`.
+- **Пороги покрытия JaCoCo**: Минимум 55% покрытия инструкций и 35-40% покрытия ветвлений для сервисных доменных пакетов. Исключаются сгенерированные OpenAPI DTO и имплементации MapStruct.
+- **Checkstyle и длина строк**: Соответствие стандарту Google Java Style (`google_checks.xml`). Лимит строки — **строго до 100 символов**.
 
-### 8.2 Frontend Verification Gates
+### 8.2 Команды проверки фронтенда
 
 ```bash
-# Type checking & production bundle compilation:
+# Проверка типов и production сборка бандла:
 npm run build
 
-# Static analysis and linting:
+# Статический анализ и линтинг ESLint:
 npm run lint
 ```
 
 ---
 
-## 9. Git Workflow & Conventional Commits
+## 9. Git Workflow и правила Conventional Commits
 
-All changes pushed to this repository must follow the **Conventional Commits** specification:
+Все коммиты в репозитории обязаны следовать спецификации **Conventional Commits**:
 
-- `feat(scope)`: A new feature or capability (e.g. `feat(server): implement SSH key rotation via MinIO`)
-- `fix(scope)`: A bug fix (e.g. `fix(traefik): eliminate duplicate middleware definition`)
-- `sec(scope)`: A security improvement, vulnerability patch, or dependency upgrade
-- `refactor(scope)`: Code changes that neither fix a bug nor add a feature
-- `test(scope)`: Adding or updating unit, integration, or regression tests
-- `chore(scope)`: Routine maintenance, CI/CD tweaks, build system upgrades
+- `feat(scope)`: Новая функциональность (например, `feat(server): implement SSH key rotation via MinIO`)
+- `fix(scope)`: Исправление дефекта (например, `fix(traefik): eliminate duplicate middleware definition`)
+- `sec(scope)`: Улучшение безопасности, патч уязвимости или обновление зависимостей
+- `refactor(scope)`: Изменение структуры кода без изменения его внешнего поведения
+- `test(scope)`: Добавление или обновление тестов
+- `chore(scope)`: Обслуживание репозитория, обновление CI/CD, версий плагинов сборки
 
-### 9.1 Branch Hygiene & Commit Squashing Policy
+### 9.1 Политика чистоты веток и слияния коммитов
 
-1. **Atomic & Purposeful Commits**: Each commit must represent a single, cohesive change. Avoid commingling refactoring, feature work, and formatting in a single commit.
-2. **Zero Fix Spam in Branches**: While iterating on a PR or feature branch, do not leave trails of `fix`, `fix tests`, or `wip` commits. Use `git commit --fixup` and interactive rebase (`git rebase -i --autosquash`) to fold fixes into the commit where the modified code was originally introduced.
-3. **Linear History**: Keep branch history linear and rebased onto `master`. Avoid unnecessary merge commits in feature branches.
-4. **CI Gates Enforced**: Every Pull Request must pass the automated GitHub Actions pipelines ([`ci.yml`](file:///E:/Programs/Java/mVPN/.github/workflows/ci.yml) and [`security.yml`](file:///E:/Programs/Java/mVPN/.github/workflows/security.yml)) prior to merging into `main` or `master`.
+1. **Атомарные и осмысленные коммиты**: Каждый коммит должен представлять законченное, целостное логическое изменение. Не смешивайте рефакторинг, фичи и правку стилей в одном коммите.
+2. **Запрет мусорных коммитов в ветках**: Не оставляйте цепочек коммитов вида `fix`, `fix tests`, `review` или `wip`. Используйте `git commit --fixup` и интерактивный ребейз (`git rebase -i --autosquash`) для объединения правок с исходным коммитом.
+3. **Линейная история**: Поддерживайте чистую линейную историю, перебазируя ветки на актуальный `master`. Избегайте лишних merge-коммитов в тематических ветках.
+4. **Обязательные проверки CI**: Любой Pull Request должен успешно проходить автоматические проверки GitHub Actions ([`ci.yml`](file:///E:/Programs/Java/mVPN/.github/workflows/ci.yml) и [`security.yml`](file:///E:/Programs/Java/mVPN/.github/workflows/security.yml)) до слияния с ветками `main` или `master`.
+
+---
+
+## 10. Обязательный чек-лист агента перед сдачей задачи (Pre-Submission Checklist)
+
+Перед тем как сообщить пользователю о выполнении задачи или сформировать коммит, агент
+**ОБЯЗАН** пофайлово проинспектировать весь подготовленный дифф (`git diff`) по чек-листу:
+
+- [ ] **Clean Code и архитектурные границы**: Классы не превращены в God Object, соблюден SRP,
+  зависимости инжектируются через конструктор/Lombok, логика не протекает в контроллеры и DTO.
+- [ ] **Отсутствие хардкода строк**: Все тексты для пользователей и Telegram-бота вынесены в
+  `messages.properties` и синхронизированы во всех локалях (`messages_en.properties`).
+- [ ] **Отсутствие магических чисел**: Все числовые литералы вынесены в осмысленные именованные
+  константы (`static final`) или свойства конфигурации.
+- [ ] **Чистота от предупреждений компилятора и IDE**: 0 предупреждений. Запрещено подавление через
+  `@SuppressWarnings`. Все неиспользуемые импорты удалены.
+- [ ] **Отсутствие неиспользуемого кода**: Проверено, что каждый объявленный метод, параметр метода,
+  конструктор и переменная действительно вызываются в коде или тестах.
+- [ ] **Google Java Style (длина строк <= 100)**: Ни одна строка кода, комментария или аннотации
+  не превышает лимит в 100 символов.
+- [ ] **100% зеленые тесты**: Проект успешно собирается и все тесты проходят (`./mvnw clean test`).
