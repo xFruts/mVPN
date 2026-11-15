@@ -6,6 +6,7 @@ import static ru.maxow.mvpn.user.UserSpecifications.nameContains;
 import static ru.maxow.mvpn.util.PaginationUtils.parseSorting;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
@@ -27,6 +28,9 @@ import ru.maxow.mvpn.util.exception.BadRequestException;
 import ru.maxow.mvpn.util.exception.NotFoundException;
 import ru.maxow.mvpn.util.exception.ResourceAlreadyExistsException;
 
+/**
+ * Реализация сервиса управления пользователями.
+ */
 @Service
 @Slf4j
 @RequiredArgsConstructor
@@ -45,7 +49,8 @@ public class UserServiceImpl implements UserService {
         .and(hasSubscriptionStatus(subStatus))
         .and(nameContains(search));
 
-    Page<User> users = userRepository.findAll(spec, PageRequest.of(page, size, parseSorting(sort)));
+    Page<User> users = userRepository
+        .findAll(spec, PageRequest.of(page, size, parseSorting(sort)));
 
     return new PageListUserDto()
         .content(users.getContent().stream().map(userMapper::toListUserDto).toList())
@@ -84,6 +89,9 @@ public class UserServiceImpl implements UserService {
     }
 
     User user = userMapper.toUser(dto);
+    if (dto.getTelegramUsername() != null) {
+      user.setTelegramUsername(dto.getTelegramUsername());
+    }
     userRepository.save(user);
     log.info("User created: id={}", user.getId());
     return userMapper.toUserResponseDto(user);
@@ -106,6 +114,9 @@ public class UserServiceImpl implements UserService {
     if (dto.getUserTelegramId() != null) {
       existingUser.setUserTelegramId(dto.getUserTelegramId());
     }
+    if (dto.getTelegramUsername() != null) {
+      existingUser.setTelegramUsername(dto.getTelegramUsername());
+    }
     if (dto.getRole() != null) {
       existingUser.setRole(dto.getRole());
     }
@@ -113,7 +124,7 @@ public class UserServiceImpl implements UserService {
     updateUserSubscription(existingUser, dto);
 
     User updatedUser = userRepository.save(existingUser);
-    log.info("User updated: id={}", id);
+    log.debug("User updated: id={}", id);
     return userMapper.toUserResponseDto(updatedUser);
   }
 
@@ -131,7 +142,7 @@ public class UserServiceImpl implements UserService {
             subscription.setEndDate(dto.getSubscriptionEndDate());
           }
           subscriptionRepository.save(subscription);
-          log.info("Latest subscription updated for user id={}", user.getId());
+          log.debug("Latest subscription updated for user id={}", user.getId());
         });
   }
 
@@ -198,6 +209,26 @@ public class UserServiceImpl implements UserService {
   @Transactional(readOnly = true)
   public User findByTelegramId(Long telegramId) {
     return userRepository.findByUserTelegramId(telegramId).orElse(null);
+  }
+
+  @Override
+  @Transactional(readOnly = true)
+  public Optional<User> findByTelegramUsername(String telegramUsername) {
+    if (telegramUsername == null || telegramUsername.isBlank()) {
+      return Optional.empty();
+    }
+    return userRepository.findByTelegramUsernameIgnoreCase(
+        User.normalizeTelegramUsername(telegramUsername));
+  }
+
+  @Override
+  @Transactional
+  public void bindTelegramIdToUser(Long userId, Long telegramId) {
+    userRepository.findById(userId).ifPresent(user -> {
+      user.setUserTelegramId(telegramId);
+      userRepository.save(user);
+      log.info("Bound telegram ID {} to user id={}", telegramId, userId);
+    });
   }
 
   @Override

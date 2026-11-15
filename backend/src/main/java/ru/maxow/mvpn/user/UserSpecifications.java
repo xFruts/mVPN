@@ -6,10 +6,19 @@ import ru.maxow.mvpn.model.SubscriptionStatus;
 import ru.maxow.mvpn.model.UserRole;
 import ru.maxow.mvpn.subscription.Subscription;
 
+/**
+ * Спецификации Spring Data JPA для фильтрации пользователей.
+ */
 public final class UserSpecifications {
 
   private UserSpecifications() {}
 
+  /**
+   * Фильтрация пользователей по роли.
+   *
+   * @param roleStr строковое значение роли
+   * @return спецификация для запроса
+   */
   public static Specification<User> hasRole(String roleStr) {
     return (root, query, cb) -> {
       if (roleStr == null || roleStr.isBlank()) {
@@ -25,6 +34,12 @@ public final class UserSpecifications {
     };
   }
 
+  /**
+   * Фильтрация пользователей по статусу подписки.
+   *
+   * @param status строковое значение статуса подписки
+   * @return спецификация для запроса
+   */
   public static Specification<User> hasSubscriptionStatus(String status) {
     return (root, query, cb) -> {
       if (status == null || status.isBlank()) {
@@ -49,6 +64,12 @@ public final class UserSpecifications {
     };
   }
 
+  /**
+   * Поиск пользователя по части имени.
+   *
+   * @param search поисковый запрос
+   * @return спецификация для запроса
+   */
   public static Specification<User> nameContains(String search) {
     return (root, query, cb) -> {
       if (search == null || search.isBlank()) {
@@ -61,7 +82,7 @@ public final class UserSpecifications {
   }
 
   /**
-   * Escapes SQL LIKE wildcards so user input is treated as a literal substring.
+   * Экранирует спецсимволы LIKE для поиска подстроки.
    */
   static String escapeLikePattern(String input) {
     return input

@@ -3,23 +3,25 @@ spring:
     activate:
       on-profile: dev
   datasource:
-    url: jdbc:h2:mem:testdb
-    username: sa
-    password:
-    driver-class-name: org.h2.Driver
+    url: ${SPRING_DATASOURCE_URL:jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE}
+    username: ${SPRING_DATASOURCE_USERNAME:sa}
+    password: ${SPRING_DATASOURCE_PASSWORD:}
   h2:
     console:
-      enabled: true
+      enabled: ${H2_CONSOLE_ENABLED:true}
       path: /h2-console
   jpa:
     hibernate:
-      ddl-auto: create-drop
-    show-sql: true
+      ddl-auto: ${SPRING_JPA_HIBERNATE_DDL_AUTO:update}
+    show-sql: false
     properties:
       hibernate:
-        format_sql: true
+        format_sql: false
+  liquibase:
+    enabled: ${SPRING_LIQUIBASE_ENABLED:false}
+
 encryption:
-  key: DevKey12345DevKey12345DevKey1234
+  key: ${ENCRYPTION_KEY:DevKey12345DevKey12345DevKey1234}
 
 app:
   cors:
@@ -27,8 +29,11 @@ app:
       - http://localhost:3000
       - http://localhost:5173
 
-debug: true
 logging:
   level:
-    root: DEBUG
-  org.springframework.web: DEBUG
+    root: INFO
+    ru.maxow.mvpn: DEBUG
+    org.springframework.web: INFO
+    org.hibernate.SQL: INFO
+    org.hibernate.orm.deprecation: ERROR
+    com.zaxxer.hikari.HikariConfig: ERROR

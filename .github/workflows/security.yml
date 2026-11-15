@@ -205,6 +205,7 @@ jobs:
             -Dformat=HTML \
             -DfailBuildOnCVSS=9 \
             -DfailOnError=false \
+            -DsuppressionFile=dependency-check-suppression.xml \
             -DnvdMaxRetryCount=5 \
             -DnvdDelay=10000 \
             $NVD_KEY_ARG

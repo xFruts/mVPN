@@ -11,8 +11,9 @@ import {
 import { UserService } from "@api/services/userService.ts";
 
 const schema = z.object({
-    fullName: z.string(),
-    userTelegramId: z.number().optional(),
+    fullName: z.string().min(1, "Ник обязателен"),
+    telegramUsername: z.string().optional().nullable(),
+    userTelegramId: z.number().nullish(),
     role: z.enum(USER_ROLES),
 });
 
@@ -31,18 +32,29 @@ export default function AddUsers() {
         resolver: zodResolver(schema),
         values: {
             fullName: "",
-            userTelegramId: 0,
+            telegramUsername: "",
+            userTelegramId: null,
             role: "REGULAR",
         },
     });
 
     const onSubmit = async () => {
         try {
+            const rawUsername = watch("telegramUsername");
+            const cleanUsername = rawUsername
+                ? rawUsername.trim().replace(/^@/, "").replace(/^https?:\/\/t\.me\//, "").replace(/^t\.me\//, "")
+                : null;
+            const rawTelegramId = watch("userTelegramId");
+            const cleanTelegramId =
+                rawTelegramId !== null && rawTelegramId !== undefined && !isNaN(rawTelegramId)
+                    ? Number(rawTelegramId)
+                    : null;
             const createUser = {
                 fullName: watch("fullName"),
-                userTelegramId: watch("userTelegramId") || 0,
+                telegramUsername: cleanUsername || null,
+                userTelegramId: cleanTelegramId,
                 role: watch("role")
-            }
+            };
             await UserService.createUser(createUser);
             navigate("/users");
         }
@@ -93,12 +105,29 @@ export default function AddUsers() {
                                 </div>
                             </div>
                             <div className={styles.addusersPersonTelegram}>
+                                <span>Telegram никнейм (опционально)</span>
+                                <input
+                                    type="text"
+                                    className={styles.addusersPersonInput}
+                                    placeholder="Например, @xFruts или t.me/xFruts"
+                                    {...register("telegramUsername")}
+                                />
+                                <span style={{ color: "gray" }}>
+                                    Пользователь автоматически привяжется к боту без кода авторизации
+                                </span>
+                            </div>
+                            <div className={styles.addusersPersonTelegram}>
                                 <span>Telegram ID (опционально)</span>
                                 <input
                                     type="text"
                                     className={styles.addusersPersonInput}
                                     placeholder="Введите ID"
-                                    {...register("userTelegramId", { valueAsNumber: true })}
+                                    {...register("userTelegramId", {
+                                        setValueAs: (v) =>
+                                            v === "" || v === null || v === undefined || isNaN(Number(v))
+                                                ? null
+                                                : Number(v),
+                                    })}
                                 />
                                 {errors.userTelegramId && (
                                     <span style={{ color: "red" }}>
@@ -106,8 +135,7 @@ export default function AddUsers() {
                                     </span>
                                 )}
                                 <span style={{ color: "gray" }}>
-                                    Если указан, пользователь сможет управлять
-                                    подпиской через Telegram бота
+                                    Числовой Telegram ID (если известен заранее)
                                 </span>
                             </div>
                         </form>
@@ -157,6 +185,12 @@ export default function AddUsers() {
                                 {watch("role")}
                             </span>
                         </div>
+                        {watch("telegramUsername") && (
+                            <div className={styles.addusersSearchDetails}>
+                                <span style={{ color: "gray", fontSize: "15px" }}>Telegram ник</span>
+                                <span>{watch("telegramUsername")}</span>
+                            </div>
+                        )}
                         {watch("userTelegramId") && (
                             <div className={styles.addusersSearchDetails}>
                                 <span style={{ color: "gray", fontSize: "15px" }}>Telegram ID</span>

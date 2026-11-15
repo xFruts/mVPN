@@ -1,0 +1,86 @@
+databaseChangeLog:
+  - changeSet:
+      id: "006-create-user-devices"
+      author: "xFruts"
+      preConditions:
+        - onFail: "MARK_RAN"
+          not:
+            tableExists:
+              tableName: "user_devices"
+      changes:
+        - createTable:
+            tableName: "user_devices"
+            columns:
+              - column:
+                  name: id
+                  type: bigint
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: user_id
+                  type: bigint
+                  constraints:
+                    nullable: false
+              - column:
+                  name: device_fingerprint
+                  type: varchar(128)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: client_app
+                  type: varchar(100)
+              - column:
+                  name: device_model
+                  type: varchar(150)
+              - column:
+                  name: os_name
+                  type: varchar(100)
+              - column:
+                  name: last_ip
+                  type: varchar(45)
+              - column:
+                  name: last_isp
+                  type: varchar(150)
+              - column:
+                  name: last_city
+                  type: varchar(100)
+              - column:
+                  name: first_seen_at
+                  type: timestamp with time zone
+                  constraints:
+                    nullable: false
+              - column:
+                  name: last_seen_at
+                  type: timestamp with time zone
+                  constraints:
+                    nullable: false
+              - column:
+                  name: is_active
+                  type: boolean
+                  defaultValueBoolean: true
+                  constraints:
+                    nullable: false
+        - addUniqueConstraint:
+            tableName: "user_devices"
+            columnNames: "user_id, device_fingerprint"
+            constraintName: "uk_user_device_fingerprint"
+
+  - changeSet:
+      id: "006-user-devices-fk"
+      author: "xFruts"
+      preConditions:
+        - onFail: "MARK_RAN"
+        - tableExists:
+            tableName: "users"
+        - tableExists:
+            tableName: "user_devices"
+      changes:
+        - addForeignKeyConstraint:
+            baseTableName: "user_devices"
+            baseColumnNames: "user_id"
+            constraintName: "fk_user_devices_user_id"
+            referencedTableName: "users"
+            referencedColumnNames: "id"
+            onDelete: "CASCADE"
