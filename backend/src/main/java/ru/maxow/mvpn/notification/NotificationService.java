@@ -22,7 +22,7 @@ public class NotificationService {
   PaymentSettingsService paymentSettingsService;
   //KafkaTemplate<String, BroadcastRequestDto> kafkaTemplate;
 
-  /**
+  /*
    * Sends payment reminders to all users with role REGULAR on the payment date.
    * Scheduled to run daily at 9 AM.
    */
@@ -47,7 +47,10 @@ public class NotificationService {
   }*/ //TODO: Раскомментировать после перенастройки payment settings
 
   /*@NotNull
-  private static BroadcastRequestDto getBroadcastPaymentMessage(LocalDate paymentDate, PaymentSettingsResponseDto settings) {
+  private static BroadcastRequestDto getBroadcastPaymentMessage(
+      LocalDate paymentDate,
+      PaymentSettingsResponseDto settings
+  ) {
     String messageText = String.format(
         """
            Здравствуйте! Напоминаем, что (%s) истекает срок оплаты услуги.

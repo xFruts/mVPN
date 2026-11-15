@@ -15,6 +15,9 @@ import lombok.Setter;
 import lombok.experimental.FieldDefaults;
 import ru.maxow.mvpn.xui.dto.TrafficSyncSource;
 
+/**
+ * Состояние суммарного использованного трафика подписки за текущий период.
+ */
 @Entity
 @Table(name = "subscription_traffic_state")
 @Getter
@@ -68,7 +71,41 @@ public class SubscriptionTrafficState {
     return usedDownloadBytes != null ? usedDownloadBytes : 0L;
   }
 
+  /**
+   * Проверяет, превышен ли заданный лимит байт.
+   *
+   * @param limitBytes лимит трафика в байтах
+   * @return true, если фактически использованный объем больше либо равен лимиту
+   */
   public boolean isLimitExceeded(long limitBytes) {
+    if (limitBytes <= 0) {
+      return false;
+    }
     return getEffectiveUsedBytes() >= limitBytes;
+  }
+
+  /**
+   * Сбрасывает счетчики использованного трафика для нового расчетного периода.
+   */
+  public void resetPeriod(Instant now) {
+    this.usedBytes = 0L;
+    this.usedUploadBytes = 0L;
+    this.usedDownloadBytes = 0L;
+    this.periodStartTotalBytes = 0L;
+    this.periodStartUploadBytes = 0L;
+    this.periodStartDownloadBytes = 0L;
+    this.periodStartAt = now;
+  }
+
+  /**
+   * Фабричный метод для создания начального состояния трафика подписки.
+   */
+  public static SubscriptionTrafficState initial(Long subscriptionId, Instant now) {
+    SubscriptionTrafficState state = new SubscriptionTrafficState();
+    state.setSubscriptionId(subscriptionId);
+    state.resetPeriod(now);
+    state.setLastSyncedAt(now);
+    state.setSource(TrafficSyncSource.XUI_SYNC);
+    return state;
   }
 }
