@@ -31,4 +31,14 @@
     <Class name="ru.maxow.mvpn.xui.config.ResolvedServerConfig"/>
     <Bug pattern="EI_EXPOSE_REP2"/>
   </Match>
+
+  <Match>
+    <Class name="ru.maxow.mvpn.telegram.service.TelegramUserService"/>
+    <Bug pattern="EI_EXPOSE_REP2"/>
+  </Match>
+
+  <Match>
+    <Class name="ru.maxow.mvpn.telegram.service.TelegramMessageFormatter"/>
+    <Bug pattern="VA_FORMAT_STRING_USES_NEWLINE"/>
+  </Match>
 </FindBugsFilter>

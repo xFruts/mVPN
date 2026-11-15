@@ -1,5 +1,16 @@
 package ru.maxow.mvpn.xui;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
+import java.time.OffsetDateTime;
+import java.util.List;
+import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -16,15 +27,7 @@ import ru.maxow.mvpn.tariff.Tariff;
 import ru.maxow.mvpn.user.User;
 import ru.maxow.mvpn.util.exception.NotFoundException;
 import ru.maxow.mvpn.util.exception.XuiUnavailableException;
-
-import java.time.OffsetDateTime;
-import java.util.UUID;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.*;
+import ru.maxow.mvpn.xui.dto.XuiClientIpRecord;
 
 @ExtendWith(MockitoExtension.class)
 @MockitoSettings(strictness = Strictness.LENIENT)
@@ -36,6 +39,7 @@ class XuiPanelServiceImplTest {
   @Mock private XuiClientTrafficReader trafficReader;
   @Mock private XuiVlessConfigService vlessConfigService;
   @Mock private XuiJsonConfigClient jsonConfigClient;
+  @Mock private XuiClientIpClient clientIpClient;
   @Mock private RestClient restClient;
 
   private XuiPanelServiceImpl service;
@@ -47,7 +51,8 @@ class XuiPanelServiceImplTest {
         clientProvisioner,
         trafficReader,
         vlessConfigService,
-        jsonConfigClient);
+        jsonConfigClient,
+        clientIpClient);
 
     when(sessionClient.buildPanelClient(any())).thenReturn(restClient);
     when(sessionClient.buildRootClient(any())).thenReturn(restClient);
@@ -130,6 +135,38 @@ class XuiPanelServiceImplTest {
     assertThat(result).isNotNull();
     assertThat(result.total()).isEqualTo(300L);
     verify(trafficReader).getClientTraffic(restClient, "session=ok", server, "test-user");
+  }
+
+  @Test
+  @DisplayName("getClientIps: успешно возвращает список IP клиента")
+  void shouldReturnClientIps() {
+    Server server = testServer();
+    List<XuiClientIpRecord> records = List.of(
+        new XuiClientIpRecord("1.2.3.4", 1700000000L)
+    );
+
+    when(sessionClient.login(eq(restClient), eq(server))).thenReturn("session=ok");
+    when(clientIpClient.getClientIps(restClient, "session=ok", "test-user"))
+        .thenReturn(records);
+
+    List<XuiClientIpRecord> result = service.getClientIps(server, "test-user");
+
+    assertThat(result).isEqualTo(records);
+    verify(clientIpClient).getClientIps(restClient, "session=ok", "test-user");
+  }
+
+  @Test
+  @DisplayName("clearClientIps: успешно вызывает очистку IP")
+  void shouldClearClientIps() {
+    Server server = testServer();
+
+    when(sessionClient.login(eq(restClient), eq(server))).thenReturn("session=ok");
+    doNothing().when(clientIpClient)
+        .clearClientIps(restClient, "session=ok", "test-user", server);
+
+    service.clearClientIps(server, "test-user");
+
+    verify(clientIpClient).clearClientIps(restClient, "session=ok", "test-user", server);
   }
 
   private Server testServer() {

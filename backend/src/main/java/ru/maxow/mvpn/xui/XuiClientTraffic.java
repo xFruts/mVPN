@@ -34,12 +34,18 @@ public record XuiClientTraffic(
       return zero(clientEmail);
     }
     long expiry = client.expiryTime() != null ? client.expiryTime() : 0L;
-    XuiClientDto.TrafficInfo traffic = client.traffic();
-    if (traffic == null) {
-      return new XuiClientTraffic(clientEmail, 0L, 0L, 0L, expiry);
+    long up = 0L;
+    long down = 0L;
+    if (client.traffic() != null) {
+      up = client.traffic().up() != null ? client.traffic().up() : 0L;
+      down = client.traffic().down() != null ? client.traffic().down() : 0L;
     }
-    long up = traffic.up() != null ? traffic.up() : 0L;
-    long down = traffic.down() != null ? traffic.down() : 0L;
+    if (up == 0L && client.up() != null) {
+      up = client.up();
+    }
+    if (down == 0L && client.down() != null) {
+      down = client.down();
+    }
     return new XuiClientTraffic(clientEmail, up, down, up + down, expiry);
   }
 }
