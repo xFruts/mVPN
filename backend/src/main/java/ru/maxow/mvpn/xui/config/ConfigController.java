@@ -1,14 +1,18 @@
 package ru.maxow.mvpn.xui.config;
 
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import java.util.UUID;
 import lombok.AccessLevel;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 import ru.maxow.mvpn.api.ConfigApi;
@@ -17,7 +21,6 @@ import ru.maxow.mvpn.util.exception.BadRequestException;
 import ru.maxow.mvpn.util.exception.NotFoundException;
 import ru.maxow.mvpn.util.exception.XuiUnavailableException;
 import ru.maxow.mvpn.xui.dto.SubscriptionConfigPayload;
-import java.util.UUID;
 
 @Slf4j
 @RestController
@@ -33,19 +36,15 @@ public class ConfigController implements ConfigApi {
   String profileWebPageUrl;
   String profileUpdateInterval;
 
+  @Autowired
   public ConfigController(
       ConfigFacade configFacade,
       SubscriptionService subscriptionService,
-      @Value("${vpn.config.profile-title:}")
-      String profileTitle,
-      @Value("${vpn.config.profile-description:}")
-      String profileDescription,
-      @Value("${vpn.config.support-url:}")
-      String supportUrl,
-      @Value("${vpn.config.profile-web-page-url:}")
-      String profileWebPageUrl,
-      @Value("${vpn.config.profile-update-interval:24}")
-      String profileUpdateInterval
+      @Value("${vpn.config.profile-title:}") String profileTitle,
+      @Value("${vpn.config.profile-description:}") String profileDescription,
+      @Value("${vpn.config.support-url:}") String supportUrl,
+      @Value("${vpn.config.profile-web-page-url:}") String profileWebPageUrl,
+      @Value("${vpn.config.profile-update-interval:24}") String profileUpdateInterval
   ) {
     this.configFacade = configFacade;
     this.subscriptionService = subscriptionService;
@@ -63,6 +62,8 @@ public class ConfigController implements ConfigApi {
         ? config.subscriptionInfo()
         : subscriptionService.getSubscriptionInfoForUserByCode(verificationCode);
 
+    recordDeviceAccessSafely(verificationCode);
+
     HttpServletResponse response = getCurrentResponse();
     response.setContentType(config.contentType() + ";charset=UTF-8");
 
@@ -78,7 +79,6 @@ public class ConfigController implements ConfigApi {
     return config.body();
   }
 
-  @SuppressWarnings("unused")
   @ExceptionHandler(NotFoundException.class)
   public ResponseEntity<String> handleNotFoundException(NotFoundException e) {
     log.warn("Resource not found: {}", e.getMessage());
@@ -87,7 +87,6 @@ public class ConfigController implements ConfigApi {
         .body(e.getMessage());
   }
 
-  @SuppressWarnings("unused")
   @ExceptionHandler(BadRequestException.class)
   public ResponseEntity<String> handleBadRequestException(BadRequestException e) {
     log.warn("Bad request received: {}", e.getMessage());
@@ -96,7 +95,6 @@ public class ConfigController implements ConfigApi {
         .body(e.getLocalizedMessage());
   }
 
-  @SuppressWarnings("unused")
   @ExceptionHandler(XuiUnavailableException.class)
   public ResponseEntity<String> handleXuiUnavailableException(XuiUnavailableException e) {
     log.warn("XUI integration backend is temporarily unreachable: {}", e.getMessage());
@@ -105,7 +103,6 @@ public class ConfigController implements ConfigApi {
         .body("VPN nodes are temporarily unreachable. Please try again later.");
   }
 
-  @SuppressWarnings("unused")
   @ExceptionHandler(Exception.class)
   public ResponseEntity<String> handleException(Exception e) {
     log.error("Unexpected internal server error occurred", e);
@@ -114,13 +111,62 @@ public class ConfigController implements ConfigApi {
         .body("Server Error. Please try again later");
   }
 
+  private void recordDeviceAccessSafely(UUID verificationCode) {
+    if (verificationCode == null) {
+      return;
+    }
+    try {
+      HttpServletRequest request = getCurrentRequest();
+      String userAgent = request != null ? request.getHeader("User-Agent") : null;
+      String headerHwid = request != null ? request.getHeader("X-Hwid") : null;
+      String hwid = (headerHwid != null || request == null)
+          ? headerHwid
+          : request.getHeader("x-hwid");
+      String clientIp = extractClientIp(request);
+
+      configFacade.recordDeviceAccess(verificationCode, userAgent, clientIp, hwid);
+    } catch (Exception e) {
+      log.debug("Failed to record device access for code {}: {}",
+          verificationCode, e.getMessage());
+    }
+  }
+
   private HttpServletResponse getCurrentResponse() {
     ServletRequestAttributes attrs =
         (ServletRequestAttributes) RequestContextHolder.currentRequestAttributes();
     return attrs.getResponse();
   }
 
-  private void setHeaderIfPresent(HttpServletResponse response, String headerName, String value) {
+  private HttpServletRequest getCurrentRequest() {
+    try {
+      ServletRequestAttributes attrs =
+          (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
+      return attrs != null ? attrs.getRequest() : null;
+    } catch (Exception e) {
+      return null;
+    }
+  }
+
+  private String extractClientIp(HttpServletRequest request) {
+    if (request == null) {
+      return null;
+    }
+    String xForwardedFor = request.getHeader("X-Forwarded-For");
+    if (xForwardedFor != null && !xForwardedFor.isBlank()) {
+      return xForwardedFor.split(",")[0].trim();
+    }
+    String xRealIp = request.getHeader("X-Real-IP");
+    if (xRealIp != null && !xRealIp.isBlank()) {
+      return xRealIp.trim();
+    }
+    return request.getRemoteAddr();
+  }
+
+  private void setHeaderIfPresent(
+      HttpServletResponse response,
+      String headerName,
+      String value
+  ) {
     if (value != null && !value.isBlank()) {
       response.setHeader(headerName, value);
     }

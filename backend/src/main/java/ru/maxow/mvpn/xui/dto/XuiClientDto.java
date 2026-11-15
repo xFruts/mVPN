@@ -29,16 +29,35 @@ public record XuiClientDto(
     String comment,
     @JsonProperty("inboundIds")
     List<Integer> inboundIds,
-    TrafficInfo traffic
+    TrafficInfo traffic,
+    @JsonProperty("up")
+    Long up,
+    @JsonProperty("down")
+    Long down
 ) {
+
+  public XuiClientDto(
+      String uuid,
+      String email,
+      String subId,
+      Long totalGB,
+      Long expiryTime,
+      Boolean enable,
+      Long telegramId,
+      Integer limitIp,
+      String flow,
+      String password,
+      String security,
+      String comment,
+      List<Integer> inboundIds,
+      TrafficInfo traffic
+  ) {
+    this(uuid, email, subId, totalGB, expiryTime, enable, telegramId, limitIp,
+        flow, password, security, comment, inboundIds, traffic, null, null);
+  }
 
   public XuiClientDto {
     inboundIds = inboundIds == null ? null : List.copyOf(inboundIds);
-  }
-
-  @Override
-  public List<Integer> inboundIds() {
-    return inboundIds == null ? null : List.copyOf(inboundIds);
   }
 
   /**

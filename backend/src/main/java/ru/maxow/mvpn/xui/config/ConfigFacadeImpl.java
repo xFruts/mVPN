@@ -13,6 +13,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import tools.jackson.databind.ObjectMapper;
 import tools.jackson.databind.node.ArrayNode;
+import ru.maxow.mvpn.device.UserDeviceService;
 import ru.maxow.mvpn.model.ServerStatus;
 import ru.maxow.mvpn.server.Server;
 import ru.maxow.mvpn.server.SubscriptionFormat;
@@ -41,6 +42,7 @@ public class ConfigFacadeImpl implements ConfigFacade {
   ObjectMapper objectMapper;
   ConfigCacheService configCacheService;
   ConfigSyncService configSyncService;
+  UserDeviceService userDeviceService;
 
   @Override
   public SubscriptionConfigPayload getSubscriptionConfig(UUID verificationCode) {
@@ -187,5 +189,17 @@ public class ConfigFacadeImpl implements ConfigFacade {
     String encoded = Base64.getEncoder().encodeToString(
         combinedConfigs.getBytes(StandardCharsets.UTF_8));
     return new SubscriptionConfigPayload(encoded, SubscriptionFormat.VLESS, subscriptionInfo);
+  }
+
+  @Override
+  public void recordDeviceAccess(
+      UUID verificationCode,
+      String userAgent,
+      String clientIp,
+      String hwid
+  ) {
+    if (userDeviceService != null) {
+      userDeviceService.recordAccessSafely(verificationCode, userAgent, clientIp, hwid);
+    }
   }
 }

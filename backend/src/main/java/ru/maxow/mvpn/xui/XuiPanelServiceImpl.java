@@ -1,5 +1,6 @@
 package ru.maxow.mvpn.xui;
 
+import java.util.List;
 import java.util.function.Supplier;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
@@ -14,6 +15,7 @@ import ru.maxow.mvpn.subscription.Subscription;
 import ru.maxow.mvpn.user.User;
 import ru.maxow.mvpn.util.exception.NotFoundException;
 import ru.maxow.mvpn.util.exception.XuiUnavailableException;
+import ru.maxow.mvpn.xui.dto.XuiClientIpRecord;
 
 /**
  * Фасад для операций с панелью 3X-UI: аутентификация, вызов специализированных сервисов
@@ -30,6 +32,7 @@ class XuiPanelServiceImpl implements XuiPanelService {
   XuiClientTrafficReader trafficReader;
   XuiVlessConfigService vlessConfigService;
   XuiJsonConfigClient jsonConfigClient;
+  XuiClientIpClient clientIpClient;
 
   @Override
   public String getVlessConfig(Server server, User user) {
@@ -79,6 +82,25 @@ class XuiPanelServiceImpl implements XuiPanelService {
       RestClient restClient = sessionClient.buildPanelClient(server);
       String sessionCookie = sessionClient.login(restClient, server);
       return trafficReader.getClientTraffic(restClient, sessionCookie, server, clientEmail);
+    });
+  }
+
+  @Override
+  public List<XuiClientIpRecord> getClientIps(Server server, String clientEmail) {
+    return executeWithHandling(server, "get client IPs", () -> {
+      RestClient restClient = sessionClient.buildPanelClient(server);
+      String sessionCookie = sessionClient.login(restClient, server);
+      return clientIpClient.getClientIps(restClient, sessionCookie, clientEmail);
+    });
+  }
+
+  @Override
+  public void clearClientIps(Server server, String clientEmail) {
+    executeWithHandling(server, "clear client IPs", () -> {
+      RestClient restClient = sessionClient.buildPanelClient(server);
+      String sessionCookie = sessionClient.login(restClient, server);
+      clientIpClient.clearClientIps(restClient, sessionCookie, clientEmail, server);
+      return null;
     });
   }
 
