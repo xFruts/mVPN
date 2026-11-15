@@ -2,8 +2,10 @@ package ru.maxow.mvpn.user;
 
 import java.util.Comparator;
 import java.util.Optional;
+import org.mapstruct.AfterMapping;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
+import org.mapstruct.MappingTarget;
 import org.mapstruct.Named;
 import ru.maxow.mvpn.model.CreateUserRequestDto;
 import ru.maxow.mvpn.model.ListUserDto;
@@ -14,11 +16,14 @@ import ru.maxow.mvpn.subscription.Subscription;
 import ru.maxow.mvpn.subscription.SubscriptionMapper;
 import ru.maxow.mvpn.tariff.TariffMapper;
 
+/**
+ * MapStruct маппер для преобразования сущностей {@link User} в DTO.
+ */
 @Mapper(componentModel = "spring", uses = {SubscriptionMapper.class, TariffMapper.class})
 public abstract class UserMapper {
 
-  @Mapping(source = "user", target = "subscription", qualifiedByName = "userToSubscriptionDto")
   @Mapping(source = "role", target = "role")
+  @Mapping(target = "subscription", ignore = true)
   public abstract UserResponseDto toUserResponseDto(User user);
 
   @Mapping(target = "id", ignore = true)
@@ -31,34 +36,36 @@ public abstract class UserMapper {
 
   public abstract ShortListUserDto toShortListUserDto(User user);
 
-  public ListUserDto toListUserDto(User user) {
-    if (user == null) {
-      return null;
+  @Mapping(target = "subscriptionStatus", ignore = true)
+  @Mapping(target = "endDate", ignore = true)
+  @Mapping(target = "tariffName", ignore = true)
+  public abstract ListUserDto toListUserDto(User user);
+
+  /**
+   * Обогащает DTO пользователя подробной информацией об актуальной подписке.
+   */
+  @AfterMapping
+  protected void enrichUserResponseDto(User user, @MappingTarget UserResponseDto dto) {
+    if (user != null && user.getId() != null) {
+      findLatestSubscription(user)
+          .map(this::toSubscriptionResponseDto)
+          .ifPresent(dto::setSubscription);
     }
-
-    Optional<Subscription> latestSubscription = findLatestSubscription(user);
-
-    ListUserDto dto = new ListUserDto()
-        .id(user.getId())
-        .fullName(user.getFullName())
-        .role(user.getRole() != null ? user.getRole().name() : null);
-
-    latestSubscription.ifPresent(subscription -> dto.subscriptionStatus(subscription.getStatus())
-        .endDate(subscription.getEndDate())
-        .tariffName(subscription.getTariff() != null ? subscription.getTariff().getName() : null));
-
-    return dto;
   }
 
-  @Named("userToSubscriptionDto")
-  protected SubscriptionResponseDto userToSubscriptionDto(User user) {
-    if (user == null || user.getId() == null) {
-      return null;
+  /**
+   * Обогащает элемент списка пользователей статусом, датой окончания и названием
+   * тарифа последней подписки для компактного отображения в таблице админки.
+   */
+  @AfterMapping
+  protected void enrichListUserDto(User user, @MappingTarget ListUserDto dto) {
+    if (user != null) {
+      findLatestSubscription(user).ifPresent(sub -> {
+        dto.subscriptionStatus(sub.getStatus())
+            .endDate(sub.getEndDate())
+            .tariffName(sub.getTariff() != null ? sub.getTariff().getName() : null);
+      });
     }
-
-    return findLatestSubscription(user)
-        .map(this::toSubscriptionResponseDto)
-        .orElse(null);
   }
 
   @Mapping(target = "userId", source = "user.id")

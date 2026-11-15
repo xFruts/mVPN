@@ -2,34 +2,35 @@ package ru.maxow.mvpn.telegram.adapter;
 
 import java.util.List;
 import org.springframework.stereotype.Component;
-import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
+import org.telegram.telegrambots.meta.api.methods.BotApiMethod;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import ru.maxow.mvpn.telegram.handlers.CommandHandler;
 
 /**
- * Dispatches incoming Telegram updates to the appropriate command handler.
+ * Диспетчер входящих обновлений Telegram для маршрутизации
+ * в соответствующие обработчики команд.
  */
 @Component
 public class UpdateDispatcher {
   private final List<CommandHandler> handlers;
 
   /**
-   * Constructs an UpdateDispatcher with the given list of command handlers.
+   * Конструктор диспетчера обновлений со списком обработчиков команд.
    *
-   * @param handlers the list of command handlers
+   * @param handlers список обработчиков команд
    */
   public UpdateDispatcher(List<CommandHandler> handlers) {
     this.handlers = List.copyOf(handlers);
   }
 
   /**
-   * Dispatches the given update to the appropriate command handler.
+   * Направляет входящее обновление в соответствующий обработчик команды.
    *
-   * @param update the incoming Telegram update
-   * @return a list of SendMessage responses from the handler,
-   *     or an empty list if no handler supports the update
+   * @param update входящее обновление Telegram
+   * @return список методов Telegram Bot API для отправки пользователю,
+   *     или пустой список, если обработчик не найден
    */
-  public List<SendMessage> dispatch(Update update) {
+  public List<BotApiMethod<?>> dispatch(Update update) {
     return handlers.stream()
         .filter(h -> h.supports(update))
         .findFirst()

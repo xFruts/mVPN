@@ -1,0 +1,235 @@
+package ru.maxow.mvpn.telegram.service;
+
+import static org.assertj.core.api.Assertions.assertThat;
+
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
+import java.util.List;
+import java.util.Locale;
+import java.util.Optional;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import ru.maxow.mvpn.device.UserDevice;
+import ru.maxow.mvpn.model.ServerStatus;
+import ru.maxow.mvpn.server.Server;
+import ru.maxow.mvpn.subscription.Subscription;
+import ru.maxow.mvpn.subscription.traffic.SubscriptionTrafficState;
+import ru.maxow.mvpn.tariff.Tariff;
+import ru.maxow.mvpn.telegram.model.UserDeviceRecord;
+import ru.maxow.mvpn.telegram.model.UserDevicesSummary;
+import ru.maxow.mvpn.user.User;
+
+@DisplayName("TelegramMessageFormatter - unit tests")
+class TelegramMessageFormatterTest {
+
+  private final TelegramMessageFormatter formatter = new TelegramMessageFormatter();
+
+  @Test
+  @DisplayName("formatSubscriptionStatus with unlimited tariff")
+  void shouldFormatUnlimitedSubscription() {
+    User user = new User();
+    Tariff tariff = new Tariff();
+    tariff.setName("Unlimited Plan");
+    tariff.setTrafficLimitGb(0);
+
+    Subscription sub = new Subscription();
+    sub.setTariff(tariff);
+    sub.setStartDate(OffsetDateTime.now(ZoneOffset.UTC));
+    sub.setEndDate(OffsetDateTime.now(ZoneOffset.UTC).plusDays(10));
+
+    SubscriptionTrafficState traffic = new SubscriptionTrafficState();
+    traffic.setUsedBytes(5L * 1024L * 1024L * 1024L);
+
+    String result = formatter.formatSubscriptionStatus(sub, traffic);
+
+    assertThat(result).contains("Unlimited Plan");
+    assertThat(result).contains("Безлимитный");
+    assertThat(result).contains("5.00 ГБ");
+  }
+
+  @Test
+  @DisplayName("formatSubscriptionStatus with expired subscription")
+  void shouldFormatExpiredSubscription() {
+    User user = new User();
+    Tariff tariff = new Tariff();
+    tariff.setName("Basic");
+    tariff.setTrafficLimitGb(10);
+
+    Subscription sub = new Subscription();
+    sub.setTariff(tariff);
+    sub.setStartDate(OffsetDateTime.now(ZoneOffset.UTC).minusDays(40));
+    sub.setEndDate(OffsetDateTime.now(ZoneOffset.UTC).minusDays(10));
+
+    String result = formatter.formatSubscriptionStatus(sub, null);
+
+    assertThat(result).contains("Истекла");
+    assertThat(result).contains("истекла 10 дн. назад");
+  }
+
+  @Test
+  @DisplayName("formatServersStatus with multiple servers and statuses")
+  void shouldFormatServersSafely() {
+    Server s1 = new Server();
+    s1.setName("Нидерланды");
+    s1.setLocation("Amsterdam");
+    s1.setCountryEmoji("🇳🇱");
+    s1.setStatus(ServerStatus.ACTIVE);
+    s1.setIp("1.2.3.4");
+
+    Server s2 = new Server();
+    s2.setName("Швеция");
+    s2.setCountryEmoji("🇸🇪");
+    s2.setStatus(ServerStatus.INACTIVE);
+    s2.setIp("5.6.7.8");
+
+    String result = formatter.formatServersStatus(List.of(s1, s2));
+
+    assertThat(result).contains("🇳🇱 Нидерланды (Amsterdam) — 🟢 Работает стабильно");
+    assertThat(result).contains("🇸🇪 Швеция — 🔴 Временно недоступен");
+    assertThat(result).doesNotContain("1.2.3.4");
+    assertThat(result).doesNotContain("5.6.7.8");
+  }
+
+  @Test
+  @DisplayName("formatServersStatus with empty list")
+  void shouldFormatEmptyServers() {
+    String result = formatter.formatServersStatus(List.of());
+    assertThat(result).contains("список доступных серверов пуст");
+  }
+
+  @Test
+  @DisplayName("formatHappGuide contains Happ instructions and subscription URL")
+  void shouldFormatHappGuide() {
+    String url = "https://sub.example.com/v1/config/test-uuid";
+    String result = formatter.formatHappGuide(url);
+
+    assertThat(result).contains("Happ");
+    assertThat(result).contains(url);
+    assertThat(result).contains("Добавить подписку");
+  }
+
+  @Test
+  @DisplayName("formatV2rayTunGuide contains v2rayTun instructions and subscription URL")
+  void shouldFormatV2rayTunGuide() {
+    String url = "https://sub.example.com/v1/config/test-uuid";
+    String result = formatter.formatV2rayTunGuide(url);
+
+    assertThat(result).contains("v2rayTun");
+    assertThat(result).contains(url);
+    assertThat(result).contains("Обновить подписку");
+  }
+
+  @Test
+  @DisplayName("formatVlessKey returns key when present and fallback when empty")
+  void shouldFormatVlessKey() {
+    String key = "vless://uuid@host:443?type=tcp";
+    String url = "https://sub.example.com/v1/config/test-uuid";
+
+    String withKey = formatter.formatVlessKey(key, url);
+    assertThat(withKey).contains(key);
+    assertThat(withKey).contains("Импорт из буфера обмена");
+
+    String withoutKey = formatter.formatVlessKey(null, url);
+    assertThat(withoutKey).contains("Не удалось");
+    assertThat(withoutKey).contains(url);
+  }
+
+  @Test
+  @DisplayName("formatUnknownCommand resolves from MessageSource in Russian and English")
+  void shouldFormatUnknownCommandWithLocales() {
+    assertThat(formatter.formatUnknownCommand())
+        .contains("Неизвестная команда")
+        .contains("/help");
+
+    assertThat(formatter.formatUnknownCommand(Locale.ENGLISH))
+        .contains("Unknown command")
+        .contains("/help");
+  }
+
+  @Test
+  @DisplayName("formatUnauthorized resolves localized message")
+  void shouldFormatUnauthorized() {
+    assertThat(formatter.formatUnauthorized())
+        .contains("Вы ещё не авторизованы")
+        .contains("/auth");
+
+    assertThat(formatter.formatUnauthorized(Locale.ENGLISH))
+        .contains("You are not authorized yet")
+        .contains("/auth");
+  }
+
+  @Test
+  @DisplayName("formatAuth messages resolve properly")
+  void shouldFormatAuthMessages() {
+    assertThat(formatter.formatAuthAlready()).contains("уже аутентифицированы");
+    assertThat(formatter.formatAuthSuccess()).contains("успешно аутентифицированы");
+    assertThat(formatter.formatAuthInvalidToken()).contains("Неверный токен");
+    assertThat(formatter.formatAuthInvalidFormat()).contains("Неверный формат токена");
+    assertThat(formatter.formatAuthTokenRequired()).contains("предоставьте токен");
+  }
+
+  @Test
+  @DisplayName("formatWelcome resolves personalized messages in Russian and English")
+  void shouldFormatWelcome() {
+    assertThat(formatter.formatWelcome("Max", true))
+        .contains("С возвращением, Max!");
+    assertThat(formatter.formatWelcome("Max", true, Locale.ENGLISH))
+        .contains("Welcome back, Max!");
+
+    assertThat(formatter.formatWelcome(null, false))
+        .contains("Привет, друг!");
+    assertThat(formatter.formatWelcome(null, false, Locale.ENGLISH))
+        .contains("Hello, friend!");
+  }
+
+  @Test
+  @DisplayName("formatSubscriptionStatus with null traffic displays unavailable status")
+  void shouldFormatSubscriptionWithNullTraffic() {
+    Tariff tariff = new Tariff();
+    tariff.setName("Standard");
+    tariff.setTrafficLimitGb(50);
+
+    Subscription sub = new Subscription();
+    sub.setTariff(tariff);
+    sub.setStartDate(OffsetDateTime.now(ZoneOffset.UTC));
+    sub.setEndDate(OffsetDateTime.now(ZoneOffset.UTC).plusDays(15));
+
+    String result = formatter.formatSubscriptionStatus(sub, null);
+
+    assertThat(result).contains("Standard");
+    assertThat(result).contains("Данные о трафике временно недоступны");
+  }
+
+  @Test
+  @DisplayName("formatDevices escapes underscores in model, os, isp, servers")
+  void shouldEscapeMarkdownInDevices() {
+    UserDevice dev = new UserDevice();
+    dev.setDeviceModel("MaxowPC_x86_64");
+    dev.setOsName("Linux_Debian");
+    dev.setLastIsp("MegaFon_LTE");
+    dev.setLastCity("Saint_Petersburg");
+
+    UserDeviceRecord session = new UserDeviceRecord(
+        "192.168.1.1",
+        List.of("Frankfurt_1", "Amsterdam_2"),
+        "Rostelecom_Broadband",
+        null
+    );
+
+    UserDevicesSummary summary = new UserDevicesSummary(
+        1,
+        5,
+        4,
+        List.of(session),
+        List.of(dev)
+    );
+
+    String result = formatter.formatDevices(summary, Locale.forLanguageTag("ru"));
+
+    assertThat(result).contains("MaxowPC\\_x86\\_64");
+    assertThat(result).contains("Linux\\_Debian");
+    assertThat(result).contains("MegaFon\\_LTE (Saint\\_Petersburg)");
+    assertThat(result).contains("Frankfurt\\_1, Amsterdam\\_2");
+    assertThat(result).contains("Rostelecom\\_Broadband");
+  }
+}

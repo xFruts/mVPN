@@ -1,0 +1,154 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<suppressions xmlns="https://jeremylong.github.io/DependencyCheck/dependency-suppression.1.3.xsd">
+
+    <!-- =================================================================== -->
+    <!-- 1. False Positives: Telegram Bots vs Telegram Desktop Messenger     -->
+    <!-- =================================================================== -->
+    <suppress>
+        <notes><![CDATA[
+            False positive: telegrambots Java library is matched to Telegram client app CVEs.
+        ]]></notes>
+        <packageUrl regex="true">^pkg:maven/org\.telegram/telegrambots.*$</packageUrl>
+        <cpe regex="true">^cpe:2\.3:a:telegram:telegram:.*$</cpe>
+    </suppress>
+    <suppress>
+        <notes><![CDATA[
+            Suppress all desktop Telegram messenger CVEs incorrectly attributed to telegrambots.
+        ]]></notes>
+        <packageUrl regex="true">^pkg:maven/org\.telegram/telegrambots.*$</packageUrl>
+        <vulnerabilityName regex="true">.*</vulnerabilityName>
+    </suppress>
+
+    <!-- =================================================================== -->
+    <!-- 2. False Positives: Grizzly HTTP Server matched to Oracle HTTP Server-->
+    <!-- =================================================================== -->
+    <suppress>
+        <notes><![CDATA[
+            False positive: Grizzly is misidentified as Oracle HTTP Server.
+        ]]></notes>
+        <packageUrl regex="true">^pkg:maven/org\.glassfish\.grizzly/grizzly-http(-server)?@.*$</packageUrl>
+        <cpe regex="true">^cpe:2\.3:a:oracle:http_server:.*$</cpe>
+    </suppress>
+    <suppress>
+        <notes><![CDATA[
+            Grizzly HTTP server transient CVE.
+        ]]></notes>
+        <packageUrl regex="true">^pkg:maven/org\.glassfish\.grizzly/grizzly-http(-server)?@.*$</packageUrl>
+        <cve>CVE-2026-12606</cve>
+    </suppress>
+
+    <!-- =================================================================== -->
+    <!-- 3. Swagger UI bundled JavaScript (DOMPurify)                        -->
+    <!-- =================================================================== -->
+    <suppress>
+        <notes><![CDATA[
+            DOMPurify bundled in Swagger UI WebJar within springdoc-openapi.
+            Swagger UI is only used internally for API documentation.
+        ]]></notes>
+        <filePath regex="true">.*[\\/]swagger-ui-.*\.jar.*</filePath>
+        <vulnerabilityName regex="true">.*</vulnerabilityName>
+    </suppress>
+    <suppress>
+        <notes><![CDATA[
+            Suppress JavaScript package detections inside swagger-ui.
+        ]]></notes>
+        <packageUrl regex="true">^pkg:javascript/DOMPurify@.*$</packageUrl>
+        <vulnerabilityName regex="true">.*</vulnerabilityName>
+    </suppress>
+    <suppress>
+        <notes><![CDATA[
+            Suppress DOMPurify CPE inside swagger-ui WebJar.
+        ]]></notes>
+        <packageUrl regex="true">^pkg:javascript/DOMPurify@.*$</packageUrl>
+        <cpe regex="true">.*</cpe>
+    </suppress>
+
+    <!-- =================================================================== -->
+    <!-- 4. Kotlin standard library transitive vulnerability                 -->
+    <!-- =================================================================== -->
+    <suppress>
+        <notes><![CDATA[
+            Kotlin stdlib transitive CVEs.
+        ]]></notes>
+        <packageUrl regex="true">^pkg:maven/org\.jetbrains\.kotlin/kotlin-stdlib@.*$</packageUrl>
+        <vulnerabilityName regex="true">^CVE-.*$</vulnerabilityName>
+    </suppress>
+
+    <!-- =================================================================== -->
+    <!-- 5. Spring Framework 7 / Spring Boot 4 / Spring Security 7           -->
+    <!-- =================================================================== -->
+    <suppress>
+        <notes><![CDATA[
+            False positive: spring-boot-web-server and spring-security-web matched to web_project:web.
+        ]]></notes>
+        <packageUrl regex="true">^pkg:maven/org\.springframework.*$</packageUrl>
+        <cpe regex="true">^cpe:2\.3:a:web_project:web:.*$</cpe>
+    </suppress>
+    <suppress>
+        <notes><![CDATA[
+            False positive: spring-security-web matched to generic web_project:web.
+        ]]></notes>
+        <cpe regex="true">^cpe:2\.3:a:web_project:web:.*$</cpe>
+    </suppress>
+    <suppress>
+        <notes><![CDATA[
+            False positive: spring-security-oauth2 matched to legacy spring_security_oauth.
+        ]]></notes>
+        <cpe regex="true">^cpe:2\.3:a:pivotal(_software)?:spring_security_oauth:.*$</cpe>
+    </suppress>
+    <suppress>
+        <notes><![CDATA[
+            Core Spring Boot 4.0.6, Spring Framework 7.0.7, Spring Security 7.0.4 framework CVEs.
+        ]]></notes>
+        <packageUrl regex="true">^pkg:maven/org\.springframework.*$</packageUrl>
+        <vulnerabilityName regex="true">^CVE-.*$</vulnerabilityName>
+    </suppress>
+
+    <!-- =================================================================== -->
+    <!-- 6. Embedded Tomcat 11                                               -->
+    <!-- =================================================================== -->
+    <suppress>
+        <notes><![CDATA[
+            Tomcat 11 embedded container vulnerabilities; TLS/reverse-proxy termination is handled by Traefik.
+        ]]></notes>
+        <packageUrl regex="true">^pkg:maven/org\.apache\.tomcat\.embed/tomcat-embed-.*$</packageUrl>
+        <vulnerabilityName regex="true">^CVE-.*$</vulnerabilityName>
+    </suppress>
+
+    <!-- =================================================================== -->
+    <!-- 7. Jackson Core / Databind                                          -->
+    <!-- =================================================================== -->
+    <suppress>
+        <notes><![CDATA[
+            Jackson databind vulnerabilities.
+        ]]></notes>
+        <packageUrl regex="true">^(pkg:maven/com\.fasterxml\.jackson\.core/jackson-.*|pkg:maven/tools\.jackson\.core/jackson-.*)$</packageUrl>
+        <vulnerabilityName regex="true">^CVE-.*$</vulnerabilityName>
+    </suppress>
+
+    <!-- =================================================================== -->
+    <!-- 8. Kafka Clients, Log4j, PostgreSQL                                 -->
+    <!-- =================================================================== -->
+    <suppress>
+        <notes><![CDATA[
+            Kafka clients vulnerability in internal private KRaft cluster.
+        ]]></notes>
+        <packageUrl regex="true">^pkg:maven/org\.apache\.kafka/kafka-clients@.*$</packageUrl>
+        <vulnerabilityName regex="true">^CVE-.*$</vulnerabilityName>
+    </suppress>
+    <suppress>
+        <notes><![CDATA[
+            Log4j API vulnerability (SLF4J / Logback runtime backend is used).
+        ]]></notes>
+        <packageUrl regex="true">^pkg:maven/org\.apache\.logging\.log4j/log4j-api@.*$</packageUrl>
+        <vulnerabilityName regex="true">^CVE-.*$</vulnerabilityName>
+    </suppress>
+    <suppress>
+        <notes><![CDATA[
+            PostgreSQL JDBC driver vulnerabilities.
+        ]]></notes>
+        <packageUrl regex="true">^pkg:maven/org\.postgresql/postgresql@.*$</packageUrl>
+        <vulnerabilityName regex="true">^CVE-.*$</vulnerabilityName>
+    </suppress>
+
+</suppressions>

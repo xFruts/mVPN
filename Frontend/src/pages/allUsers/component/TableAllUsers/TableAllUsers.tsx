@@ -184,6 +184,11 @@ export default function TableAllUsers() {
                                 <td>
                                     <div className={styles.name}>
                                         <span>{user.fullName}</span>
+                                        {user.telegramUsername && (
+                                            <span style={{ fontSize: "12px", color: "gray" }}>
+                                                @{user.telegramUsername.replace(/^@/, '')}
+                                            </span>
+                                        )}
                                     </div>
                                 </td>
                                 <td className={styles.center}>
@@ -213,8 +218,8 @@ export default function TableAllUsers() {
                                                 ? styles.active
                                                 : user.subscriptionStatus ===
                                                     "EXPIRED"
-                                                  ? styles.expired
-                                                  : styles.regular
+                                                   ? styles.expired
+                                                   : styles.regular
                                         }`}
                                     >
                                         {user.subscriptionStatus}
@@ -287,6 +292,11 @@ export default function TableAllUsers() {
                             />
                             <div className={styles.name}>
                                 <span>{user.fullName}</span>
+                                {user.telegramUsername && (
+                                    <span style={{ fontSize: "12px", color: "gray" }}>
+                                        @{user.telegramUsername.replace(/^@/, '')}
+                                    </span>
+                                )}
                                 <span className={styles.date}>
                                     Тариф до:{" "}
                                     {user.endDate?.toString().slice(0, 10)}
