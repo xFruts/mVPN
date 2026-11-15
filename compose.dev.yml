@@ -4,9 +4,11 @@ services:
       context: ./backend
       dockerfile: Dockerfile
     environment:
+      SPRING_DATASOURCE_URL: ${SPRING_DATASOURCE_URL:-jdbc:postgresql://db:5432/mvpn_db}
       SPRING_DATASOURCE_USERNAME: ${DB_USER}
       SPRING_DATASOURCE_PASSWORD: ${DB_PASSWORD}
       SPRING_PROFILES_ACTIVE: dev
+      TELEGRAM_BOT_ENABLED: ${TELEGRAM_BOT_ENABLED}
       TELEGRAM_BOT_USERNAME: ${TELEGRAM_BOT_USERNAME}
       TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN}
       MINIO_URL: http://minio:9000
@@ -18,6 +20,8 @@ services:
       KEYCLOAK_CLIENT_ID: ${KEYCLOAK_CLIENT_ID}
       KEYCLOAK_CLIENT_SECRET: ${KEYCLOAK_CLIENT_SECRET}
       KEYCLOAK_URL: ${KEYCLOAK_URL}
+      API_DOMAIN: ${API_DOMAIN:-}
+      SUBSCRIPTION_BASE_URL: ${SUBSCRIPTION_BASE_URL:-}
       PROFILE_TITLE: ${PROFILE_TITLE}
       PROFILE_DESCRIPTION: ${PROFILE_DESCRIPTION}
       SUPPORT_URL: ${SUPPORT_URL}
@@ -83,12 +87,12 @@ services:
     environment:
       MINIO_ROOT_USER: ${MINIO_ACCESS_KEY}
       MINIO_ROOT_PASSWORD: ${MINIO_SECRET_KEY}
-    ports:
-      - "9000:9000"
-      - "9001:9001"
+    expose:
+      - "9000"
+      - "9001"
     volumes:
       - minio-data:/data
-    restart: unless-stopped
+    restart: always
     networks:
       - internal
     healthcheck:
