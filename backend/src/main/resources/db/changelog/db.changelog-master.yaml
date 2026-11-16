@@ -3,3 +3,9 @@ databaseChangeLog:
         file: db/changelog/changes/001-add-is-deleted.yaml
     - include:
         file: db/changelog/changes/003-tariff-servers-cascade.yaml
+    - include:
+        file: db/changelog/changes/004-traffic-tables.yaml
+    - include:
+        file: db/changelog/changes/005-add-telegram-username.yaml
+    - include:
+        file: db/changelog/changes/006-create-user-devices.yaml

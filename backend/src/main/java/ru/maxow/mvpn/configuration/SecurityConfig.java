@@ -7,6 +7,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.annotation.web.configuration.WebSecurityCustomizer;
 import org.springframework.security.oauth2.client.oidc.web.logout.OidcClientInitiatedLogoutSuccessHandler;
 import org.springframework.security.oauth2.client.registration.ClientRegistrationRepository;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
@@ -17,17 +18,20 @@ import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import ru.maxow.mvpn.util.converter.KeycloakOAuth2UserService;
 import ru.maxow.mvpn.util.converter.KeycloakRoleConverter;
+import lombok.AccessLevel;
+import lombok.experimental.FieldDefaults;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
 
 @Configuration
 @EnableWebSecurity
 @EnableConfigurationProperties(CorsProperties.class)
+@FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class SecurityConfig {
 
-  private final String issuerUri;
-  private final String clientId;
-  private final ClientRegistrationRepository clientRegistrationRepository;
-  private final CorsProperties corsProperties;
+  String issuerUri;
+  String clientId;
+  ClientRegistrationRepository clientRegistrationRepository;
+  CorsProperties corsProperties;
 
 
   public SecurityConfig(
@@ -60,13 +64,20 @@ public class SecurityConfig {
             ).permitAll()
             .requestMatchers("/api/openapi.yaml", "/api/components/**", "/api/paths/**").permitAll()
 
-            // Actuator endpoints
-            .requestMatchers("/actuator/health", "/actuator/info", "/actuator/prometheus").permitAll()
+            .requestMatchers(
+                "/actuator/health",
+                "/actuator/info",
+                "/actuator/prometheus"
+            ).permitAll()
 
             .requestMatchers("/v1/config/**").permitAll()
 
             // API endpoints требующие роль VPN_ADMIN
-            .requestMatchers("/v1/users/**", "/v1/servers/**", "/v1/tariffs/**").hasRole("VPN_ADMIN")
+            .requestMatchers(
+                "/v1/users/**",
+                "/v1/servers/**",
+                "/v1/tariffs/**"
+            ).hasRole("VPN_ADMIN")
             .requestMatchers("/v1/subscriptions/**", "/v1/promocodes/**").hasRole("VPN_ADMIN")
             .requestMatchers("/v1/broadcasts/**", "/v1/payment-settings/**").hasRole("VPN_ADMIN")
             .requestMatchers("/v1/payment-verifications/**").hasRole("VPN_ADMIN")
@@ -90,6 +101,11 @@ public class SecurityConfig {
         );
 
     return http.build();
+  }
+
+  @Bean
+  public WebSecurityCustomizer webSecurityCustomizer() {
+    return web -> web.ignoring().requestMatchers("/favicon.ico", "/**/favicon.ico");
   }
 
   @Bean

@@ -1,14 +1,16 @@
 package ru.maxow.mvpn.xui;
 
+import java.util.List;
 import ru.maxow.mvpn.server.Server;
 import ru.maxow.mvpn.subscription.Subscription;
 import ru.maxow.mvpn.user.User;
+import ru.maxow.mvpn.xui.dto.XuiClientIpRecord;
 
 /**
  * Фасад интеграции с 3X-UI Panel.
  * <p>
  * Предоставляет операции для управления VPN-клиентами на панели:
- * создание/обновление клиентов, генерация конфигов и получение трафика.
+ * создание/обновление клиентов, генерация конфигов, получение трафика и IP-адресов.
  */
 public interface XuiPanelService {
 
@@ -41,4 +43,20 @@ public interface XuiPanelService {
    * @param clientEmail email клиента (соответствует {@code user.getFullName()})
    */
   XuiClientTraffic getClientTraffic(Server server, String clientEmail);
+
+  /**
+   * Возвращает список активных IP-адресов клиента на сервере.
+   *
+   * @param server      целевой сервер
+   * @param clientEmail email клиента (соответствует {@code user.getFullName()})
+   */
+  List<XuiClientIpRecord> getClientIps(Server server, String clientEmail);
+
+  /**
+   * Сбрасывает сохраненные IP-адреса сессий клиента на сервере.
+   *
+   * @param server      целевой сервер
+   * @param clientEmail email клиента (соответствует {@code user.getFullName()})
+   */
+  void clearClientIps(Server server, String clientEmail);
 }

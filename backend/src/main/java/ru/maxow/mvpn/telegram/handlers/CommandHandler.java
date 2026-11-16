@@ -1,26 +1,28 @@
 package ru.maxow.mvpn.telegram.handlers;
 
 import java.util.List;
-import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
+import org.telegram.telegrambots.meta.api.methods.BotApiMethod;
 import org.telegram.telegrambots.meta.api.objects.Update;
 
 /**
- * Interface for handling commands in a Telegram bot.
+ * Интерфейс обработчика команд Telegram-бота.
  */
 public interface CommandHandler {
+
   /**
-   * Checks if the handler supports the given update.
+   * Проверяет, поддерживает ли обработчик данное входящее обновление.
    *
-   * @param update the incoming update
-   * @return true if the handler can process the update, false otherwise
+   * @param update входящее обновление Telegram
+   * @return {@code true}, если обработчик может обработать обновление,
+   *     иначе {@code false}
    */
   boolean supports(Update update);
 
   /**
-   * Handles the given update and returns a list of messages to be sent.
+   * Обрабатывает входящее обновление и возвращает список действий Telegram API.
    *
-   * @param update the incoming update
-   * @return a list of SendMessage objects to be sent as responses
+   * @param update входящее обновление Telegram
+   * @return список объектов {@link BotApiMethod} для отправки
    */
-  List<SendMessage> handle(Update update);
+  List<BotApiMethod<?>> handle(Update update);
 }

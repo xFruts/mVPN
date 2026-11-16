@@ -12,6 +12,7 @@ import UserTariffs from "@pages/allUsers/component/UserTariffs/UserTariffs.tsx";
 
 const schema = z.object({
     fullName: z.string().min(1, "Ник обязателен"),
+    telegramUsername: z.string().nullish(),
     userTelegramId: z.number().nullish(),
     role: z.enum(USER_ROLES),
     tariffName: z.string().nullish(),
@@ -25,6 +26,7 @@ type UserRole = z.infer<typeof schema>["role"];
 
 const defaultValues: FormData = {
     fullName: "",
+    telegramUsername: "",
     role: "REGULAR",
     userTelegramId: null,
     subscriptionStatus: "CANCELLED",
@@ -70,11 +72,21 @@ export default function ChangeUsers() {
 
     const onSubmit = async (data: FormData) => {
         try {
+            const cleanUsername = data.telegramUsername
+                ? data.telegramUsername
+                      .trim()
+                      .replace(/^@/, "")
+                      .replace(/^https?:\/\/t\.me\//, "")
+                      .replace(/^t\.me\//, "")
+                : null;
             const userData = {
                 ...data,
+                telegramUsername: cleanUsername || null,
                 userTelegramId:
-                    data.userTelegramId && !isNaN(data.userTelegramId)
-                        ? data.userTelegramId
+                    data.userTelegramId !== null &&
+                    data.userTelegramId !== undefined &&
+                    !isNaN(data.userTelegramId)
+                        ? Number(data.userTelegramId)
                         : null,
             };
 
@@ -92,6 +104,7 @@ export default function ChangeUsers() {
 
     const role = watch("role");
     const tgId = watch("userTelegramId");
+    const tgUsername = watch("telegramUsername");
 
     return (
         <div className={styles.container}>
@@ -163,13 +176,31 @@ export default function ChangeUsers() {
                                         className={styles.field}
                                         style={{ marginTop: "15px" }}
                                     >
+                                        <span>Telegram никнейм (опционально)</span>
+                                        <input
+                                            type="text"
+                                            className={styles.input}
+                                            placeholder="Например, @xFruts или t.me/xFruts"
+                                            {...register("telegramUsername")}
+                                        />
+                                        <span className={styles.hint}>
+                                            Пользователь автоматически привяжется к боту без кода авторизации
+                                        </span>
+                                    </div>
+                                    <div
+                                        className={styles.field}
+                                        style={{ marginTop: "15px" }}
+                                    >
                                         <span>Telegram ID (опционально)</span>
                                         <input
                                             type="number"
                                             className={styles.input}
                                             placeholder="Введите Telegram ID"
                                             {...register("userTelegramId", {
-                                                valueAsNumber: true,
+                                                setValueAs: (v) =>
+                                                    v === "" || v === null || v === undefined || isNaN(Number(v))
+                                                        ? null
+                                                        : Number(v),
                                             })}
                                         />
                                         {errors.userTelegramId && (
@@ -264,6 +295,16 @@ export default function ChangeUsers() {
                                             {watch("startDate")
                                                 ?.toString()
                                                 .slice(0, 10)}
+                                        </span>
+                                    </div>
+                                )}
+                                {tgUsername && (
+                                    <div className={styles.previewItem}>
+                                        <span className={styles.previewLabel}>
+                                            TELEGRAM НИК
+                                        </span>
+                                        <span className={styles.previewInput}>
+                                            {tgUsername}
                                         </span>
                                     </div>
                                 )}

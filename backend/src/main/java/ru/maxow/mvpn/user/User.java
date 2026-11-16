@@ -13,7 +13,6 @@ import jakarta.persistence.Table;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
-
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
@@ -24,6 +23,9 @@ import org.hibernate.annotations.SQLRestriction;
 import ru.maxow.mvpn.model.UserRole;
 import ru.maxow.mvpn.subscription.Subscription;
 
+/**
+ * Сущность пользователя системы.
+ */
 @Entity
 @Getter
 @Setter
@@ -39,6 +41,42 @@ public class User {
 
   Long userTelegramId;
 
+  @Column(name = "telegram_username")
+  String telegramUsername;
+
+  public void setTelegramUsername(String username) {
+    this.telegramUsername = normalizeTelegramUsername(username);
+  }
+
+  /**
+   * Нормализует Telegram username, очищая @ и URL-префиксы, и приводя к нижнему регистру.
+   *
+   * @param username исходный username пользователя
+   * @return очищенный и приведенный к нижнему регистру username или null
+   */
+  public static String normalizeTelegramUsername(String username) {
+    if (username == null || username.isBlank()) {
+      return null;
+    }
+    String clean = username.trim();
+    if (clean.startsWith("https://t.me/")) {
+      clean = clean.substring("https://t.me/".length());
+    } else if (clean.startsWith("http://t.me/")) {
+      clean = clean.substring("http://t.me/".length());
+    } else if (clean.startsWith("t.me/")) {
+      clean = clean.substring("t.me/".length());
+    }
+    if (clean.startsWith("@")) {
+      clean = clean.substring(1);
+    }
+    int slashIdx = clean.indexOf('/');
+    if (slashIdx >= 0) {
+      clean = clean.substring(0, slashIdx);
+    }
+    clean = clean.trim();
+    return clean.isBlank() ? null : clean.toLowerCase();
+  }
+
   @Column(nullable = false, unique = true)
   String fullName;
 
@@ -51,7 +89,7 @@ public class User {
   @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
   List<Subscription> subscriptions = new ArrayList<>();
 
-  //Data for 3x-ui panel
+  // Данные для панели 3X-UI
   UUID xuiId = UUID.randomUUID();
 
   UUID xuiSubscription = UUID.randomUUID();

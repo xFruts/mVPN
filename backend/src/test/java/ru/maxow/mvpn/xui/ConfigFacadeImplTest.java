@@ -55,6 +55,8 @@ class ConfigFacadeImplTest {
   private ConfigCacheService configCacheService;
   @Mock
   private ConfigSyncService configSyncService;
+  @Mock
+  private ru.maxow.mvpn.device.UserDeviceService userDeviceService;
 
   @InjectMocks
   private ConfigFacadeImpl configFacade;
@@ -138,5 +140,14 @@ class ConfigFacadeImplTest {
     subscription.setEndDate(OffsetDateTime.now().plusDays(30));
     subscription.setTariff(tariff);
     return subscription;
+  }
+
+  @Test
+  @DisplayName("recordDeviceAccess делегирует вызов в UserDeviceService")
+  void shouldDelegateRecordDeviceAccessToUserDeviceService() {
+    UUID code = UUID.randomUUID();
+    configFacade.recordDeviceAccess(code, "Happ/4.8.0", "1.2.3.4", "hwid-123");
+
+    verify(userDeviceService).recordAccessSafely(code, "Happ/4.8.0", "1.2.3.4", "hwid-123");
   }
 }

@@ -1,33 +1,62 @@
 package ru.maxow.mvpn.telegram.handlers;
 
-import java.util.List;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Test;
-import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
-import org.telegram.telegrambots.meta.api.objects.Message;
-import org.telegram.telegrambots.meta.api.objects.Update;
-
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import java.util.List;
+import java.util.Optional;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.quality.Strictness;
+import org.telegram.telegrambots.meta.api.methods.BotApiMethod;
+import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
+import org.telegram.telegrambots.meta.api.objects.Message;
+import org.telegram.telegrambots.meta.api.objects.Update;
+import ru.maxow.mvpn.telegram.service.TelegramKeyboardFactory;
+import ru.maxow.mvpn.telegram.service.TelegramMessageFormatter;
+import ru.maxow.mvpn.telegram.service.TelegramUserService;
+import ru.maxow.mvpn.user.User;
+
+@ExtendWith(MockitoExtension.class)
+@MockitoSettings(strictness = Strictness.LENIENT)
 @DisplayName("DefaultCommandHandler - unit tests")
 class DefaultCommandHandlerTest {
 
-  private final DefaultCommandHandler handler = new DefaultCommandHandler();
+  @Mock
+  private TelegramUserService userService;
+
+  private final TelegramMessageFormatter messageFormatter = new TelegramMessageFormatter();
+  private final TelegramKeyboardFactory keyboardFactory = new TelegramKeyboardFactory();
+
+  private DefaultCommandHandler handler;
+
+  @BeforeEach
+  void setUp() {
+    handler = new DefaultCommandHandler(userService, messageFormatter, keyboardFactory);
+  }
 
   @Test
   @DisplayName("Given unknown command When handle Then return fallback message")
   void givenUnknownCommandWhenHandleThenFallbackMessage() {
     Update update = updateWithText(42L, "/unknown");
+    when(userService.findAuthenticatedUser(eq(42L), any())).thenReturn(Optional.of(new User()));
 
-    List<SendMessage> result = handler.handle(update);
+    List<BotApiMethod<?>> result = handler.handle(update);
 
-    assertThat(result).singleElement().satisfies(message -> {
-      assertThat(message.getChatId()).isEqualTo("42");
-      assertThat(message.getText()).contains("Неизвестная команда");
-      assertThat(message.getText()).contains("/help");
-    });
+    assertThat(result).singleElement().isInstanceOf(SendMessage.class);
+    SendMessage message = (SendMessage) result.get(0);
+    assertThat(message.getChatId()).isEqualTo("42");
+    assertThat(message.getText()).contains("Неизвестная команда");
+    assertThat(message.getText()).contains("/help");
+    assertThat(message.getReplyMarkup()).isNotNull();
   }
 
   @Test
@@ -58,4 +87,3 @@ class DefaultCommandHandlerTest {
     return update;
   }
 }
-
