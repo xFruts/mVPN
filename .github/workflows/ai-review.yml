@@ -18,8 +18,24 @@ permissions:
 
 jobs:
   review:
-    name: Gemini Senior Code Review
+    name: ${{ matrix.name }}
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - id: general
+            name: "Gemini Senior Code Review"
+            marker: "<!-- gemini-senior-review -->"
+            mode: "general"
+          - id: adversarial
+            name: "Gemini Adversarial & Red Team Review"
+            marker: "<!-- gemini-adversarial-review -->"
+            mode: "adversarial"
+          - id: architecture
+            name: "Gemini Architecture & Clean Code Review"
+            marker: "<!-- gemini-clean-architecture-review -->"
+            mode: "architecture"
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -33,7 +49,8 @@ jobs:
           PR_NUMBER: ${{ github.event.pull_request.number }}
         run: |
           if [ -n "$PR_NUMBER" ]; then
-            git fetch origin "pull/$PR_NUMBER/head:pr-head" || ( [ -n "$HEAD_SHA" ] && git fetch origin "$HEAD_SHA:pr-head" )
+            git fetch origin "pull/$PR_NUMBER/head:pr-head" || \
+              ( [ -n "$HEAD_SHA" ] && git fetch origin "$HEAD_SHA:pr-head" )
           elif [ -n "$HEAD_SHA" ]; then
             git fetch origin "$HEAD_SHA:pr-head"
           fi
@@ -56,13 +73,19 @@ jobs:
           fi
 
       - name: Notify Missing API Key
-        if: steps.check-key.outputs.missing_key == 'true'
+        if: steps.check-key.outputs.missing_key == 'true' && matrix.id == 'general'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
         run: |
-          gh pr comment "$PR_NUMBER" --body '⚠️ **AI Code Review пропущено**: Секрет `GEMINI_API_KEY` не найден в настройках репозитория. Добавьте его в **Settings → Secrets and variables → Actions**, чтобы включить автоматическое ревью.' || true
+          gh pr comment "$PR_NUMBER" --body \
+            '⚠️ **AI Code Review пропущено**: Секрет `GEMINI_API_KEY` не найден в репозитории.' \
+            || true
           exit 0
+
+      - name: Skip secondary jobs when API key is missing
+        if: steps.check-key.outputs.missing_key == 'true' && matrix.id != 'general'
+        run: exit 0
 
       - name: Generate AI Code Review
         if: steps.check-key.outputs.missing_key == 'false'
@@ -77,6 +100,9 @@ jobs:
           PR_SHA: ${{ github.event.pull_request.head.sha }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           REPO: ${{ github.repository }}
+          REVIEW_MODE: ${{ matrix.mode }}
+          REVIEW_MARKER: ${{ matrix.marker }}
+          REVIEW_NAME: ${{ matrix.name }}
         run: |
           python3 -c "import sys, textwrap; exec(textwrap.dedent(sys.stdin.read()))" << 'EOF'
           import os
@@ -87,7 +113,11 @@ jobs:
           import urllib.error
 
           api_key = os.environ.get("GEMINI_API_KEY", "").strip()
-          preferred_model = os.environ.get("GEMINI_MODEL", "gemini-2.5-flash").strip().removeprefix("models/")
+          preferred_model = (
+              os.environ.get("GEMINI_MODEL", "gemini-2.5-flash")
+              .strip()
+              .removeprefix("models/")
+          )
           base_ref = (os.environ.get("BASE_REF") or "master").strip()
           base_sha = os.environ.get("BASE_SHA", "").strip()
           pr_number = os.environ.get("PR_NUMBER", "")
@@ -95,6 +125,13 @@ jobs:
           pr_author = os.environ.get("PR_AUTHOR", "")
           pr_sha = os.environ.get("PR_SHA", "")
           repo = os.environ.get("REPO", "")
+          review_mode = os.environ.get("REVIEW_MODE", "general").strip()
+          review_marker = os.environ.get(
+              "REVIEW_MARKER", "<!-- gemini-review -->"
+          ).strip()
+          review_name = os.environ.get(
+              "REVIEW_NAME", "Gemini Code Review"
+          ).strip()
 
           # Ensure base branch / ref is available locally for computing merge-base
           fetch_targets = []
@@ -133,6 +170,11 @@ jobs:
               ":(exclude)*.svg",
               ":(exclude)*.jar",
               ":(exclude)*.war",
+              ":(exclude)*.mp3",
+              ":(exclude)*.wav",
+              ":(exclude)*.ogg",
+              ":(exclude)*.flac",
+              ":(exclude)*.mp4",
               ":(exclude).idea/**",
               ":(exclude).agents/**",
               ":(exclude).gemini/**",
@@ -143,40 +185,59 @@ jobs:
           ]
 
           # Determine the common ancestor (merge-base)
-          head_ref = "pr-head" if subprocess.run(["git", "rev-parse", "--verify", "pr-head"], capture_output=True).returncode == 0 else (pr_sha or "HEAD")
+          pr_target = "pr-head" if pr_sha else "HEAD"
 
-          merge_base = None
-          for base_candidate in [base_sha, f"origin/{base_ref}", base_ref, "origin/master", "master", "origin/main", "main"]:
-              if not base_candidate:
-                  continue
-              mb_res = subprocess.run(
-                  ["git", "merge-base", base_candidate, head_ref],
-                  capture_output=True,
-                  text=True,
-                  check=False
+          def resolve_merge_base():
+              candidates = []
+              if base_ref:
+                  candidates.extend([f"origin/{base_ref}", base_ref])
+              if base_sha:
+                  candidates.append(base_sha)
+              candidates.append("HEAD")
+
+              for target in candidates:
+                  mb_proc = subprocess.run(
+                      ["git", "merge-base", target, pr_target],
+                      capture_output=True,
+                      text=True,
+                      check=False
+                  )
+                  if mb_proc.returncode == 0 and mb_proc.stdout.strip():
+                      mb = mb_proc.stdout.strip()
+                      print(f"Computed merge-base between {target} and {pr_target}: {mb}")
+                      return mb
+              return None
+
+          merge_base = resolve_merge_base()
+          if merge_base:
+              diff_targets = [f"{merge_base}..{pr_target}", f"{pr_target}~1"]
+          else:
+              print(f"Warning: merge-base fallback to {pr_target}~1")
+              diff_targets = [f"{pr_target}~1"]
+
+          diff_text = ""
+          for diff_target in diff_targets:
+              cmd = ["git", "diff", diff_target, "--", "."] + exclude_patterns
+              diff_proc = subprocess.run(
+                  cmd, capture_output=True, text=True, check=False
               )
-              if mb_res.returncode == 0 and mb_res.stdout.strip():
-                  merge_base = mb_res.stdout.strip()
-                  print(f"Computed merge-base: {merge_base} against {base_candidate}")
+              if diff_proc.returncode == 0:
+                  diff_text = diff_proc.stdout
                   break
 
-          if not merge_base:
-              merge_base = base_sha if base_sha else f"origin/{base_ref}"
-              print(f"Fallback to base ref: {merge_base}")
-
-          # Run git diff
-          diff_cmd = ["git", "diff", f"{merge_base}...{head_ref}", "--"] + exclude_patterns
-          diff_res = subprocess.run(diff_cmd, capture_output=True, text=True, check=False)
-
-          diff_text = diff_res.stdout
-          if not diff_text.strip():
-              print("No diff found or only excluded files changed. Exiting cleanly.")
+          if not diff_text or not diff_text.strip():
+              print("No reviewable code changes detected.")
+              with open("review_comment.md", "w", encoding="utf-8") as f:
+                  f.write(
+                      f"ℹ️ **{review_name}**: В этом PR нет проверяемых изменений кода."
+                  )
               sys.exit(0)
 
-          MAX_DIFF_CHARS = 80000
+          # Truncate if diff is exceptionally large (~120k chars)
+          MAX_DIFF_LEN = 120000
           diff_truncated = False
-          if len(diff_text) > MAX_DIFF_CHARS:
-              diff_text = diff_text[:MAX_DIFF_CHARS] + "\n\n... [DIFF TRUNCATED: Exceeded 80,000 characters limit] ..."
+          if len(diff_text) > MAX_DIFF_LEN:
+              diff_text = diff_text[:MAX_DIFF_LEN]
               diff_truncated = True
 
           # Read AGENTS.md standards
@@ -188,30 +249,128 @@ jobs:
               except Exception as e:
                   print(f"Warning: could not read AGENTS.md: {e}")
 
-          system_prompt = f"""Ты — Senior / Staff Software Engineer & Tech Lead в FAANG (Google / Meta / Netflix), наставник и код-ревьюер для платформы VPN-оркестрации и управления подписками mVPN.
-          Твоя цель: провести исчерпывающее, строгое, конструктивное и высокопрофессиональное код-ревью предоставленного Pull Request diff.
+          # Tailor system prompt based on the review mode
+          if review_mode == "adversarial":
+              system_prompt = (
+                  "Ты — Principal Security Engineer & Highload Red Team Auditor в FAANG.\n"
+                  "Твоя роль — жесткий адверсиальный аудит (Red Teaming) PR diff в mVPN.\n"
+                  "Твоя задача — найти скрытые векторы атак, race conditions, утечки ресурсов\n"
+                  "и точки деградации под нагрузкой.\n\n"
+                  f"СТАНДАРТЫ И КОНТЕКСТ ПРОЕКТА (из AGENTS.md):\n{agents_rules}\n\n"
+                  "СПЕЦИФИКАЦИЯ АДВЕРСИАЛЬНОГО АУДИТА:\n"
+                  "1. Пиши на русском языке, предельно конкретно, жестко, по существу.\n"
+                  "2. Проверь код по ключевым векторам сбоев и атак:\n"
+                  "   - Concurrency & Race Conditions: Check-Then-Act паттерны в кэшах/Map\n"
+                  "     (требуется атомарный CAS / replace / computeIfAbsent), гонки учета трафика,\n"
+                  "     параллельные обновления подписок и узлов 3X-UI.\n"
+                  "   - Java 21 Virtual Threads (Loom) Carrier Pinning: Блокировки `synchronized`\n"
+                  "     при блокирующем I/O (сеть, сокеты, вызовы 3X-UI, SSH, `Thread.sleep`)\n"
+                  "     блокируют carrier-потоки ForkJoinPool! Обязателен `ReentrantLock`.\n"
+                  "   - HikariCP & DB Starvation: Сетевые вызовы (3X-UI REST API, SSH к VPN-узлам,\n"
+                  "     MinIO S3 upload, GeoIP lookups) внутри `@Transactional` удерживают соединения БД.\n"
+                  "   - Security & SSRF: Валидация URL — строгая проверка схем (http/https),\n"
+                  "     хостов, портов, защита от обращений к приватным подсетям;\n"
+                  "     валидация входных данных Telegram-бота (инъекции, обход экранирования);\n"
+                  "     AES-256-GCM шифрование паролей/SSH-ключей; валидация JWT/OIDC токенов.\n"
+                  "   - Утечки ресурсов: утечки SSH-сессий/каналов JSch; неутилизированные пулы;\n"
+                  "     утечки соединений HTTP/WebClient; утечки файловых дескрипторов.\n"
+                  "   - DoS & Resilience: Отсутствие таймаутов на сетевые вызовы 3X-UI и SSH,\n"
+                  "     circuit breaker, retry storms, лавинообразный сброс кэша.\n"
+                  "3. Формат ответа:\n"
+                  "   - 🥊 **Вердикт Red Team аудита**: (PASSED 🟢 / CONCERNS 🟡 / BREACH 🔴)\n"
+                  "   - 🚨 **Критические векторы атак и Highload уязвимости (Blockers)**\n"
+                  "   - ⚡ **Конкурентность, Carrier Pinning и утечки ресурсов**\n"
+                  "   - 🛡️ **Рекомендации по харденингу (Hardening)**\n"
+                  "4. Указывай точные строки `файл:строка` и сценарий сбоя (Proof of Failure).\n"
+              )
+          elif review_mode == "architecture":
+              # Deterministic check for lines exceeding 100 characters in the diff
+              long_lines_info = []
+              cur_file = ""
+              ignored_exts = (".lock", ".json", ".svg", ".map", ".min.js", ".min.css")
+              for line in diff_text.splitlines():
+                  if line.startswith("+++ b/"):
+                      cur_file = line[6:]
+                  elif line.startswith("+") and not line.startswith("+++"):
+                      if any(cur_file.endswith(ext) for ext in ignored_exts):
+                          continue
+                      added_content = line[1:]
+                      if len(added_content) > 100:
+                          snippet = added_content[:50]
+                          long_lines_info.append(
+                              f"- `{cur_file}` ({len(added_content)} симв.): `{snippet}...`"
+                          )
+                          if len(long_lines_info) >= 50:
+                              break
 
-          СТРОГИЕ ПРАВИЛА И СТАНДАРТЫ ПРОЕКТА (из AGENTS.md):
-          {agents_rules}
+              long_lines_report = (
+                  "\n".join(long_lines_info[:15])
+                  if long_lines_info
+                  else "Строк длинее 100 символов не обнаружено."
+              )
 
-          Инструкции по стилю и структуре ревью:
-          1. Пиши на русском языке, профессионально, уважительно, по-деловому, без токсичности, без пустых похвал и без лишней воды.
-          2. Фокусируйся на реальных проблемах архитектуры, безопасности и производительности:
-             - Frontend (React 19, TypeScript 5, Zustand, Vite, Tailwind): строгая типизация без any, корректность интеграции с Keycloak (silent SSO, токен-интерцепторы), точечные селекторы Zustand, отсутствие XSS и open-redirect уязвимостей, обработка состояний экранов.
-             - Backend (Java 21, Spring Boot 3, PostgreSQL, Kafka, MinIO, 3X-UI): строгий Contract-First (OpenAPI yaml), отсутствие @Transactional на внешних I/O вызовах (предотвращение starvation в пуле HikariCP), изоляция интеграций с нодами 3X-UI и SSH, шифрование токенов через AES-256-GCM (AttributeEncryptor), идемпотентность Kafka consumer/producer, RFC 7807 исключения, запрет выхода Entity за пределы сервисного слоя.
-             - Безопасность: строжайший запрет хардкода секретов, токенов, ключей, паролей и любых данных из .env (кроме шаблонов .example).
-          3. Формат ответа:
-             - 📋 **Краткое резюме изменений** (1-2 емких предложения о сути PR)
-             - 🚨 **Критические замечания (Critical / Blocker)** (если найдены критические баги, утечки ресурсов, уязвимости безопасности или грубые нарушения архитектуры)
-             - 💡 **Рекомендации и оптимизации (Suggestions / Performance)** (ререндеринг, оптимизация запросов, читаемость, Clean Code)
-             - 👍 **Что сделано отлично** (позитивные инженерные решения)
-          4. Приводи конкретные строки и имена файлов из diff в формате `путь/к/файлу:строка` или небольшие блоки кода с объяснением «ПОЧЕМУ» (Socratic Mentoring).
-          5. Если в PR всё написано чисто и оптимально, отметь хорошие решения и поставь вердикт: **LGTM (Looks Good To Me) ✨**.
-          """
+              system_prompt = (
+                  "Ты — Staff Software Architect & Clean Code Guardian в FAANG.\n"
+                  "Твоя роль — архитектурное ревью, чистота кода и оформление в mVPN.\n\n"
+                  f"СТАНДАРТЫ И КОНТЕКСТ ПРОЕКТА (из AGENTS.md):\n{agents_rules}\n\n"
+                  "СПЕЦИФИКАЦИЯ АРХИТЕКТУРНОГО РЕВЬЮ:\n"
+                  "1. Пиши на русском языке, структурированно, емко, без воды.\n"
+                  "2. Проверь код по стандартам:\n"
+                  "   - Лимит длины строки (Line Length <= 100): жесткий стандарт AGENTS.md.\n"
+                  "     Никаких исключений! Укажи каждую строку длиннее 100 символов.\n"
+                  "   - DDD & Clean Architecture: изоляция домена от фреймворков; запрет утечки\n"
+                  "     Entity в REST контроллеры (строго DTO + MapStruct); SRP; Ports & Adapters.\n"
+                  "   - Роберт Мартин (Clean Code):\n"
+                  "     * Защита от God Object / God Service (ориентир <= 250-350 строк).\n"
+                  "     * Step-Down Rule: публичные методы вверху, приватные строго ниже.\n"
+                  "     * Нейминг: самодокументируемый, запрет бессмысленных сокращений.\n"
+                  "     * Комментарии: никакого Javadoc-мусора. Разрешены краткие комментарии\n"
+                  "       НА РУССКОМ ЯЗЫКЕ только в нетривиальных местах (почему, а не что).\n"
+                  "     * DRY / KISS / YAGNI: отсутствие дублирования и избыточных абстракций.\n"
+                  "     * Строгий запрет @SuppressWarnings.\n"
+                  "     * Полное отсутствие мертвого кода, неиспользуемых переменных и методов.\n"
+                  "     * Запрет хардкода строк (i18n через messages.properties) и магических чисел.\n"
+                  "   - Frontend (React 19 & Zustand):\n"
+                  "     * Точечные селекторы Zustand: `const x = useStore(s => s.x)` строго\n"
+                  "       обязательно. Деструктуризация `const { x } = useStore()` запрещена.\n"
+                  "     * Неизменяемость состояния (immutable updates).\n"
+                  "     * Декомпозиция: разделение dumb/UI и smart, без божественных классов.\n"
+                  "3. Формат ответа:\n"
+                  "   - 📐 **Архитектурный вердикт**: (CLEAN 🟢 / REFACTOR 🟡 / SMELL 🔴)\n"
+                  "   - 📏 **Соблюдение лимита длины строки (<= 100 символов)**\n"
+                  "   - 🏛️ **DDD, Clean Architecture и SRP**\n"
+                  "   - ⚛️ **Качество React & Zustand кода**\n"
+                  "   - 🧼 **Чистота методов, Step-Down Rule и нейминг**\n"
+                  f"4. Статический анализ строк длинее 100 символов в diff:\n{long_lines_report}\n"
+              )
+          else:
+              # General Senior Fullstack Code Review
+              system_prompt = (
+                  "Ты — Senior / Staff Software Engineer & Tech Lead в FAANG.\n"
+                  "Твоя цель — всестороннее функциональное и инженерное код-ревью в mVPN.\n\n"
+                  f"СТАНДАРТЫ И КОНТЕКСТ ПРОЕКТА (из AGENTS.md):\n{agents_rules}\n\n"
+                  "СПЕЦИФИКАЦИЯ ОБЩЕГО РЕВЬЮ:\n"
+                  "1. Пиши на русском языке, профессионально, уважительно, по делу.\n"
+                  "2. Фокусируйся на функциональности, бизнес-логике и качестве реализации:\n"
+                  "   - Бизнес-логика VPN: управление подписками, синхронизация с 3X-UI, трафик,\n"
+                  "     Telegram-бот (i18n, инлайн-кнопки, оповещения, парсинг User-Agent/устройств).\n"
+                  "   - UX & Resilience: 4 состояния экранов (Loading, Success, Empty, Error),\n"
+                  "     отсутствие регрессий, обработка сбоев внешних VPN-панелей.\n"
+                  "   - Корректная обработка граничных условий (edge cases) и сбоев сети.\n"
+                  "   - Безопасность: строжайший запрет утечек секретов/токенов/.env.\n"
+                  "3. Формат ответа:\n"
+                  "   - 📋 **Краткое резюме изменений** (1-2 емких предложения о сути PR)\n"
+                  "   - 🔍 **Функциональный анализ и бизнес-логика**\n"
+                  "   - 💡 **Рекомендации по улучшению UX и API**\n"
+                  "   - 👍 **Что сделано отлично** (позитивные инженерные решения)\n"
+                  "   - 🏁 **Вердикт**: (LGTM ✨ или список блокирующих вопросов)\n"
+                  "4. Приводи строки `файл:строка` с объяснением «ПОЧЕМУ» (Socratic Mentoring).\n"
+              )
 
           user_prompt = f"""Pull Request: #{pr_number} - "{pr_title}"
           Автор: @{pr_author}
           Commit: {pr_sha}
+          Режим ревью: {review_name}
 
           {"[Внимание: Diff был усечен из-за большого объема]" if diff_truncated else ""}
 
@@ -223,7 +382,9 @@ jobs:
 
           # Dynamically discover active models supported by this API key
           def discover_models():
-              list_url = f"https://generativelanguage.googleapis.com/v1beta/models?key={api_key}"
+              list_url = (
+                  f"https://generativelanguage.googleapis.com/v1beta/models?key={api_key}"
+              )
               try:
                   req = urllib.request.Request(list_url, method="GET")
                   with urllib.request.urlopen(req, timeout=15) as resp:
@@ -248,27 +409,32 @@ jobs:
           if preferred_model:
               candidate_models.append(preferred_model)
 
-          # Prioritize active Google recommended models
-          priority_patterns = ["2.5-flash", "1.5-flash", "2.5-pro", "1.5-pro", "flash", "pro"]
+          priority_patterns = [
+              "2.5-flash", "1.5-flash", "2.5-pro", "1.5-pro", "flash", "pro"
+          ]
           for pat in priority_patterns:
               for m in available_models:
                   if pat in m and m not in candidate_models:
                       candidate_models.append(m)
 
-          # Fallbacks if discovery returned empty or missed
-          default_fallbacks = ["gemini-2.5-flash", "gemini-1.5-flash", "gemini-2.5-pro", "gemini-1.5-pro"]
+          default_fallbacks = [
+              "gemini-2.5-flash", "gemini-1.5-flash",
+              "gemini-2.5-pro", "gemini-1.5-pro"
+          ]
           for fb in default_fallbacks:
               if fb not in candidate_models:
                   candidate_models.append(fb)
 
-          # Filter out deprecated models known to fail
           deprecated_models = {"gemini-2.0-flash", "gemini-1.0-pro"}
-          candidate_models = [m for m in candidate_models if m not in deprecated_models]
+          candidate_models = [
+              m for m in candidate_models if m not in deprecated_models
+          ]
 
-          print(f"Models candidate queue: {candidate_models}")
+          print(f"[{review_name}] Models candidate queue: {candidate_models}")
 
           def call_gemini(model_name):
-              url = f"https://generativelanguage.googleapis.com/v1beta/models/{model_name}:generateContent?key={api_key}"
+              endpoint = f"models/{model_name}:generateContent?key={api_key}"
+              url = f"https://generativelanguage.googleapis.com/v1beta/{endpoint}"
               headers = {"Content-Type": "application/json"}
               payload = {
                   "systemInstruction": {
@@ -282,11 +448,9 @@ jobs:
                   ],
                   "generationConfig": {
                       "temperature": 0.2,
-                      "topP": 0.95,
                       "maxOutputTokens": 8192
                   }
               }
-
               req = urllib.request.Request(
                   url,
                   data=json.dumps(payload).encode("utf-8"),
@@ -296,70 +460,97 @@ jobs:
               with urllib.request.urlopen(req, timeout=120) as resp:
                   return json.loads(resp.read().decode("utf-8"))
 
-          review_content = ""
-          last_error = None
-          for model in candidate_models:
-              try:
-                  print(f"Attempting review with Gemini model: {model}...")
-                  response = call_gemini(model)
-                  candidates = response.get("candidates", [])
-                  if candidates and "content" in candidates[0]:
-                      parts = candidates[0]["content"].get("parts", [])
-                      if parts and "text" in parts[0]:
-                          review_content = parts[0]["text"]
-                          print(f"Successfully generated review with model {model}!")
-                          break
-              except urllib.error.HTTPError as e:
-                  err_msg = e.read().decode("utf-8") if e.fp else str(e)
-                  print(f"Model {model} failed with HTTP {e.code}: {err_msg}")
-                  last_error = f"HTTP {e.code}: {err_msg}"
-              except Exception as e:
-                  print(f"Model {model} failed with error: {e}")
-                  last_error = str(e)
+          review_body = None
+          used_model = None
+          errors = []
 
-          if not review_content:
-              print(f"Error: All Gemini models failed. Last error: {last_error}")
+          for m in candidate_models:
+              try:
+                  print(f"[{review_name}] Requesting review from Gemini model: {m}...")
+                  res = call_gemini(m)
+                  candidates = res.get("candidates", [])
+                  if candidates:
+                      finish_reason = candidates[0].get("finishReason", "")
+                      content_obj = candidates[0].get("content") or {}
+                      parts = content_obj.get("parts") or []
+                      text_parts = [
+                          p.get("text", "")
+                          for p in parts
+                          if isinstance(p, dict) and "text" in p
+                      ]
+                      text = "".join(text_parts).strip()
+
+                      if finish_reason and finish_reason not in ("STOP", "MAX_TOKENS"):
+                          print(f"Warning: model {m} finished with reason: {finish_reason}")
+
+                      if finish_reason == "MAX_TOKENS":
+                          print(f"Warning: Response was truncated due to MAX_TOKENS for model {m}.")
+                          text += "\n\n*(⚠️ Примечание: ревью было сокращено из-за лимита токенов)*"
+
+                      if text:
+                          review_body = text
+                          used_model = m
+                          print(f"[{review_name}] Received review from {m} ({finish_reason})!")
+                          break
+              except urllib.error.HTTPError as err:
+                  err_msg = err.read().decode("utf-8")
+                  print(f"Error calling {m}: HTTP {err.code} - {err_msg}")
+                  errors.append(f"{m} (HTTP {err.code}): {err_msg}")
+                  if err.code in (404, 400, 429) and m != candidate_models[-1]:
+                      continue
+              except Exception as e:
+                  print(f"Error calling {m}: {e}")
+                  errors.append(f"{m}: {e}")
+                  if m != candidate_models[-1]:
+                      continue
+
+          if not review_body:
+              combined_error = " | ".join(errors) if errors else "Unknown error"
+              print(f"Failed to get review from Gemini: {combined_error}")
+              with open("review_comment.md", "w", encoding="utf-8") as f:
+                  f.write(
+                      f"⚠️ **{review_name} error**: Не удалось получить ответ ({combined_error})."
+                  )
               sys.exit(1)
 
-          bot_marker = "<!-- GEMINI_AI_CODE_REVIEW_BOT_COMMENT -->"
-          header = f"## 🤖 Gemini Senior Code Review\n\n> 🔍 Анализ изменений Pull Request #{pr_number} на соответствие архитектурным стандартам и качеству кода.\n\n"
-          footer = f"\n\n---\n*Сгенерировано автоматически с помощью Gemini AI ({preferred_model}) по стандартам [AGENTS.md](../../AGENTS.md).*\n{bot_marker}"
-          final_comment = header + review_content + footer
+          footer = (
+              f"\n\n---\n{review_marker}\n"
+              f"*🤖 Автоматическое ревью [{review_name}] сгенерировано "
+              f"**Google Gemini ({used_model})** по стандартам [AGENTS.md](AGENTS.md) "
+              f"для коммита `{pr_sha[:7]}`.*"
+          )
+          full_comment = review_body.strip() + footer
 
-          # Post or update GitHub PR comment
-          def post_or_update_comment(comment_body):
-              comments_url = f"https://api.github.com/repos/{repo}/issues/{pr_number}/comments"
-              gh_headers = {
-                  "Authorization": f"Bearer {os.environ.get('GH_TOKEN')}",
-                  "Accept": "application/vnd.github+json",
-                  "User-Agent": "Gemini-Code-Review-Action"
-              }
+          with open("review_comment.md", "w", encoding="utf-8") as f:
+              f.write(full_comment)
 
-              existing_comment_id = None
-              try:
-                  list_req = urllib.request.Request(comments_url, headers=gh_headers, method="GET")
-                  with urllib.request.urlopen(list_req, timeout=15) as resp:
-                      comments = json.loads(resp.read().decode("utf-8"))
-                      for c in comments:
-                          if bot_marker in c.get("body", ""):
-                              existing_comment_id = c.get("id")
-                              break
-              except Exception as e:
-                  print(f"Warning: could not inspect existing PR comments: {e}")
-
-              if existing_comment_id:
-                  print(f"Updating existing comment ID: {existing_comment_id}")
-                  patch_url = f"https://api.github.com/repos/{repo}/issues/comments/{existing_comment_id}"
-                  payload = json.dumps({"body": comment_body}).encode("utf-8")
-                  req = urllib.request.Request(patch_url, data=payload, headers=gh_headers, method="PATCH")
-                  with urllib.request.urlopen(req, timeout=15) as resp:
-                      print("PR comment updated successfully.")
-              else:
-                  print("Creating new PR review comment...")
-                  payload = json.dumps({"body": comment_body}).encode("utf-8")
-                  req = urllib.request.Request(comments_url, data=payload, headers=gh_headers, method="POST")
-                  with urllib.request.urlopen(req, timeout=15) as resp:
-                      print("PR comment created successfully.")
-
-          post_or_update_comment(final_comment)
+          print(f"[{review_name}] Review comment successfully created using model {used_model}.")
           EOF
+
+      - name: Post or Update PR Comment
+        if: always() && steps.check-key.outputs.missing_key == 'false'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          REPO: ${{ github.repository }}
+          REVIEW_MARKER: ${{ matrix.marker }}
+        run: |
+          if [ ! -f review_comment.md ]; then
+            echo "review_comment.md not found, skipping."
+            exit 0
+          fi
+
+          # Search for existing comment matching the specific review marker
+          EXISTING_COMMENT_ID=$(gh api --paginate "repos/${REPO}/issues/${PR_NUMBER}/comments" \
+            --jq ".[] | select(.body | contains(\"${REVIEW_MARKER}\")) | .id" 2>/dev/null \
+            | head -n 1 || true)
+
+          if [ -n "$EXISTING_COMMENT_ID" ]; then
+            echo "Updating existing comment (ID: $EXISTING_COMMENT_ID)..."
+            gh api -X PATCH "repos/${REPO}/issues/comments/${EXISTING_COMMENT_ID}" \
+              -F body=@review_comment.md \
+              || gh pr comment "$PR_NUMBER" --body-file review_comment.md
+          else
+            echo "Creating new comment for ${REVIEW_MARKER} on PR #${PR_NUMBER}..."
+            gh pr comment "$PR_NUMBER" --body-file review_comment.md
+          fi
